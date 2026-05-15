@@ -1,5 +1,6 @@
 import { populateSampleMessages } from '../services/populateMessages';
 import { sendDailyMessageNotification } from '../services/notificationService';
+import { clearAllMessages } from '../services/clearMessages';
 import { useState, useEffect } from 'react';
 
 const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
@@ -107,6 +108,19 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
                 <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform ${useLoveName ? 'translate-x-6' : 'translate-x-0.5'}`} />
               </button>
             </div>
+
+            <button
+              onClick={async () => {
+                if (confirm('⚠️ Tem certeza que deseja apagar TODAS as mensagens do Firebase? Esta ação não pode ser desfeita.')) {
+                  await clearAllMessages();
+                  onClose();
+                }
+              }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-red-50 hover:bg-red-100 transition-colors"
+            >
+              <span className="material-symbols-outlined text-red-600">delete</span>
+              <span className="font-body-md text-[16px] text-red-700">Apagar todas as mensagens</span>
+            </button>
           </div>
         </div>
       </div>

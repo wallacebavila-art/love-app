@@ -10,6 +10,7 @@ import { TimePeriodProvider, useTimePeriod } from './contexts/TimePeriodContext'
 import { fetchDailyMessage } from './services/messageService';
 import { fetchWeather } from './services/weatherService';
 import { requestNotificationPermission, scheduleDailyNotification, sendDailyMessageNotification, cancelDailyNotification } from './services/notificationService';
+import { clearAllMessages } from './services/clearMessages';
 
 function AppContent() {
   const [dailyMessage, setDailyMessage] = useState(null);
