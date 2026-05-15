@@ -78,11 +78,7 @@ export default {
         "headline-lg": ["Playfair Display"],
         "display-lg": ["Playfair Display"],
         "body-md": ["Plus Jakarta Sans"],
-        "label-md": ["Plus Jakarta Sans"],
-        "playfair": ["Playfair Display"],
-        "eb-garamond": ["EB Garamond"],
-        "montserrat": ["Montserrat"],
-        "poppins": ["Poppins"]
+        "label-md": ["Plus Jakarta Sans"]
       },
       fontSize: {
         "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "500" }],

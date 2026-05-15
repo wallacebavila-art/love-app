@@ -4,18 +4,12 @@ import { useState, useEffect } from 'react';
 
 const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
   const [useLoveName, setUseLoveName] = useState(false);
-  const [selectedFont, setSelectedFont] = useState('playfair');
 
   useEffect(() => {
-    // Carregar preferências do localStorage
-    const savedLoveName = localStorage.getItem('useLoveName');
-    if (savedLoveName) {
-      setUseLoveName(JSON.parse(savedLoveName));
-    }
-
-    const savedFont = localStorage.getItem('selectedFont');
-    if (savedFont) {
-      setSelectedFont(savedFont);
+    // Carregar preferência do localStorage
+    const saved = localStorage.getItem('useLoveName');
+    if (saved) {
+      setUseLoveName(JSON.parse(saved));
     }
   }, []);
 
@@ -25,13 +19,6 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
     localStorage.setItem('useLoveName', JSON.stringify(newValue));
     // Dispara evento para notificar outros componentes
     window.dispatchEvent(new CustomEvent('loveNameToggled', { detail: newValue }));
-  };
-
-  const changeFont = (font) => {
-    setSelectedFont(font);
-    localStorage.setItem('selectedFont', font);
-    // Dispara evento para notificar outros componentes
-    window.dispatchEvent(new CustomEvent('fontChanged', { detail: font }));
   };
 
   if (!isOpen) return null;
@@ -119,43 +106,6 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
               >
                 <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform ${useLoveName ? 'translate-x-6' : 'translate-x-0.5'}`} />
               </button>
-            </div>
-
-            <div className="p-3 rounded-xl bg-gray-50">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="material-symbols-outlined text-gray-600">text_fields</span>
-                <span className="font-body-md text-[16px] text-gray-700">Fonte</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => changeFont('playfair')}
-                  className={`p-2 rounded-lg text-sm transition-colors ${selectedFont === 'playfair' ? 'bg-pink-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-                  style={{ fontFamily: 'Playfair Display' }}
-                >
-                  Playfair
-                </button>
-                <button
-                  onClick={() => changeFont('eb-garamond')}
-                  className={`p-2 rounded-lg text-sm transition-colors ${selectedFont === 'eb-garamond' ? 'bg-pink-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-                  style={{ fontFamily: 'EB Garamond' }}
-                >
-                  EB Garamond
-                </button>
-                <button
-                  onClick={() => changeFont('montserrat')}
-                  className={`p-2 rounded-lg text-sm transition-colors ${selectedFont === 'montserrat' ? 'bg-pink-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-                  style={{ fontFamily: 'Montserrat' }}
-                >
-                  Montserrat
-                </button>
-                <button
-                  onClick={() => changeFont('poppins')}
-                  className={`p-2 rounded-lg text-sm transition-colors ${selectedFont === 'poppins' ? 'bg-pink-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
-                  style={{ fontFamily: 'Poppins' }}
-                >
-                  Poppins
-                </button>
-              </div>
             </div>
           </div>
         </div>
