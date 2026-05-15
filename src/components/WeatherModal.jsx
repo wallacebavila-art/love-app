@@ -1,4 +1,24 @@
+import { useState, useEffect } from 'react';
+
 const WeatherModal = ({ isOpen, onClose, weather }) => {
+  const [useLoveName, setUseLoveName] = useState(false);
+
+  useEffect(() => {
+    // Carregar preferência do localStorage
+    const saved = localStorage.getItem('useLoveName');
+    if (saved) {
+      setUseLoveName(JSON.parse(saved));
+    }
+
+    // Ouvir evento de toggle
+    const handleToggle = (e) => {
+      setUseLoveName(e.detail);
+    };
+
+    window.addEventListener('loveNameToggled', handleToggle);
+    return () => window.removeEventListener('loveNameToggled', handleToggle);
+  }, []);
+
   if (!isOpen || !weather) return null;
 
   return (
@@ -16,7 +36,7 @@ const WeatherModal = ({ isOpen, onClose, weather }) => {
           <span className="material-symbols-outlined text-blue-600 text-[48px]">cloud</span>
           <h2 className="font-headline-lg text-[28px] text-gray-800 mt-2">Clima de Hoje</h2>
           <p className="font-body-md text-[14px] text-gray-600 mt-2">
-            Raíssa, informações do clima para você saber como será seu dia
+            {useLoveName ? 'Amor' : 'Raíssa'}, informações do clima para você saber como será seu dia
           </p>
         </div>
 

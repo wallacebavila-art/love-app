@@ -1,7 +1,25 @@
 import { populateSampleMessages } from '../services/populateMessages';
 import { sendDailyMessageNotification } from '../services/notificationService';
+import { useState, useEffect } from 'react';
 
 const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
+  const [useLoveName, setUseLoveName] = useState(false);
+
+  useEffect(() => {
+    // Carregar preferência do localStorage
+    const saved = localStorage.getItem('useLoveName');
+    if (saved) {
+      setUseLoveName(JSON.parse(saved));
+    }
+  }, []);
+
+  const toggleLoveName = () => {
+    const newValue = !useLoveName;
+    setUseLoveName(newValue);
+    localStorage.setItem('useLoveName', JSON.stringify(newValue));
+    // Dispara evento para notificar outros componentes
+    window.dispatchEvent(new CustomEvent('loveNameToggled', { detail: newValue }));
+  };
 
   if (!isOpen) return null;
 
@@ -76,6 +94,19 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
               <span className="material-symbols-outlined text-gray-600">notifications</span>
               <span className="font-body-md text-[16px] text-gray-700">Testar Notificação</span>
             </button>
+
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-gray-600">favorite</span>
+                <span className="font-body-md text-[16px] text-gray-700">Nome carinhoso</span>
+              </div>
+              <button
+                onClick={toggleLoveName}
+                className={`w-12 h-6 rounded-full transition-colors ${useLoveName ? 'bg-pink-500' : 'bg-gray-300'}`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform ${useLoveName ? 'translate-x-6' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
           </div>
         </div>
       </div>

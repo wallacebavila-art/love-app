@@ -10,6 +10,23 @@ const Header = ({ onOpenCalendar, onOpenWeather }) => {
   const greeting = getGreeting();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [weather, setWeather] = useState(null);
+  const [useLoveName, setUseLoveName] = useState(false);
+
+  useEffect(() => {
+    // Carregar preferência do localStorage
+    const saved = localStorage.getItem('useLoveName');
+    if (saved) {
+      setUseLoveName(JSON.parse(saved));
+    }
+
+    // Ouvir evento de toggle
+    const handleToggle = (e) => {
+      setUseLoveName(e.detail);
+    };
+
+    window.addEventListener('loveNameToggled', handleToggle);
+    return () => window.removeEventListener('loveNameToggled', handleToggle);
+  }, []);
 
   useEffect(() => {
     const loadWeather = async () => {
@@ -79,7 +96,7 @@ const Header = ({ onOpenCalendar, onOpenWeather }) => {
               {getIcon()}
             </span>
             <h1 className={`font-headline-lg-mobile ${getTextColor} italic transition-all duration-300 hover:scale-105 cursor-default text-[20px]`}>
-              {greeting}, Raíssa
+              {greeting}, {useLoveName ? 'Amor' : 'Raíssa'}
             </h1>
           </div>
           <p className={`font-label-md ${getTextColor} text-[12px] ml-8 opacity-80`}>
