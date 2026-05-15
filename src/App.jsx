@@ -139,6 +139,13 @@ function AppContent() {
       {/* Layout Decorative Element */}
       <div className="fixed bottom-1/4 -right-24 w-64 h-64 bg-[#e6b89c]/20 blur-[100px] rounded-full pointer-events-none"></div>
       <div className="fixed top-1/4 -left-24 w-64 h-64 bg-[#9ec2fe]/20 blur-[100px] rounded-full pointer-events-none"></div>
+
+      {/* Marca d'água */}
+      <div className="fixed bottom-4 right-4 z-20">
+        <p className="font-body-md text-[12px] text-white/60 italic">
+          ~para Raíssa. Com amor, Wallace. 💕
+        </p>
+      </div>
     </div>
   );
 }
