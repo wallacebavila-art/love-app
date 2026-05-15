@@ -11,12 +11,18 @@ const Header = ({ onOpenCalendar, onOpenWeather }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [weather, setWeather] = useState(null);
   const [useLoveName, setUseLoveName] = useState(false);
+  const [selectedFont, setSelectedFont] = useState('playfair');
 
   useEffect(() => {
-    // Carregar preferência do localStorage
-    const saved = localStorage.getItem('useLoveName');
-    if (saved) {
-      setUseLoveName(JSON.parse(saved));
+    // Carregar preferências do localStorage
+    const savedLoveName = localStorage.getItem('useLoveName');
+    if (savedLoveName) {
+      setUseLoveName(JSON.parse(savedLoveName));
+    }
+
+    const savedFont = localStorage.getItem('selectedFont');
+    if (savedFont) {
+      setSelectedFont(savedFont);
     }
 
     // Ouvir evento de toggle
@@ -24,8 +30,17 @@ const Header = ({ onOpenCalendar, onOpenWeather }) => {
       setUseLoveName(e.detail);
     };
 
+    // Ouvir evento de mudança de fonte
+    const handleFontChange = (e) => {
+      setSelectedFont(e.detail);
+    };
+
     window.addEventListener('loveNameToggled', handleToggle);
-    return () => window.removeEventListener('loveNameToggled', handleToggle);
+    window.addEventListener('fontChanged', handleFontChange);
+    return () => {
+      window.removeEventListener('loveNameToggled', handleToggle);
+      window.removeEventListener('fontChanged', handleFontChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -95,7 +110,7 @@ const Header = ({ onOpenCalendar, onOpenWeather }) => {
             <span className={`material-symbols-outlined ${getIconColor} icon-glow transition-transform duration-300 hover:scale-110 cursor-pointer`} style={{ fontVariationSettings: 'FILL 1' }}>
               {getIcon()}
             </span>
-            <h1 className={`font-headline-lg-mobile ${getTextColor} italic transition-all duration-300 hover:scale-105 cursor-default text-[20px]`}>
+            <h1 className={`${getTextColor} italic transition-all duration-300 hover:scale-105 cursor-default text-[20px]`} style={{ fontFamily: selectedFont === 'playfair' ? 'Playfair Display' : selectedFont === 'eb-garamond' ? 'EB Garamond' : selectedFont === 'montserrat' ? 'Montserrat' : 'Poppins' }}>
               {greeting}, {useLoveName ? 'Amor' : 'Raíssa'}
             </h1>
           </div>

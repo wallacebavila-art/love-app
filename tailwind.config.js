@@ -72,13 +72,17 @@ export default {
         "stack-lg": "48px"
       },
       fontFamily: {
-        "headline-lg-mobile": ["EB Garamond"],
-        "quote-italic": ["EB Garamond"],
+        "headline-lg-mobile": ["Playfair Display"],
+        "quote-italic": ["Playfair Display"],
         "body-lg": ["Plus Jakarta Sans"],
-        "headline-lg": ["EB Garamond"],
-        "display-lg": ["EB Garamond"],
+        "headline-lg": ["Playfair Display"],
+        "display-lg": ["Playfair Display"],
         "body-md": ["Plus Jakarta Sans"],
-        "label-md": ["Plus Jakarta Sans"]
+        "label-md": ["Plus Jakarta Sans"],
+        "playfair": ["Playfair Display"],
+        "eb-garamond": ["EB Garamond"],
+        "montserrat": ["Montserrat"],
+        "poppins": ["Poppins"]
       },
       fontSize: {
         "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "500" }],
