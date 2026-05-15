@@ -56,8 +56,8 @@ export const scheduleDailyNotification = (callback) => {
     const hour = now.getHours();
     const minute = now.getMinutes();
 
-    // Envia notificação às 8:00 da manhã
-    if (hour === 8 && minute === 0) {
+    // Envia notificação às 7:00 da manhã
+    if (hour === 7 && minute === 0) {
       callback();
     }
   }, 60000); // Verifica a cada minuto

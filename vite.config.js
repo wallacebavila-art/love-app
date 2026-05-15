@@ -8,29 +8,29 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['icon-192.svg', 'icon-512.svg'],
       manifest: {
-        name: 'Bom dia, Raíssa',
-        short_name: 'Bom dia',
-        description: 'App de mensagens diárias para Raíssa',
-        theme_color: '#824f66',
-        background_color: '#fff8f6',
+        name: 'Bom Dia Raíssa',
+        short_name: 'Bom Dia',
+        description: 'Mensagens diárias de amor para Raíssa',
+        theme_color: '#e6b89c',
+        background_color: '#fbf9f5',
         display: 'standalone',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'icon-192.svg',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/svg+xml'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'icon-512.svg',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/svg+xml'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'icon-512.svg',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           }
         ]
