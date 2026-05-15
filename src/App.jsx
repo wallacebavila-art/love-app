@@ -142,7 +142,7 @@ function AppContent() {
 
       {/* Marca d'água */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
-        <p className="font-body-md text-[12px] text-white/60 italic">
+        <p className="font-body-md text-[13px] text-white/60 italic">
           ~para Raíssa. Com amor, Wallace. 💕
         </p>
       </div>
