@@ -3,7 +3,6 @@ import StatusBarSpacer from './components/StatusBarSpacer';
 import Header from './components/Header';
 import JourneyCard from './components/JourneyCard';
 import DailyMessageCard from './components/DailyMessageCard';
-import BottomNav from './components/BottomNav';
 import TimeSimulator from './components/TimeSimulator';
 import CalendarModal from './components/CalendarModal';
 import WeatherModal from './components/WeatherModal';
@@ -111,18 +110,13 @@ function AppContent() {
         
         <JourneyCard />
         
-        <main className="flex-grow flex items-center justify-center px-6 md:px-16">
+        <main className="flex-grow flex items-center justify-center px-6 md:px-16 pb-20">
           <DailyMessageCard 
             message={dailyMessage} 
             selectedDate={selectedDate}
           />
         </main>
-        
-        {/* Spacer for Bottom Navigation */}
-        <div className="h-32"></div>
-        
-        <BottomNav />
-        
+
         <TimeSimulator 
           onTimeChange={handleTimeChange}
           isSimulating={isSimulating}
