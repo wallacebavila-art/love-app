@@ -141,7 +141,7 @@ function AppContent() {
       <div className="fixed top-1/4 -left-24 w-64 h-64 bg-[#9ec2fe]/20 blur-[100px] rounded-full pointer-events-none"></div>
 
       {/* Marca d'água */}
-      <div className="fixed bottom-4 right-4 z-20">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
         <p className="font-body-md text-[12px] text-white/60 italic">
           ~para Raíssa. Com amor, Wallace. 💕
         </p>
