@@ -98,7 +98,7 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
             <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-gray-600">favorite</span>
-                <span className="font-body-md text-[16px] text-gray-700">Nome carinhoso</span>
+                <span className="font-body-md text-[16px] text-gray-700">Modo Amor 💕</span>
               </div>
               <button
                 onClick={toggleLoveName}
