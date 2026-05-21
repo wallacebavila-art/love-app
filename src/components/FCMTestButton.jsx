@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { requestFCMToken } from '../services/fcmService';
 import { getAllFCMTokens } from '../services/fcmTokenService';
+import { fetchDailyMessage } from '../services/messageService';
 
 const FCMTestButton = () => {
   const [token, setToken] = useState('');
@@ -19,9 +20,16 @@ const FCMTestButton = () => {
 
   const handleGetTotalTokens = async () => {
     setLoading(true);
-    const tokens = await getAllFCMTokens();
-    setTotalTokens(tokens.length);
-    setResult(`📱 ${tokens.length} tokens encontrados`);
+    try {
+      const response = await fetch('http://localhost:3001/api/tokens');
+      const data = await response.json();
+      setTotalTokens(data.total);
+      setResult(`📱 ${data.total} tokens encontrados`);
+    } catch (error) {
+      const tokens = await getAllFCMTokens();
+      setTotalTokens(tokens.length);
+      setResult(`📱 ${tokens.length} tokens encontrados (via Firestore)`);
+    }
     setLoading(false);
   };
 
@@ -41,8 +49,78 @@ const FCMTestButton = () => {
 
   const handleSendToAll = async () => {
     setLoading(true);
-    setResult('📡 Use o script Node.js para enviar para todos:');
-    setResult('node send-notification-admin.js --all "Título" "Mensagem"');
+    try {
+      const response = await fetch('http://localhost:3001/api/send-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title, body }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setResult(`✅ Enviado para ${data.successCount}/${data.total} dispositivos`);
+        if (data.failureCount > 0) {
+          setResult(`✅ Enviado para ${data.successCount}/${data.total} dispositivos (${data.failureCount} falhas)`);
+        }
+      } else {
+        setResult('❌ Erro ao enviar notificações');
+      }
+    } catch (error) {
+      setResult('❌ Servidor backend não disponível. Use o script Node.js:');
+      setResult('node send-notification-admin.js --all "Título" "Mensagem"');
+    }
+    setLoading(false);
+  };
+
+  const handleSendToActive = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/send-active', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title, body }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setResult(`✅ Enviado para ${data.successCount}/${data.total} dispositivos ativos`);
+      } else {
+        setResult('❌ Erro ao enviar notificações');
+      }
+    } catch (error) {
+      setResult('❌ Servidor backend não disponível');
+    }
+    setLoading(false);
+  };
+
+  const handleSendDailyMessage = async () => {
+    setLoading(true);
+    try {
+      const message = await fetchDailyMessage();
+      const response = await fetch('http://localhost:3001/api/send-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          title: 'Bom dia! 💕',
+          body: message 
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setResult(`✅ Mensagem do dia enviada para ${data.successCount}/${data.total} dispositivos`);
+      } else {
+        setResult('❌ Erro ao enviar notificações');
+      }
+    } catch (error) {
+      setResult('❌ Erro ao enviar mensagem do dia');
+    }
     setLoading(false);
   };
 
@@ -99,11 +177,27 @@ const FCMTestButton = () => {
         </button>
 
         <button
+          onClick={handleSendToActive}
+          disabled={loading}
+          className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+        >
+          {loading ? 'Enviando...' : '🔥 Enviar para Ativos'}
+        </button>
+
+        <button
           onClick={handleSendToAll}
           disabled={loading}
           className="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50"
         >
-          {loading ? 'Enviando...' : '🚀 Enviar para Todos (via Script)'}
+          {loading ? 'Enviando...' : '🚀 Enviar para Todos'}
+        </button>
+
+        <button
+          onClick={handleSendDailyMessage}
+          disabled={loading}
+          className="w-full px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors disabled:opacity-50"
+        >
+          {loading ? 'Enviando...' : '💕 Enviar Mensagem do Dia'}
         </button>
 
         {result && (

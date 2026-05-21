@@ -12,7 +12,7 @@ import { fetchDailyMessage } from './services/messageService';
 import { fetchWeather } from './services/weatherService';
 import { requestNotificationPermission, scheduleDailyNotification, sendDailyMessageNotification, cancelDailyNotification } from './services/notificationService';
 import { requestFCMToken, onForegroundMessage, showNotification } from './services/fcmService';
-import { saveFCMToken, updateTokenLastUsed } from './services/fcmTokenService';
+import { saveFCMToken } from './services/fcmTokenService';
 
 function AppContent() {
   const [dailyMessage, setDailyMessage] = useState(null);
@@ -20,6 +20,7 @@ function AppContent() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
   const [weather, setWeather] = useState(null);
+  const [fcmToken, setFcmToken] = useState(null);
   const { period, isSimulating, handleTimeChange, handleToggleSimulation } = useTimePeriod();
 
   useEffect(() => {
@@ -38,6 +39,7 @@ function AppContent() {
     requestFCMToken().then(token => {
       if (token) {
         console.log('Token FCM obtido com sucesso:', token);
+        setFcmToken(token);
         // Salva o token no Firestore para envio de notificações
         saveFCMToken(token);
       }
@@ -59,6 +61,36 @@ function AppContent() {
       cancelDailyNotification();
     };
   }, []);
+
+  // Heartbeat para manter dispositivo ativo
+  useEffect(() => {
+    if (!fcmToken) return;
+
+    const sendHeartbeat = async () => {
+      try {
+        await fetch('http://localhost:3001/api/heartbeat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token: fcmToken }),
+        });
+      } catch (error) {
+        // Silenciar erro se servidor não estiver rodando
+        console.log('Servidor backend não disponível');
+      }
+    };
+
+    // Enviar heartbeat a cada 2 minutos
+    const heartbeatInterval = setInterval(sendHeartbeat, 2 * 60 * 1000);
+
+    // Enviar heartbeat imediatamente
+    sendHeartbeat();
+
+    return () => {
+      clearInterval(heartbeatInterval);
+    };
+  }, [fcmToken]);
 
   useEffect(() => {
     const loadMessage = async () => {

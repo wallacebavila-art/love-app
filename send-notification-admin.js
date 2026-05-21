@@ -19,7 +19,6 @@ import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { getFirestore, collection, getDocs } from 'firebase-admin/firestore';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -66,9 +65,8 @@ try {
 // Buscar todos os tokens do Firestore se --all
 const getAllTokens = async () => {
   try {
-    const db = getFirestore();
-    const tokensRef = collection(db, 'fcm_tokens');
-    const snapshot = await getDocs(tokensRef);
+    const db = admin.firestore();
+    const snapshot = await db.collection('fcm_tokens').get();
     
     const tokens = [];
     snapshot.forEach((doc) => {
@@ -127,16 +125,29 @@ const sendToMultipleTokens = async (tokens, title, body) => {
         link: 'https://para-raissa.firebaseapp.com',
       },
     },
-    tokens: tokens,
   };
 
   try {
-    const response = await admin.messaging().sendMulticast(message);
+    let successCount = 0;
+    let failureCount = 0;
+    const failedTokens = [];
+
+    for (const token of tokens) {
+      try {
+        await admin.messaging().send({ ...message, token });
+        successCount++;
+      } catch (error) {
+        failureCount++;
+        failedTokens.push(token);
+        console.error(`❌ Erro ao enviar para token ${token.substring(0, 20)}...:`, error.message);
+      }
+    }
+
     console.log(`✅ Notificações enviadas com sucesso!`);
-    console.log(`Sucesso: ${response.successCount}, Falhas: ${response.failureCount}`);
+    console.log(`Sucesso: ${successCount}, Falhas: ${failureCount}`);
     
-    if (response.failureCount > 0) {
-      console.log('Tokens que falharam:', response.responses.map((r, i) => r.success ? null : tokens[i]).filter(Boolean));
+    if (failureCount > 0) {
+      console.log('Tokens que falharam:', failedTokens.map(t => t.substring(0, 20) + '...'));
     }
   } catch (error) {
     console.error('❌ Erro ao enviar notificações:', error);
