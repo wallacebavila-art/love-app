@@ -35,10 +35,3 @@ export const clearAllMessages = async () => {
     return false;
   }
 };
-
-// Executar a limpeza se este script for executado diretamente
-if (typeof window !== 'undefined') {
-  // Disponibilizar no console para execução manual
-  window.clearAllMessages = clearAllMessages;
-  console.log('💡 Para apagar todas as mensagens, execute: clearAllMessages()');
-}

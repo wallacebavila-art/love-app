@@ -1,5 +1,5 @@
 /**
- * Serviço de notificações push
+ * Serviço de notificações push (Web)
  */
 
 // Solicita permissão para notificações
@@ -26,8 +26,8 @@ export const sendLocalNotification = (title, body) => {
   if (Notification.permission === 'granted') {
     new Notification(title, {
       body: body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      icon: '/icon-192.svg',
+      badge: '/icon-192.svg',
       vibrate: [200, 100, 200]
     });
   }

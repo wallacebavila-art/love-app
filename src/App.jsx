@@ -6,11 +6,13 @@ import DailyMessageCard from './components/DailyMessageCard';
 import TimeSimulator from './components/TimeSimulator';
 import CalendarModal from './components/CalendarModal';
 import WeatherModal from './components/WeatherModal';
+import FCMTestButton from './components/FCMTestButton';
 import { TimePeriodProvider, useTimePeriod } from './contexts/TimePeriodContext';
 import { fetchDailyMessage } from './services/messageService';
 import { fetchWeather } from './services/weatherService';
 import { requestNotificationPermission, scheduleDailyNotification, sendDailyMessageNotification, cancelDailyNotification } from './services/notificationService';
-import { clearAllMessages } from './services/clearMessages';
+import { requestFCMToken, onForegroundMessage, showNotification } from './services/fcmService';
+import { saveFCMToken, updateTokenLastUsed } from './services/fcmTokenService';
 
 function AppContent() {
   const [dailyMessage, setDailyMessage] = useState(null);
@@ -29,16 +31,31 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    // Solicita permissão para notificações
+    // Solicita permissão para notificações web
     requestNotificationPermission();
 
-    // Agenda notificação diária
+    // Solicita token FCM e salva no Firestore
+    requestFCMToken().then(token => {
+      if (token) {
+        console.log('Token FCM obtido com sucesso:', token);
+        // Salva o token no Firestore para envio de notificações
+        saveFCMToken(token);
+      }
+    });
+
+    // Configura listener para mensagens em foreground
+    const unsubscribe = onForegroundMessage((payload) => {
+      showNotification(payload);
+    });
+
+    // Agenda notificação diária (web)
     scheduleDailyNotification(async () => {
       const message = await fetchDailyMessage();
       sendDailyMessageNotification(message);
     });
 
     return () => {
+      unsubscribe();
       cancelDailyNotification();
     };
   }, []);
@@ -147,6 +164,9 @@ function AppContent() {
           ~para Raíssa. Com amor, Wallace. 💕
         </p>
       </div>
+
+      {/* FCM Test Button */}
+      <FCMTestButton />
     </div>
   );
 }
