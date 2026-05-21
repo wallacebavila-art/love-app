@@ -22,8 +22,11 @@ export const requestFCMToken = async () => {
       return null;
     }
 
-    // Obter token FCM
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+    // Obter token FCM com caminho correto do service worker
+    const token = await getToken(messaging, { 
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: await navigator.serviceWorker.register('/love-app/firebase-messaging-sw.js')
+    });
     
     if (token) {
       console.log('Token FCM gerado:', token);
@@ -58,8 +61,8 @@ export const showNotification = (payload) => {
   const notificationTitle = payload.notification?.title || 'Nova Mensagem';
   const notificationOptions = {
     body: payload.notification?.body || '',
-    icon: payload.notification?.icon || '/icon-192.svg',
-    badge: payload.notification?.badge || '/icon-192.svg',
+    icon: payload.notification?.icon || '/love-app/icon-192.svg',
+    badge: payload.notification?.badge || '/love-app/icon-192.svg',
     data: payload.data,
   };
 

@@ -30,8 +30,8 @@ const FCMTestButton = () => {
     if (Notification.permission === 'granted') {
       new Notification(title, {
         body: body,
-        icon: '/icon-192.svg',
-        badge: '/icon-192.svg',
+        icon: '/love-app/icon-192.svg',
+        badge: '/love-app/icon-192.svg',
       });
       setResult('✅ Notificação local enviada!');
     } else {
