@@ -3,10 +3,8 @@ import StatusBarSpacer from './components/StatusBarSpacer';
 import Header from './components/Header';
 import JourneyCard from './components/JourneyCard';
 import DailyMessageCard from './components/DailyMessageCard';
-import TimeSimulator from './components/TimeSimulator';
 import CalendarModal from './components/CalendarModal';
 import WeatherModal from './components/WeatherModal';
-import FCMTestButton from './components/FCMTestButton';
 import { TimePeriodProvider, useTimePeriod } from './contexts/TimePeriodContext';
 import { fetchDailyMessage } from './services/messageService';
 import { fetchWeather } from './services/weatherService';
@@ -21,7 +19,7 @@ function AppContent() {
   const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
   const [weather, setWeather] = useState(null);
   const [fcmToken, setFcmToken] = useState(null);
-  const { period, isSimulating, handleTimeChange, handleToggleSimulation } = useTimePeriod();
+  const { period } = useTimePeriod();
 
   useEffect(() => {
     const loadWeather = async () => {
@@ -167,11 +165,6 @@ function AppContent() {
           />
         </main>
 
-        <TimeSimulator 
-          onTimeChange={handleTimeChange}
-          isSimulating={isSimulating}
-          onToggleSimulation={handleToggleSimulation}
-        />
         
         <CalendarModal
           isOpen={isCalendarOpen}
@@ -196,9 +189,6 @@ function AppContent() {
           ~para Raíssa. Com amor, Wallace. 💕
         </p>
       </div>
-
-      {/* FCM Test Button */}
-      <FCMTestButton />
     </div>
   );
 }

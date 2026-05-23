@@ -1,5 +1,3 @@
-import { populateSampleMessages } from '../services/populateMessages';
-import { sendDailyMessageNotification } from '../services/notificationService';
 import { clearAllMessages } from '../services/clearMessages';
 import { useState, useEffect } from 'react';
 
@@ -46,17 +44,6 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
 
           <div className="space-y-3">
             <button
-              onClick={async () => {
-                await populateSampleMessages();
-                onClose();
-              }}
-              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 transition-colors"
-            >
-              <span className="material-symbols-outlined text-gray-600">database</span>
-              <span className="font-body-md text-[16px] text-gray-700">Popular Mensagens</span>
-            </button>
-
-            <button
               onClick={() => {
                 onOpenCalendar();
                 onClose();
@@ -83,17 +70,6 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
             >
               <span className="material-symbols-outlined text-gray-600">settings</span>
               <span className="font-body-md text-[16px] text-gray-700">Configurações</span>
-            </button>
-
-            <button
-              onClick={() => {
-                sendDailyMessageNotification(null);
-                onClose();
-              }}
-              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 transition-colors"
-            >
-              <span className="material-symbols-outlined text-gray-600">notifications</span>
-              <span className="font-body-md text-[16px] text-gray-700">Testar Notificação</span>
             </button>
 
             <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">

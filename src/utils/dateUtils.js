@@ -46,40 +46,12 @@ export const getTodayDateString = () => {
   return `${year}-${month}-${day}`;
 };
 
-// Variável global para armazenar o horário simulado
-let simulatedHour = null;
-let simulatedMinute = null;
-
 /**
- * Define o horário simulado para testes
- * @param {number} hour - Hora (0-23)
- * @param {number} minute - Minuto (0-59)
- */
-export const setSimulatedTime = (hour, minute) => {
-  simulatedHour = hour;
-  simulatedMinute = minute;
-};
-
-/**
- * Limpa o horário simulado e volta ao horário real
- */
-export const clearSimulatedTime = () => {
-  simulatedHour = null;
-  simulatedMinute = null;
-};
-
-/**
- * Retorna o período do dia baseado no horário atual (ou simulado)
+ * Retorna o período do dia baseado no horário atual
  * @returns {string} 'morning', 'afternoon' ou 'night'
  */
 export const getDayPeriod = () => {
-  let hour;
-  
-  if (simulatedHour !== null) {
-    hour = simulatedHour;
-  } else {
-    hour = new Date().getHours();
-  }
+  const hour = new Date().getHours();
   
   if (hour >= 5 && hour < 12) {
     return 'morning';
