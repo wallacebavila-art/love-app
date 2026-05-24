@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import StatusBarSpacer from './components/StatusBarSpacer';
 import Header from './components/Header';
 import JourneyCard from './components/JourneyCard';
 import DailyMessageCard from './components/DailyMessageCard';
+import DailyVerseCard from './components/DailyVerseCard';
 import CalendarModal from './components/CalendarModal';
 import WeatherModal from './components/WeatherModal';
+import Login from './components/Login';
+import AdminModal from './components/AdminModal';
+import SettingsModal from './components/SettingsModal';
+import ProtectedRoute from './components/ProtectedRoute';
 import { TimePeriodProvider, useTimePeriod } from './contexts/TimePeriodContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { fetchDailyMessage } from './services/messageService';
+import { fetchDailyVerse } from './services/verseService';
 import { fetchWeather } from './services/weatherService';
 import { requestNotificationPermission, scheduleDailyNotification, sendDailyMessageNotification, cancelDailyNotification } from './services/notificationService';
 import { requestFCMToken, onForegroundMessage, showNotification } from './services/fcmService';
@@ -14,11 +22,15 @@ import { saveFCMToken } from './services/fcmTokenService';
 
 function AppContent() {
   const [dailyMessage, setDailyMessage] = useState(null);
+  const [dailyVerse, setDailyVerse] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [weather, setWeather] = useState(null);
   const [fcmToken, setFcmToken] = useState(null);
+  const location = useLocation();
   const { period } = useTimePeriod();
 
   useEffect(() => {
@@ -28,6 +40,13 @@ function AppContent() {
     };
     loadWeather();
   }, []);
+
+  // Abrir modal de admin quando rota for /admin
+  useEffect(() => {
+    if (location.pathname === '/admin') {
+      setIsAdminModalOpen(true);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     // Solicita permissão para notificações web
@@ -103,6 +122,19 @@ function AppContent() {
     loadMessage();
   }, []);
 
+  useEffect(() => {
+    const loadVerse = async () => {
+      try {
+        const verse = await fetchDailyVerse();
+        setDailyVerse(verse);
+      } catch (error) {
+        console.error('Erro ao carregar versículo:', error);
+      }
+    };
+
+    loadVerse();
+  }, []);
+
   const getThemeClasses = () => {
     switch (period) {
       case 'morning':
@@ -154,15 +186,26 @@ function AppContent() {
         <Header 
           onOpenCalendar={() => setIsCalendarOpen(true)}
           onOpenWeather={() => setIsWeatherModalOpen(true)}
+          onOpenAdmin={() => setIsAdminModalOpen(true)}
+          onOpenSettings={() => setIsSettingsModalOpen(true)}
         />
         
         <JourneyCard />
         
         <main className="flex-grow flex items-center justify-center px-6 md:px-16 pb-20">
-          <DailyMessageCard 
-            message={dailyMessage} 
-            selectedDate={selectedDate}
-          />
+          <div className="flex flex-col md:flex-row gap-6 w-full max-w-4xl">
+            <div className="flex-1">
+              <DailyMessageCard 
+                message={dailyMessage} 
+                selectedDate={selectedDate}
+              />
+            </div>
+            <div className="flex-1">
+              <DailyVerseCard 
+                verse={dailyVerse}
+              />
+            </div>
+          </div>
         </main>
 
         
@@ -176,6 +219,22 @@ function AppContent() {
           isOpen={isWeatherModalOpen}
           onClose={() => setIsWeatherModalOpen(false)}
           weather={weather}
+        />
+
+        <AdminModal
+          isOpen={isAdminModalOpen}
+          onClose={() => {
+            setIsAdminModalOpen(false);
+            // Redirecionar para home se estiver na rota /admin
+            if (location.pathname === '/admin') {
+              window.history.pushState({}, '', '/');
+            }
+          }}
+        />
+
+        <SettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
         />
       </div>
 
@@ -195,9 +254,31 @@ function AppContent() {
 
 function App() {
   return (
-    <TimePeriodProvider>
-      <AppContent />
-    </TimePeriodProvider>
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <TimePeriodProvider>
+                  <AppContent />
+                </TimePeriodProvider>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <TimePeriodProvider>
+                <AppContent />
+              </TimePeriodProvider>
+            }
+          />
+        </Routes>
+      </AuthProvider>
+    </Router>
   );
 }
 

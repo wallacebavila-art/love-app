@@ -3,9 +3,13 @@ import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { fetchWeather } from '../services/weatherService';
 import { useState, useEffect } from 'react';
 import SideMenu from './SideMenu';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
-const Header = ({ onOpenCalendar, onOpenWeather }) => {
+const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings }) => {
   const { period } = useTimePeriod();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const greeting = getGreeting();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [weather, setWeather] = useState(null);
@@ -109,23 +113,40 @@ const Header = ({ onOpenCalendar, onOpenWeather }) => {
         </div>
         
         {/* Botões Desktop */}
-        <div className="hidden md:flex gap-2">
+        <div className="hidden md:flex gap-4">
           <button 
             onClick={onOpenCalendar}
-            className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95"
+            className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
             title="Ver mensagens anteriores"
           >
             <span className="material-symbols-outlined text-white transition-transform duration-300">calendar_month</span>
+            <span className="text-white text-xs font-medium">Calendário</span>
           </button>
           <button 
             onClick={onOpenWeather}
-            className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95"
+            className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
             title="Clima de hoje"
           >
             <span className="material-symbols-outlined text-white transition-transform duration-300">cloud</span>
+            <span className="text-white text-xs font-medium">Clima</span>
           </button>
-          <button className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95">
+          {user && (
+            <button 
+              onClick={onOpenAdmin}
+              className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
+              title="Área administrativa"
+            >
+              <span className="material-symbols-outlined text-white transition-transform duration-300">admin_panel_settings</span>
+              <span className="text-white text-xs font-medium">Admin</span>
+            </button>
+          )}
+          <button 
+            onClick={onOpenSettings}
+            className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
+            title="Configurações"
+          >
             <span className="material-symbols-outlined text-white transition-transform duration-300">settings</span>
+            <span className="text-white text-xs font-medium">Configurações</span>
           </button>
         </div>
 

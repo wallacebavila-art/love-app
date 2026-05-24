@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getMessaging } from 'firebase/messaging';
+import { getAuth } from 'firebase/auth';
 
 // Configuração do Firebase
 const firebaseConfig = {
@@ -18,6 +19,7 @@ const app = initializeApp(firebaseConfig);
 // Inicializar o Firestore
 const db = getFirestore(app);
 const messaging = getMessaging(app);
+const auth = getAuth(app);
 
-export { db, messaging };
+export { db, messaging, auth };
 export default app;

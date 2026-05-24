@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
+import { useAuth } from '../contexts/AuthContext';
 
 const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
+  const isAdmin = user && user.isAdmin;
 
   const getDaysInMonth = (year, month) => {
     return new Date(year, month + 1, 0).getDate();
@@ -58,6 +61,8 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
     const daysInMonth = getDaysInMonth(year, month);
     const firstDay = getFirstDayOfMonth(year, month);
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     const days = [];
 
@@ -69,16 +74,21 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
     // Dias do mês
     for (let day = 1; day <= daysInMonth; day++) {
       const dateKey = formatDateKey(day, month, year);
-      const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+      const isToday = today.toDateString() === new Date(year, month, day).toDateString();
+      const isFuture = new Date(year, month, day) > today;
+      const isDisabled = !isAdmin && isFuture;
       
       days.push(
         <button
           key={day}
-          onClick={() => handleDateClick(day)}
-          className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 hover:scale-110 ${
-            isToday 
-              ? 'bg-pink-500 text-white' 
-              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          onClick={() => !isDisabled && handleDateClick(day)}
+          disabled={isDisabled}
+          className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 ${
+            isDisabled
+              ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+              : isToday 
+                ? 'bg-pink-500 text-white hover:scale-110' 
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 hover:scale-110'
           }`}
         >
           {day}
