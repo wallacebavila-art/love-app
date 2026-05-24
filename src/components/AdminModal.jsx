@@ -7,6 +7,8 @@ const AdminModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const [verses, setVerses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [messageCount, setMessageCount] = useState(0);
+  const [verseCount, setVerseCount] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingVerse, setEditingVerse] = useState(null);
   const [formData, setFormData] = useState({
@@ -18,8 +20,23 @@ const AdminModal = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (isOpen) {
       fetchVerses();
+      fetchStatistics();
     }
   }, [isOpen]);
+
+  const fetchStatistics = async () => {
+    try {
+      // Contar mensagens do dia (coleção 'mensagens')
+      const messagesSnapshot = await getDocs(collection(db, 'mensagens'));
+      setMessageCount(messagesSnapshot.size);
+
+      // Contar versículos do dia (coleção 'verses')
+      const versesSnapshot = await getDocs(collection(db, 'verses'));
+      setVerseCount(versesSnapshot.size);
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas:', error);
+    }
+  };
 
   const fetchVerses = async () => {
     try {
@@ -51,6 +68,7 @@ const AdminModal = ({ isOpen, onClose }) => {
       setFormData({ id_dia: '', versiculo_texto: '', versiculo_ref: '' });
       setShowAddForm(false);
       fetchVerses();
+      fetchStatistics();
     } catch (error) {
       console.error('Erro ao adicionar versículo:', error);
     }
@@ -77,6 +95,7 @@ const AdminModal = ({ isOpen, onClose }) => {
       try {
         await deleteDoc(doc(db, 'mensagens', id));
         fetchVerses();
+        fetchStatistics();
       } catch (error) {
         console.error('Erro ao excluir versículo:', error);
       }
@@ -118,6 +137,31 @@ const AdminModal = ({ isOpen, onClose }) => {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
+          {/* Estatísticas */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Estatísticas</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-pink-600 text-3xl">chat_bubble</span>
+                  <div>
+                    <p className="text-sm text-gray-600">Mensagens do Dia</p>
+                    <p className="text-3xl font-bold text-pink-600">{messageCount}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-blue-600 text-3xl">menu_book</span>
+                  <div>
+                    <p className="text-sm text-gray-600">Versículos do Dia</p>
+                    <p className="text-3xl font-bold text-blue-600">{verseCount}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Add Button */}
           <div className="mb-6">
             <button
