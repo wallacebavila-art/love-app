@@ -7,7 +7,6 @@ const JourneyCard = () => {
   const daysTogether = calculateDaysTogether();
   const { period } = useTimePeriod();
   const [showTimeline, setShowTimeline] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [customDays, setCustomDays] = useState(daysTogether);
   const [editingMilestoneIndex, setEditingMilestoneIndex] = useState(null);
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -226,8 +225,8 @@ const JourneyCard = () => {
   };
 
   return (
-    <section className="px-6 md:px-16 py-4 w-full">
-      <div className="w-full max-w-xl flex flex-col items-start space-y-2">
+    <section className="w-full">
+      <div className="w-full flex flex-col items-start space-y-2">
         <div 
           className={`group flex items-center gap-3 ${getCardBackground()} p-4 rounded-3xl border ${getBorderColor()} backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] hover:bg-white/40 cursor-pointer shadow-lg hover:shadow-xl`}
           onClick={() => setShowTimeline(true)}
@@ -240,43 +239,20 @@ const JourneyCard = () => {
           </div>
           <div className="flex flex-col flex-1 min-w-0">
             <span className={`font-label-md text-[10px] uppercase tracking-[0.2em] ${getTextColor()}/60 mb-1`}>Nossa Jornada</span>
-            {isEditing ? (
-              <div className="flex items-center gap-2 mt-1">
-                <input
-                  type="number"
-                  value={customDays}
-                  onChange={(e) => setCustomDays(parseInt(e.target.value) || 0)}
-                  className={`w-28 px-3 py-2 rounded-xl bg-white/60 border ${getBorderColor()} ${getTextColor()} font-body-md text-[18px] font-semibold focus:outline-none focus:ring-2 focus:ring-white/50 focus:bg-white/80 transition-all`}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <span className={`font-body-md text-[14px] ${getTextColor()}/80`}>dias</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditing(false);
-                    saveCustomDays(customDays);
-                  }}
-                  className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl text-xs font-semibold hover:from-pink-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg"
-                >
-                  Salvar
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <p className={`font-body-md text-[13px] ${getTextColor()}`}>
-                  Dias desde que nos conhecemos: <span className={`font-bold ${getAccentColor()} text-[15px]`}>{customDays.toLocaleString('pt-BR')} dias</span>
-                </p>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditing(true);
-                  }}
-                  className="opacity-40 hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-white/20"
-                >
-                  <span className="material-symbols-outlined text-[16px]">edit</span>
-                </button>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <p className={`font-body-md text-[13px] ${getTextColor()}`}>
+                Dias desde que nos conhecemos: <span className={`font-bold ${getAccentColor()} text-[15px]`}>{customDays.toLocaleString('pt-BR')} dias</span>
+              </p>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowTimeline(true);
+                }}
+                className="opacity-40 hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-white/20"
+              >
+                <span className="material-symbols-outlined text-[16px]">edit</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

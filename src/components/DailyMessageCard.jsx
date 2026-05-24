@@ -1,9 +1,14 @@
 import { useTimePeriod } from '../contexts/TimePeriodContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-const DailyMessageCard = ({ message, selectedDate }) => {
+const DailyMessageCard = ({ message }) => {
   const { period } = useTimePeriod();
   const [isRevealed, setIsRevealed] = useState(false);
+
+  // Resetar o blur quando a mensagem mudar
+  useEffect(() => {
+    setIsRevealed(false);
+  }, [message]);
 
   const getCardBackground = () => {
     switch (period) {
@@ -44,40 +49,6 @@ const DailyMessageCard = ({ message, selectedDate }) => {
     }
   };
 
-  // Formatar data de hoje para exibição
-  const getTodayDate = () => {
-    const today = new Date();
-    const day = String(today.getDate()).padStart(2, '0');
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const year = today.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  // Formatar data selecionada para exibição (YYYY-MM-DD -> DD/MM/YYYY)
-  const formatDisplayDate = (dateStr) => {
-    if (!dateStr) return null;
-    const [year, month, day] = dateStr.split('-');
-    return `${day}/${month}/${year}`;
-  };
-
-  // Se não há mensagem, mostra blur com título
-  if (!message) {
-    return (
-      <section className="w-full flex justify-center">
-        <div className="w-full max-w-2xl flex flex-col items-center space-y-6">
-          <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full p-8 md:p-12 rounded-[40px] shadow-2xl shadow-black/10 flex flex-col items-center text-center relative overflow-hidden cursor-pointer`} onClick={() => setIsRevealed(true)}>
-            <span className={`font-label-md text-[12px] uppercase tracking-[0.2em] ${getTextColor}/60 mb-4`}>Mensagem do dia</span>
-            <div className="animate-pulse">
-              <div className="h-4 bg-white/30 rounded w-3/4 mb-2"></div>
-              <div className="h-4 bg-white/30 rounded w-1/2 mb-2"></div>
-              <div className="h-4 bg-white/30 rounded w-2/3"></div>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   const getAccentColor = () => {
     switch (period) {
       case 'morning':
@@ -96,17 +67,13 @@ const DailyMessageCard = ({ message, selectedDate }) => {
       <div className="w-full max-w-2xl flex flex-col items-center space-y-6">
         {/* Central Message Card (Glassmorphism) */}
         <div 
-          className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full p-8 md:p-12 rounded-[40px] shadow-2xl shadow-black/10 flex flex-col items-center text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20 cursor-pointer`}
+          className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full min-h-[200px] p-8 md:p-12 rounded-[40px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20 cursor-pointer`}
           onClick={() => setIsRevealed(true)}
         >
           <span className={`font-label-md text-[12px] uppercase tracking-[0.2em] ${getTextColor}/60 mb-4`}>Mensagem do dia</span>
           <p className={`font-quote-italic font-thin text-[14px] ${getTextColor} italic leading-relaxed transition-all duration-700 ease-out ${!isRevealed ? 'blur-md scale-95 opacity-60' : 'blur-0 scale-100 opacity-100'}`}>
             "{message}"
           </p>
-          <div className="mt-6 w-12 h-[1px] bg-white/30"></div>
-          <div className="mt-4 flex items-center gap-3 text-white/70 font-normal uppercase tracking-tighter">
-            <span>{selectedDate ? formatDisplayDate(selectedDate) : getTodayDate()}</span>
-          </div>
         </div>
       </div>
     </section>

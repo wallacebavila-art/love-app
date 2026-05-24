@@ -15,17 +15,16 @@ export const fetchDailyVerse = async () => {
     if (verseSnapshot.exists()) {
       return verseSnapshot.data();
     } else {
-      // Versículo padrão se não houver versículo para hoje
       return {
-        text: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.',
-        reference: 'João 3:16'
+        text: 'Pensando...',
+        reference: ''
       };
     }
   } catch (error) {
     console.error('Erro ao buscar versículo:', error);
     return {
-      text: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.',
-      reference: 'João 3:16'
+      text: 'Pensando...',
+      reference: ''
     };
   }
 };

@@ -15,6 +15,8 @@ const AdminModal = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [messageCount, setMessageCount] = useState(0);
   const [verseCount, setVerseCount] = useState(0);
+  const [duplicateMessages, setDuplicateMessages] = useState([]);
+  const [duplicateVerses, setDuplicateVerses] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({
@@ -30,6 +32,67 @@ const AdminModal = ({ isOpen, onClose }) => {
       fetchVerses();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (messages.length > 0 || verses.length > 0) {
+      detectDuplicates();
+    }
+  }, [messages, verses]);
+
+  const findDuplicates = (items, getText, getDate) => {
+    const duplicates = [];
+    const seenTexts = new Map();
+    const seenDates = new Map();
+
+    items.forEach(item => {
+      const text = getText(item);
+      const date = getDate(item);
+
+      // Verificar duplicado de texto
+      if (text) {
+        if (seenTexts.has(text)) {
+          duplicates.push({
+            type: 'text',
+            value: text,
+            items: [seenTexts.get(text), item]
+          });
+        } else {
+          seenTexts.set(text, item);
+        }
+      }
+
+      // Verificar duplicado de data
+      if (date) {
+        if (seenDates.has(date)) {
+          duplicates.push({
+            type: 'date',
+            value: date,
+            items: [seenDates.get(date), item]
+          });
+        } else {
+          seenDates.set(date, item);
+        }
+      }
+    });
+
+    return duplicates;
+  };
+
+  const detectDuplicates = () => {
+    const msgDuplicates = findDuplicates(
+      messages,
+      (item) => item.mensagem?.toLowerCase().trim(),
+      (item) => item.date || item.id
+    );
+    setDuplicateMessages(msgDuplicates);
+
+    const verseDuplicates = findDuplicates(
+      verses,
+      (item) => item.text?.toLowerCase().trim(),
+      (item) => item.date || item.id
+    );
+    setDuplicateVerses(verseDuplicates);
+  };
 
   const fetchStatistics = async () => {
     try {
@@ -192,7 +255,7 @@ const AdminModal = ({ isOpen, onClose }) => {
           {/* Estatísticas */}
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-3">Estatísticas</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-xl p-4">
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-pink-600 text-3xl">chat_bubble</span>
@@ -211,8 +274,104 @@ const AdminModal = ({ isOpen, onClose }) => {
                   </div>
                 </div>
               </div>
+              <div className={`rounded-xl p-4 border ${duplicateMessages.length > 0 ? 'bg-gradient-to-br from-red-50 to-orange-50 border-red-200' : 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'}`}>
+                <div className="flex items-center gap-3">
+                  <span className={`material-symbols-outlined text-3xl ${duplicateMessages.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {duplicateMessages.length > 0 ? 'warning' : 'check_circle'}
+                  </span>
+                  <div>
+                    <p className="text-sm text-gray-600">Mensagens Duplicadas</p>
+                    <p className={`text-3xl font-bold ${duplicateMessages.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {duplicateMessages.length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className={`rounded-xl p-4 border ${duplicateVerses.length > 0 ? 'bg-gradient-to-br from-red-50 to-orange-50 border-red-200' : 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'}`}>
+                <div className="flex items-center gap-3">
+                  <span className={`material-symbols-outlined text-3xl ${duplicateVerses.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {duplicateVerses.length > 0 ? 'warning' : 'check_circle'}
+                  </span>
+                  <div>
+                    <p className="text-sm text-gray-600">Versículos Duplicados</p>
+                    <p className={`text-3xl font-bold ${duplicateVerses.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {duplicateVerses.length}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Duplicatas */}
+          {(duplicateMessages.length > 0 || duplicateVerses.length > 0) && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">⚠️ Itens Duplicados</h3>
+              
+              {duplicateMessages.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-md font-semibold text-pink-600 mb-2">Mensagens Duplicadas</h4>
+                  <div className="space-y-3">
+                    {duplicateMessages.map((dup, idx) => (
+                      <div key={idx} className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p className="text-sm font-semibold text-red-700 mb-2">
+                          {dup.type === 'date' ? `Duplicado de data: ${dup.value}` : 'Duplicado de texto'}
+                        </p>
+                        <div className="space-y-2">
+                          {dup.items.map((item, itemIdx) => (
+                            <div key={itemIdx} className="flex justify-between items-start bg-white p-3 rounded border border-red-100">
+                              <div className="flex-1">
+                                <p className="text-xs text-gray-500">{item.date || item.id}</p>
+                                <p className="text-sm text-gray-800">{item.mensagem}</p>
+                              </div>
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition"
+                              >
+                                Excluir
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {duplicateVerses.length > 0 && (
+                <div>
+                  <h4 className="text-md font-semibold text-blue-600 mb-2">Versículos Duplicados</h4>
+                  <div className="space-y-3">
+                    {duplicateVerses.map((dup, idx) => (
+                      <div key={idx} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p className="text-sm font-semibold text-blue-700 mb-2">
+                          {dup.type === 'date' ? `Duplicado de data: ${dup.value}` : 'Duplicado de texto'}
+                        </p>
+                        <div className="space-y-2">
+                          {dup.items.map((item, itemIdx) => (
+                            <div key={itemIdx} className="flex justify-between items-start bg-white p-3 rounded border border-blue-100">
+                              <div className="flex-1">
+                                <p className="text-xs text-gray-500">{item.date || item.id}</p>
+                                <p className="text-sm text-gray-800">{item.text}</p>
+                                {item.reference && <p className="text-xs text-purple-600 font-semibold">{item.reference}</p>}
+                              </div>
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition"
+                              >
+                                Excluir
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="flex gap-2 mb-6 border-b border-gray-200">

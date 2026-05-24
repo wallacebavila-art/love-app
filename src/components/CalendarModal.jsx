@@ -28,21 +28,24 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
     console.log('📅 Clicou no dia:', day, 'Data key:', dateKey);
     
     try {
+      // Buscar mensagem
       const messageDoc = doc(db, 'mensagens', dateKey);
-      const docSnapshot = await getDoc(messageDoc);
+      const messageSnapshot = await getDoc(messageDoc);
+      const message = messageSnapshot.exists() ? messageSnapshot.data().mensagem : null;
       
-      if (docSnapshot.exists()) {
-        const data = docSnapshot.data();
-        console.log('✅ Mensagem encontrada:', data.mensagem);
-        onDateSelect(dateKey, data.mensagem);
-      } else {
-        console.log('❌ Nenhuma mensagem encontrada para:', dateKey);
-        onDateSelect(dateKey, null);
-      }
+      // Buscar versículo
+      const verseDoc = doc(db, 'verses', dateKey);
+      const verseSnapshot = await getDoc(verseDoc);
+      const verse = verseSnapshot.exists() ? verseSnapshot.data() : null;
+      
+      console.log('✅ Mensagem:', message);
+      console.log('✅ Versículo:', verse);
+      
+      onDateSelect(dateKey, message, verse);
       onClose();
     } catch (error) {
-      console.error('❌ Erro ao buscar mensagem:', error);
-      onDateSelect(dateKey, null);
+      console.error('❌ Erro ao buscar dados:', error);
+      onDateSelect(dateKey, null, null);
       onClose();
     }
   };

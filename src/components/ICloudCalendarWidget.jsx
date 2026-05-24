@@ -1,0 +1,385 @@
+import { useEffect, useState } from 'react';
+import { fetchICloudCalendar } from '../services/icloudCalendarService';
+import { useTimePeriod } from '../contexts/TimePeriodContext';
+
+const ICloudCalendarWidget = ({ isModal = false }) => {
+  const { period } = useTimePeriod();
+  const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [showYearPicker, setShowYearPicker] = useState(false);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
+
+  useEffect(() => {
+    const loadEvents = async () => {
+      setIsLoading(true);
+      const calendarEvents = await fetchICloudCalendar();
+      setEvents(calendarEvents);
+      setIsLoading(false);
+    };
+    loadEvents();
+  }, []);
+
+  const getCardBackground = () => {
+    if (isModal) {
+      return 'bg-transparent border-gray-200';
+    }
+    switch (period) {
+      case 'morning':
+      case 'afternoon':
+        return 'bg-white/25 border-white/30';
+      case 'night':
+        return 'bg-white/15 border-white/20';
+      default:
+        return 'bg-white/25 border-white/30';
+    }
+  };
+
+  // Lista de meses
+  const months = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
+  const getTextColor = () => {
+    if (isModal) {
+      return 'text-gray-800';
+    }
+    switch (period) {
+      case 'morning':
+      case 'afternoon':
+      case 'night':
+        return 'text-white';
+      default:
+        return 'text-white';
+    }
+  };
+
+  // Obter o nome do mês
+  const getMonthName = (date) => {
+    return months[date.getMonth()];
+  };
+
+  // Obter os dias do mês
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const days = [];
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Dias do mês anterior para preencher o início
+    for (let i = 0; i < firstDay; i++) {
+      days.push({ date: null, isCurrentMonth: false });
+    }
+
+    // Dias do mês atual
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push({
+        date: new Date(year, month, i),
+        isCurrentMonth: true
+      });
+    }
+
+    return days;
+  };
+
+  // Verificar se uma data tem eventos
+  const hasEvents = (date) => {
+    if (!date) return false;
+    const dateStr = date.toDateString();
+    return events.some(event => event.startDate.toDateString() === dateStr);
+  };
+
+  // Verificar se uma data é hoje
+  const isToday = (date) => {
+    if (!date) return false;
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  // Obter eventos para uma data específica
+  const getEventsForDate = (date) => {
+    if (!date) return [];
+    const dateStr = date.toDateString();
+    return events.filter(event => event.startDate.toDateString() === dateStr);
+  };
+
+  // Formatar data para exibição
+  const formatDate = (date) => {
+    const options = { day: 'numeric', month: 'long', year: 'numeric' };
+    return date.toLocaleDateString('pt-BR', options);
+  };
+
+  // Formatar horário
+  const formatTime = (date, isAllDay) => {
+    if (isAllDay) return 'Todo dia';
+    const options = { hour: '2-digit', minute: '2-digit' };
+    return date.toLocaleTimeString('pt-BR', options);
+  };
+
+  // Gerar lista de anos (10 anos para trás e 10 para frente)
+  const getYears = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear - 10; i <= currentYear + 10; i++) {
+      years.push(i);
+    }
+    return years;
+  };
+
+  // Selecionar ano
+  const selectYear = (year) => {
+    setCurrentDate(new Date(year, currentDate.getMonth(), 1));
+    setShowYearPicker(false);
+    setSelectedDate(null);
+  };
+
+  // Selecionar mês
+  const selectMonth = (monthIndex) => {
+    setCurrentDate(new Date(currentDate.getFullYear(), monthIndex, 1));
+    setShowMonthPicker(false);
+    setSelectedDate(null);
+  };
+
+  const days = getDaysInMonth(currentDate);
+
+  return (
+    <>
+      {/* Calendário completo */}
+      <div
+        className={`${getCardBackground()} backdrop-blur-[24px] border rounded-2xl p-4 shadow-2xl w-full max-h-[60vh] overflow-y-auto custom-scrollbar`}
+      >
+        {/* Cabeçalho */}
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                const prevMonth = new Date(currentDate);
+                prevMonth.setMonth(prevMonth.getMonth() - 1);
+                setCurrentDate(prevMonth);
+                setSelectedDate(null);
+              }}
+              className="p-1 rounded-full hover:bg-white/20 transition-colors"
+            >
+              <span className="material-symbols-outlined">chevron_left</span>
+            </button>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {/* Selecionar mês */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowMonthPicker(!showMonthPicker);
+                  setShowYearPicker(false);
+                }}
+                className={`px-2 py-1 rounded-lg hover:bg-white/20 transition-colors ${getTextColor()} font-semibold text-[13px]`}
+              >
+                {getMonthName(currentDate)}
+              </button>
+              {showMonthPicker && (
+                <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 ${isModal ? 'bg-white backdrop-blur-xl border border-gray-200' : 'bg-black/80 backdrop-blur-xl border border-white/20'} rounded-xl p-2 z-10 w-40`}>
+                  <div className="grid grid-cols-3 gap-1">
+                    {months.map((month, index) => (
+                      <button
+                        key={index}
+                        onClick={() => selectMonth(index)}
+                        className={`px-2 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                          currentDate.getMonth() === index
+                            ? isModal
+                              ? 'bg-pink-500 text-white'
+                              : 'bg-pink-500/50 text-white'
+                            : isModal
+                              ? 'text-gray-700 hover:bg-gray-100'
+                              : 'text-white/80 hover:bg-white/20'
+                        }`}
+                      >
+                        {month.slice(0, 3)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Selecionar ano */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowYearPicker(!showYearPicker);
+                  setShowMonthPicker(false);
+                }}
+                className={`px-2 py-1 rounded-lg hover:bg-white/20 transition-colors ${getTextColor()} font-semibold text-[13px]`}
+              >
+                {currentDate.getFullYear()}
+              </button>
+              {showYearPicker && (
+                <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 ${isModal ? 'bg-white backdrop-blur-xl border border-gray-200' : 'bg-black/80 backdrop-blur-xl border border-white/20'} rounded-xl p-2 z-10 w-28 max-h-40 overflow-y-auto custom-scrollbar`}>
+                  <div className="flex flex-col gap-1">
+                    {getYears().map((year) => (
+                      <button
+                        key={year}
+                        onClick={() => selectYear(year)}
+                        className={`px-2 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                          currentDate.getFullYear() === year
+                            ? isModal
+                              ? 'bg-pink-500 text-white'
+                              : 'bg-pink-500/50 text-white'
+                            : isModal
+                              ? 'text-gray-700 hover:bg-gray-100'
+                              : 'text-white/80 hover:bg-white/20'
+                        }`}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                const nextMonth = new Date(currentDate);
+                nextMonth.setMonth(nextMonth.getMonth() + 1);
+                setCurrentDate(nextMonth);
+                setSelectedDate(null);
+              }}
+              className="p-1 rounded-full hover:bg-white/20 transition-colors"
+            >
+              <span className="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
+        
+        {/* Fechar pickers ao clicar fora */}
+        {(showYearPicker || showMonthPicker) && (
+          <div 
+            className="fixed inset-0 z-0"
+            onClick={() => {
+              setShowYearPicker(false);
+              setShowMonthPicker(false);
+            }}
+          ></div>
+        )}
+
+        {/* Dias da semana */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, i) => (
+            <div
+              key={i}
+              className={`text-center font-body-md text-[11px] font-semibold ${getTextColor()}/60`}
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Grid de dias */}
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((day, index) => (
+            <div
+              key={index}
+              className={`
+                aspect-square flex flex-col items-center justify-center rounded-xl cursor-pointer transition-all duration-200
+                ${!day.isCurrentMonth ? 'opacity-30' : ''}
+                ${isToday(day.date) 
+                  ? isModal 
+                    ? 'bg-pink-100 border border-pink-400' 
+                    : 'bg-pink-500/30 border border-pink-400' 
+                  : isModal 
+                    ? 'hover:bg-gray-100' 
+                    : 'hover:bg-white/20'}
+                ${selectedDate && day.date && selectedDate.toDateString() === day.date.toDateString() 
+                  ? isModal 
+                    ? 'bg-gray-100' 
+                    : 'bg-white/30' 
+                  : ''}
+              `}
+              onClick={() => {
+                if (day.isCurrentMonth) {
+                  setSelectedDate(day.date);
+                }
+              }}
+            >
+              {day.date && (
+                <>
+                  <span className={`font-body-md text-[14px] ${getTextColor()}`}>
+                    {day.date.getDate()}
+                  </span>
+                  {hasEvents(day.date) && (
+                    <div className="w-1.5 h-1.5 bg-pink-400 rounded-full mt-1"></div>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Eventos para a data selecionada */}
+        {selectedDate && (
+          <div className={`mt-4 pt-3 border-t ${isModal ? 'border-gray-200' : 'border-white/20'}`}>
+            <h4 className={`font-headline-sm text-[15px] font-semibold ${getTextColor()} mb-2`}>
+              {formatDate(selectedDate)}
+            </h4>
+            <div className="max-h-40 overflow-y-auto custom-scrollbar">
+              {isLoading ? (
+                <div className="space-y-2">
+                  {[1, 2].map(i => (
+                    <div key={i} className="animate-pulse">
+                      <div className={`h-3 ${isModal ? 'bg-gray-200' : 'bg-white/30'} rounded w-3/4 mb-1`}></div>
+                      <div className={`h-2 ${isModal ? 'bg-gray-100' : 'bg-white/20'} rounded w-1/2`}></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {getEventsForDate(selectedDate).length === 0 ? (
+                    <p className={`font-body-md text-[13px] ${isModal ? 'text-gray-500' : getTextColor() + '/60'}`}>
+                      Nenhum evento para esta data
+                    </p>
+                  ) : (
+                    getEventsForDate(selectedDate).map((event) => (
+                      <div
+                        key={event.id}
+                        className={`${isModal ? 'bg-gray-50' : 'bg-white/10'} rounded-xl p-2.5`}
+                      >
+                        <p className={`font-body-md text-[13px] font-semibold ${getTextColor()}`}>
+                          {event.title}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className={`material-symbols-outlined text-[14px] ${isModal ? 'text-gray-500' : 'opacity-60'}`}>
+                            schedule
+                          </span>
+                          <p className={`font-body-md text-[11px] ${isModal ? 'text-gray-600' : getTextColor() + '/70'}`}>
+                            {formatTime(event.startDate, event.isAllDay)}
+                          </p>
+                        </div>
+                        {event.location && (
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className={`material-symbols-outlined text-[14px] ${isModal ? 'text-gray-500' : 'opacity-60'}`}>
+                              location_on
+                            </span>
+                            <p className={`font-body-md text-[11px] ${isModal ? 'text-gray-600' : getTextColor() + '/70'}`}>
+                              {event.location}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
+export default ICloudCalendarWidget;

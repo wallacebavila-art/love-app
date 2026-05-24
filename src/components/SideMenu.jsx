@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings }) => {
+const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar }) => {
   const { user } = useAuth();
   const [useLoveName, setUseLoveName] = useState(false);
 
@@ -52,7 +52,18 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin,
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 transition-colors"
             >
               <span className="material-symbols-outlined text-gray-600">calendar_month</span>
-              <span className="font-body-md text-[16px] text-gray-700">Calendário</span>
+              <span className="font-body-md text-[16px] text-gray-700">Calendário de Mensagens</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                onOpenICloudCalendar();
+                onClose();
+              }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 transition-colors"
+            >
+              <span className="material-symbols-outlined text-gray-600">event</span>
+              <span className="font-body-md text-[16px] text-gray-700">Nosso Calendário</span>
             </button>
 
             <button
@@ -103,6 +114,13 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin,
               </button>
             </div>
 
+          </div>
+          
+          {/* Marca d'água no menu */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full px-6 text-center">
+            <p className="font-body-md text-[12px] text-gray-500 italic">
+              ~para Raíssa. Com amor, Wallace. 💕
+            </p>
           </div>
         </div>
       </div>

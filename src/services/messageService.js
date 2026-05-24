@@ -14,13 +14,13 @@ export const fetchDailyMessage = async () => {
     
     if (docSnapshot.exists()) {
       const data = docSnapshot.data();
-      return data.mensagem || null;
+      return data.mensagem || 'Pensando...';
     }
     
-    return null;
+    return 'Pensando...';
   } catch (error) {
     console.error('Erro ao buscar mensagem do dia:', error);
-    return null;
+    return 'Pensando...';
   }
 };
 

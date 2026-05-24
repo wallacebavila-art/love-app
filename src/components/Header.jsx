@@ -6,7 +6,7 @@ import SideMenu from './SideMenu';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings }) => {
+const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar }) => {
   const { period } = useTimePeriod();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -173,6 +173,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings }) 
         onOpenWeather={onOpenWeather}
         onOpenAdmin={onOpenAdmin}
         onOpenSettings={onOpenSettings}
+        onOpenICloudCalendar={onOpenICloudCalendar}
       />
     </>
   );
