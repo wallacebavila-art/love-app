@@ -1,7 +1,8 @@
-import { clearAllMessages } from '../services/clearMessages';
 import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
-const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
+const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings }) => {
+  const { user } = useAuth();
   const [useLoveName, setUseLoveName] = useState(false);
 
   useEffect(() => {
@@ -26,12 +27,12 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
     <>
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black/50 z-50 md:hidden"
+        className="fixed inset-0 bg-black/50 z-50"
         onClick={onClose}
       ></div>
       
       {/* Sidebar */}
-      <div className={`fixed top-0 right-0 h-full w-64 bg-white shadow-2xl z-50 transform transition-transform duration-300 md:hidden ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-full w-64 bg-white shadow-2xl z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="p-6">
           <button
             onClick={onClose}
@@ -66,11 +67,28 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
             </button>
 
             <button
+              onClick={() => {
+                onOpenSettings();
+                onClose();
+              }}
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 transition-colors"
             >
               <span className="material-symbols-outlined text-gray-600">settings</span>
               <span className="font-body-md text-[16px] text-gray-700">Configurações</span>
             </button>
+
+            {user && (
+              <button
+                onClick={() => {
+                  onOpenAdmin();
+                  onClose();
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                <span className="material-symbols-outlined text-gray-600">admin_panel_settings</span>
+                <span className="font-body-md text-[16px] text-gray-700">Admin</span>
+              </button>
+            )}
 
             <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
               <div className="flex items-center gap-3">
@@ -85,18 +103,6 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather }) => {
               </button>
             </div>
 
-            <button
-              onClick={async () => {
-                if (confirm('⚠️ Tem certeza que deseja apagar TODAS as mensagens do Firebase? Esta ação não pode ser desfeita.')) {
-                  await clearAllMessages();
-                  onClose();
-                }
-              }}
-              className="w-full flex items-center gap-3 p-3 rounded-xl bg-red-50 hover:bg-red-100 transition-colors"
-            >
-              <span className="material-symbols-outlined text-red-600">delete</span>
-              <span className="font-body-md text-[16px] text-red-700">Apagar todas as mensagens</span>
-            </button>
           </div>
         </div>
       </div>

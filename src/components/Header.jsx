@@ -31,6 +31,13 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings }) 
     return () => window.removeEventListener('loveNameToggled', handleToggle);
   }, []);
 
+  const toggleLoveName = () => {
+    const newValue = !useLoveName;
+    setUseLoveName(newValue);
+    localStorage.setItem('useLoveName', JSON.stringify(newValue));
+    window.dispatchEvent(new CustomEvent('loveNameToggled', { detail: newValue }));
+  };
+
   useEffect(() => {
     const loadWeather = async () => {
       const weatherData = await fetchWeather();
@@ -141,12 +148,12 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings }) 
             </button>
           )}
           <button 
-            onClick={onOpenSettings}
+            onClick={() => setIsMenuOpen(true)}
             className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
-            title="Configurações"
+            title="Menu de Funcionalidades"
           >
             <span className="material-symbols-outlined text-white transition-transform duration-300">settings</span>
-            <span className="text-white text-xs font-medium">Configurações</span>
+            <span className="text-white text-xs font-medium">Menu</span>
           </button>
         </div>
 
@@ -164,6 +171,8 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings }) 
         onClose={() => setIsMenuOpen(false)}
         onOpenCalendar={onOpenCalendar}
         onOpenWeather={onOpenWeather}
+        onOpenAdmin={onOpenAdmin}
+        onOpenSettings={onOpenSettings}
       />
     </>
   );
