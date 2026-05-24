@@ -5,32 +5,37 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase
 
 const AdminModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('messages'); // 'messages' or 'verses'
+  
+  // Dados das mensagens
+  const [messages, setMessages] = useState([]);
+  // Dados dos versículos
   const [verses, setVerses] = useState([]);
+  
   const [loading, setLoading] = useState(true);
   const [messageCount, setMessageCount] = useState(0);
   const [verseCount, setVerseCount] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingVerse, setEditingVerse] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({
-    id_dia: '',
-    versiculo_texto: '',
-    versiculo_ref: ''
+    date: '',
+    content: '',
+    reference: ''
   });
 
   useEffect(() => {
     if (isOpen) {
-      fetchVerses();
       fetchStatistics();
+      fetchMessages();
+      fetchVerses();
     }
   }, [isOpen]);
 
   const fetchStatistics = async () => {
     try {
-      // Contar mensagens do dia (coleção 'mensagens')
       const messagesSnapshot = await getDocs(collection(db, 'mensagens'));
       setMessageCount(messagesSnapshot.size);
 
-      // Contar versículos do dia (coleção 'verses')
       const versesSnapshot = await getDocs(collection(db, 'verses'));
       setVerseCount(versesSnapshot.size);
     } catch (error) {
@@ -38,14 +43,31 @@ const AdminModal = ({ isOpen, onClose }) => {
     }
   };
 
-  const fetchVerses = async () => {
+  const fetchMessages = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'mensagens'));
-      const versesData = [];
+      const data = [];
       querySnapshot.forEach((doc) => {
-        versesData.push({ id: doc.id, ...doc.data() });
+        data.push({ id: doc.id, ...doc.data() });
       });
-      setVerses(versesData);
+      data.sort((a, b) => (a.date || a.id).localeCompare(b.date || b.id));
+      setMessages(data);
+    } catch (error) {
+      console.error('Erro ao buscar mensagens:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchVerses = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'verses'));
+      const data = [];
+      querySnapshot.forEach((doc) => {
+        data.push({ id: doc.id, ...doc.data() });
+      });
+      data.sort((a, b) => (a.date || a.id).localeCompare(b.date || b.id));
+      setVerses(data);
     } catch (error) {
       console.error('Erro ao buscar versículos:', error);
     } finally {
@@ -56,65 +78,95 @@ const AdminModal = ({ isOpen, onClose }) => {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     try {
-      const date = new Date();
-      date.setDate(date.getDate() + parseInt(formData.id_dia) - 1);
-      const dateStr = date.toISOString().split('T')[0];
+      const collectionName = activeTab === 'messages' ? 'mensagens' : 'verses';
       
-      await addDoc(collection(db, 'mensagens'), {
-        date: dateStr,
-        mensagem: `${formData.versiculo_texto} - ${formData.versiculo_ref}`
-      });
+      if (activeTab === 'messages') {
+        await addDoc(collection(db, collectionName), {
+          date: formData.date,
+          mensagem: formData.content
+        });
+      } else {
+        await addDoc(collection(db, collectionName), {
+          date: formData.date,
+          text: formData.content,
+          reference: formData.reference
+        });
+      }
       
-      setFormData({ id_dia: '', versiculo_texto: '', versiculo_ref: '' });
-      setShowAddForm(false);
-      fetchVerses();
+      resetForm();
       fetchStatistics();
+      if (activeTab === 'messages') fetchMessages();
+      else fetchVerses();
     } catch (error) {
-      console.error('Erro ao adicionar versículo:', error);
+      console.error('Erro ao adicionar item:', error);
     }
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const verseRef = doc(db, 'mensagens', editingVerse.id);
-      await updateDoc(verseRef, {
-        mensagem: `${formData.versiculo_texto} - ${formData.versiculo_ref}`
-      });
+      const collectionName = activeTab === 'messages' ? 'mensagens' : 'verses';
+      const itemRef = doc(db, collectionName, editingItem.id);
       
-      setEditingVerse(null);
-      setFormData({ id_dia: '', versiculo_texto: '', versiculo_ref: '' });
-      fetchVerses();
+      if (activeTab === 'messages') {
+        await updateDoc(itemRef, {
+          date: formData.date,
+          mensagem: formData.content
+        });
+      } else {
+        await updateDoc(itemRef, {
+          date: formData.date,
+          text: formData.content,
+          reference: formData.reference
+        });
+      }
+      
+      resetForm();
+      fetchStatistics();
+      if (activeTab === 'messages') fetchMessages();
+      else fetchVerses();
     } catch (error) {
-      console.error('Erro ao atualizar versículo:', error);
+      console.error('Erro ao atualizar item:', error);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este versículo?')) {
+    if (window.confirm('Tem certeza que deseja excluir este item?')) {
       try {
-        await deleteDoc(doc(db, 'mensagens', id));
-        fetchVerses();
+        const collectionName = activeTab === 'messages' ? 'mensagens' : 'verses';
+        await deleteDoc(doc(db, collectionName, id));
+        
         fetchStatistics();
+        if (activeTab === 'messages') fetchMessages();
+        else fetchVerses();
       } catch (error) {
-        console.error('Erro ao excluir versículo:', error);
+        console.error('Erro ao excluir item:', error);
       }
     }
   };
 
-  const handleEdit = (verse) => {
-    setEditingVerse(verse);
-    const parts = verse.mensagem.split(' - ');
-    setFormData({
-      id_dia: '',
-      versiculo_texto: parts[0] || '',
-      versiculo_ref: parts[1] || ''
-    });
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    if (activeTab === 'messages') {
+      setFormData({
+        date: item.date || item.id,
+        content: item.mensagem || '',
+        reference: ''
+      });
+    } else {
+      setFormData({
+        date: item.date || item.id,
+        content: item.text || '',
+        reference: item.reference || ''
+      });
+    }
+    setShowAddForm(true);
   };
 
-  const handleCancelEdit = () => {
-    setEditingVerse(null);
-    setFormData({ id_dia: '', versiculo_texto: '', versiculo_ref: '' });
+  const resetForm = () => {
+    setFormData({ date: '', content: '', reference: '' });
+    setShowAddForm(false);
+    setEditingItem(null);
   };
 
   if (!isOpen) return null;
@@ -162,152 +214,171 @@ const AdminModal = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Add Button */}
-          <div className="mb-6">
+          {/* Tabs */}
+          <div className="flex gap-2 mb-6 border-b border-gray-200">
             <button
-              onClick={() => setShowAddForm(!showAddForm)}
-              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition font-semibold"
+              onClick={() => { setActiveTab('messages'); resetForm(); }}
+              className={`px-6 py-3 font-semibold transition-all border-b-2 ${
+                activeTab === 'messages' 
+                  ? 'border-pink-500 text-pink-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
             >
-              {showAddForm ? 'Cancelar' : '+ Adicionar Versículo'}
+              Mensagens do Dia
+            </button>
+            <button
+              onClick={() => { setActiveTab('verses'); resetForm(); }}
+              className={`px-6 py-3 font-semibold transition-all border-b-2 ${
+                activeTab === 'verses' 
+                  ? 'border-blue-500 text-blue-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Versículos do Dia
             </button>
           </div>
 
-          {/* Add Form */}
-          {showAddForm && (
-            <div className="bg-gray-50 rounded-lg p-6 mb-6 border border-gray-200">
-              <h3 className="text-lg font-semibold mb-4">Adicionar Novo Versículo</h3>
-              <form onSubmit={handleAddSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Dia (número)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.id_dia}
-                    onChange={(e) => setFormData({ ...formData, id_dia: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                    placeholder="1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Texto do Versículo
-                  </label>
-                  <textarea
-                    value={formData.versiculo_texto}
-                    onChange={(e) => setFormData({ ...formData, versiculo_texto: e.target.value })}
-                    required
-                    rows="3"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                    placeholder="O amor é paciente..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Referência
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.versiculo_ref}
-                    onChange={(e) => setFormData({ ...formData, versiculo_ref: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                    placeholder="1 Coríntios 13:4-7"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition font-semibold"
-                >
-                  Salvar
-                </button>
-              </form>
-            </div>
-          )}
+          {/* Add Button */}
+          <div className="mb-6">
+            <button
+              onClick={() => {
+                if (showAddForm) resetForm();
+                else setShowAddForm(true);
+              }}
+              className={`px-6 py-3 rounded-lg transition font-semibold ${
+                activeTab === 'messages'
+                  ? 'bg-pink-600 text-white hover:bg-pink-700'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {showAddForm ? 'Cancelar' : `+ Adicionar ${activeTab === 'messages' ? 'Mensagem' : 'Versículo'}`}
+            </button>
+          </div>
 
-          {/* Edit Form */}
-          {editingVerse && (
-            <div className="bg-purple-50 rounded-lg p-6 mb-6 border-2 border-purple-500">
-              <h3 className="text-lg font-semibold mb-4">Editar Versículo</h3>
-              <form onSubmit={handleEditSubmit} className="space-y-4">
+          {/* Add/Edit Form */}
+          {showAddForm && (
+            <div className={`rounded-lg p-6 mb-6 border ${
+              activeTab === 'messages' 
+                ? 'bg-pink-50 border-pink-200' 
+                : 'bg-blue-50 border-blue-200'
+            }`}>
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                {editingItem ? 'Editar' : 'Adicionar Novo'} {activeTab === 'messages' ? 'Mensagem' : 'Versículo'}
+              </h3>
+              <form onSubmit={editingItem ? handleEditSubmit : handleAddSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Texto do Versículo
+                    Data (YYYY-MM-DD)
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {activeTab === 'messages' ? 'Texto da Mensagem' : 'Texto do Versículo'}
                   </label>
                   <textarea
-                    value={formData.versiculo_texto}
-                    onChange={(e) => setFormData({ ...formData, versiculo_texto: e.target.value })}
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                     required
                     rows="3"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                    placeholder={activeTab === 'messages' ? 'Sua mensagem de amor...' : 'Porque Deus amou o mundo...'}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Referência
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.versiculo_ref}
-                    onChange={(e) => setFormData({ ...formData, versiculo_ref: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                  />
-                </div>
+                {activeTab === 'verses' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Referência
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.reference}
+                      onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      placeholder="João 3:16"
+                    />
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-semibold"
+                    className={`px-6 py-2 rounded-lg transition font-semibold text-white ${
+                      activeTab === 'messages'
+                        ? 'bg-pink-600 hover:bg-pink-700'
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                   >
-                    Atualizar
+                    {editingItem ? 'Atualizar' : 'Salvar'}
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleCancelEdit}
-                    className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition font-semibold"
-                  >
-                    Cancelar
-                  </button>
+                  {editingItem && (
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-semibold"
+                    >
+                      Cancelar
+                    </button>
+                  )}
                 </div>
               </form>
             </div>
           )}
 
-          {/* Verses List */}
+          {/* List */}
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 className="text-lg font-semibold">Versículos ({verses.length})</h3>
+              <h3 className="text-lg font-semibold">
+                {activeTab === 'messages' ? 'Mensagens' : 'Versículos'} ({activeTab === 'messages' ? messages.length : verses.length})
+              </h3>
             </div>
             <div className="divide-y divide-gray-200 max-h-64 overflow-y-auto">
-              {verses.map((verse) => (
-                <div key={verse.id} className="px-6 py-4 hover:bg-gray-50 transition">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500 mb-1">{verse.date}</p>
-                      <p className="text-gray-800 font-medium mb-1">{verse.mensagem}</p>
-                    </div>
-                    <div className="flex gap-2 ml-4">
-                      <button
-                        onClick={() => handleEdit(verse)}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition text-sm"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(verse.id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition text-sm"
-                      >
-                        Excluir
-                      </button>
+              {loading ? (
+                <div className="px-6 py-8 text-center text-gray-500">Carregando...</div>
+              ) : (activeTab === 'messages' ? messages : verses).length === 0 ? (
+                <div className="px-6 py-8 text-center text-gray-500">
+                  Nenhum item encontrado
+                </div>
+              ) : (
+                (activeTab === 'messages' ? messages : verses).map((item) => (
+                  <div key={item.id} className="px-6 py-4 hover:bg-gray-50 transition">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500 mb-1">{item.date || item.id}</p>
+                        <p className="text-gray-800 font-medium mb-1">
+                          {activeTab === 'messages' ? item.mensagem : item.text}
+                        </p>
+                        {activeTab === 'verses' && item.reference && (
+                          <p className="text-sm text-purple-600 font-semibold">{item.reference}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className={`px-3 py-1 rounded transition text-sm text-white ${
+                            activeTab === 'messages'
+                              ? 'bg-pink-500 hover:bg-pink-600'
+                              : 'bg-blue-500 hover:bg-blue-600'
+                          }`}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
+                        >
+                          Excluir
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {verses.length === 0 && (
-                <div className="px-6 py-8 text-center text-gray-500">
-                  Nenhum versículo encontrado
-                </div>
+                ))
               )}
             </div>
           </div>
