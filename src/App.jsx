@@ -29,7 +29,6 @@ function AppContent() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [weather, setWeather] = useState(null);
-  const [fcmToken, setFcmToken] = useState(null);
   const location = useLocation();
   const { period } = useTimePeriod();
 
@@ -56,7 +55,6 @@ function AppContent() {
     requestFCMToken().then(token => {
       if (token) {
         console.log('Token FCM obtido com sucesso:', token);
-        setFcmToken(token);
         // Salva o token no Firestore para envio de notificações
         saveFCMToken(token);
       }
@@ -79,35 +77,7 @@ function AppContent() {
     };
   }, []);
 
-  // Heartbeat para manter dispositivo ativo
-  useEffect(() => {
-    if (!fcmToken) return;
 
-    const sendHeartbeat = async () => {
-      try {
-        await fetch('http://localhost:3001/api/heartbeat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ token: fcmToken }),
-        });
-      } catch (error) {
-        // Silenciar erro se servidor não estiver rodando
-        console.log('Servidor backend não disponível');
-      }
-    };
-
-    // Enviar heartbeat a cada 2 minutos
-    const heartbeatInterval = setInterval(sendHeartbeat, 2 * 60 * 1000);
-
-    // Enviar heartbeat imediatamente
-    sendHeartbeat();
-
-    return () => {
-      clearInterval(heartbeatInterval);
-    };
-  }, [fcmToken]);
 
   useEffect(() => {
     const loadMessage = async () => {
