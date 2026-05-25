@@ -5,14 +5,17 @@ import Header from './components/Header';
 import JourneyCard from './components/JourneyCard';
 import DailyMessageCard from './components/DailyMessageCard';
 import DailyVerseCard from './components/DailyVerseCard';
+import PhotoGalleryCard from './components/PhotoGalleryCard';
 import CalendarModal from './components/CalendarModal';
 import WeatherModal from './components/WeatherModal';
 import Login from './components/Login';
 import AdminModal from './components/AdminModal';
 import SettingsModal from './components/SettingsModal';
 import ICloudCalendarWidget from './components/ICloudCalendarWidget';
+import UpcomingEventsTicker from './components/UpcomingEventsTicker';
 import ProtectedRoute from './components/ProtectedRoute';
 import { TimePeriodProvider, useTimePeriod } from './contexts/TimePeriodContext';
+import { CalendarEventsProvider } from './contexts/CalendarEventsContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { fetchDailyMessage } from './services/messageService';
 import { fetchDailyVerse } from './services/verseService';
@@ -224,42 +227,41 @@ function AppContent() {
             onOpenSettings={() => setIsSettingsModalOpen(true)}
             onOpenICloudCalendar={() => setIsICloudCalendarModalOpen(true)}
           />
+
+          <UpcomingEventsTicker />
           
-          <div className="flex-grow px-4 md:px-8 py-2">
-            {/* Container alinhado com o calendário */}
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* Coluna esquerda (Journey Card + Calendário) */}
-              <div className="w-full md:w-80 flex-shrink-0 space-y-4 mt-2 md:overflow-y-auto md:custom-scrollbar md:pr-1 md:max-h-[calc(100vh-120px)]">
-                <JourneyCard />
-                <div className="hidden md:block">
-                  <ICloudCalendarWidget />
-                </div>
+          <div className="flex-1 px-4 md:px-8 pt-2 pb-2 overflow-hidden">
+            {/* Desktop: grid com 3 colunas - altura total da tela */}
+            <div className="flex flex-col gap-3 mt-1 h-full md:grid md:grid-cols-[1fr_auto_20rem] md:grid-rows-[auto_1fr] md:gap-x-3 md:gap-y-2">
+              {/* Coluna 1: Mensagem (linha 1) */}
+              <div className="md:col-start-1 md:row-start-1 md:row-span-1 min-h-0">
+                <DailyMessageCard
+                  key={selectedDate || 'today'}
+                  message={dailyMessage}
+                />
               </div>
-              
-              {/* Coluna direita (Cards de mensagem e versículo) */}
-              <div className="flex-grow flex flex-col items-center md:items-start md:justify-center mt-4 md:mt-0">
-                {/* Data */}
-                <div className="mb-4">
-                  <p className="font-body-md text-white/80 text-lg font-semibold">
-                    {selectedDate ? formatDisplayDate(selectedDate) : getTodayDate()}
-                  </p>
-                </div>
-                
-                {/* Cards */}
-                <div className="flex flex-col md:flex-row gap-4 w-full max-w-3xl">
-                  <div className="flex-1">
-                    <DailyMessageCard 
-                      key={selectedDate || 'today'}
-                      message={dailyMessage} 
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <DailyVerseCard 
-                      key={selectedDate || 'today'}
-                      verse={dailyVerse}
-                    />
-                  </div>
-                </div>
+
+              {/* Coluna 1: Versículo (linha 2) */}
+              <div className="md:col-start-1 md:row-start-2 md:row-span-1 min-h-0 overflow-hidden">
+                <DailyVerseCard
+                  key={selectedDate || 'today'}
+                  verse={dailyVerse}
+                />
+              </div>
+
+              {/* Coluna 2: Nossa Jornada (linha 1) */}
+              <div className="hidden md:block md:col-start-2 md:row-start-1 md:row-span-1 md:px-3 min-h-0">
+                <JourneyCard />
+              </div>
+
+              {/* Coluna 2: Galeria de Fotos (linha 2 - logo abaixo do JourneyCard) */}
+              <div className="hidden md:block md:col-start-2 md:row-start-2 md:row-span-1 md:px-3 min-h-0 overflow-hidden">
+                <PhotoGalleryCard />
+              </div>
+
+              {/* Coluna 3: Calendário iCloud (ocupa 2 linhas - altura total) */}
+              <div className="hidden md:block md:col-start-3 md:row-start-1 md:row-span-2 md:pl-3 min-h-0 overflow-hidden">
+                <ICloudCalendarWidget />
               </div>
             </div>
           </div>
@@ -328,7 +330,9 @@ function App() {
             element={
               <ProtectedRoute>
                 <TimePeriodProvider>
-                  <AppContent />
+                  <CalendarEventsProvider>
+                    <AppContent />
+                  </CalendarEventsProvider>
                 </TimePeriodProvider>
               </ProtectedRoute>
             }
@@ -337,7 +341,9 @@ function App() {
             path="*"
             element={
               <TimePeriodProvider>
-                <AppContent />
+                <CalendarEventsProvider>
+                  <AppContent />
+                </CalendarEventsProvider>
               </TimePeriodProvider>
             }
           />

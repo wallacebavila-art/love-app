@@ -1,25 +1,14 @@
-import { useEffect, useState } from 'react';
-import { fetchICloudCalendar } from '../services/icloudCalendarService';
+import { useState } from 'react';
+import { useCalendarEvents } from '../contexts/CalendarEventsContext';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 
 const ICloudCalendarWidget = ({ isModal = false }) => {
   const { period } = useTimePeriod();
-  const [events, setEvents] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { events, isLoading, isRefreshing, lastUpdated, refresh } = useCalendarEvents();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [showYearPicker, setShowYearPicker] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
-
-  useEffect(() => {
-    const loadEvents = async () => {
-      setIsLoading(true);
-      const calendarEvents = await fetchICloudCalendar();
-      setEvents(calendarEvents);
-      setIsLoading(false);
-    };
-    loadEvents();
-  }, []);
 
   const getCardBackground = () => {
     if (isModal) {
@@ -145,11 +134,23 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
 
   const days = getDaysInMonth(currentDate);
 
+  const formatLastUpdated = (date) => {
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   return (
     <>
       {/* Calendário completo */}
       <div
-        className={`${getCardBackground()} backdrop-blur-[24px] border rounded-2xl p-4 shadow-2xl w-full max-h-[60vh] overflow-y-auto custom-scrollbar`}
+        className={`${getCardBackground()} backdrop-blur-[24px] border rounded-2xl p-4 shadow-2xl w-full overflow-y-auto scrollbar-hidden ${
+          isModal ? 'max-h-[60vh]' : 'max-h-[calc(100vh-10rem)]'
+        }`}
       >
         {/* Cabeçalho */}
         <div className="flex justify-between items-center mb-2">
@@ -243,6 +244,18 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
           
           <div className="flex items-center gap-1">
             <button
+              onClick={() => refresh()}
+              disabled={isLoading || isRefreshing}
+              title="Atualizar calendário"
+              className={`p-1 rounded-full hover:bg-white/20 transition-colors disabled:opacity-50 ${getTextColor()}`}
+            >
+              <span
+                className={`material-symbols-outlined text-[20px] ${isRefreshing ? 'animate-spin' : ''}`}
+              >
+                refresh
+              </span>
+            </button>
+            <button
               onClick={() => {
                 const nextMonth = new Date(currentDate);
                 nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -255,6 +268,20 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
             </button>
           </div>
         </div>
+
+        <p
+          className={`text-center font-body-md text-[10px] mb-2 -mt-1 ${
+            isModal ? 'text-gray-500' : `${getTextColor()}/50`
+          }`}
+        >
+          {isLoading && !lastUpdated
+            ? 'Carregando calendário...'
+            : isRefreshing
+              ? 'Atualizando...'
+              : lastUpdated
+                ? `Atualizado em ${formatLastUpdated(lastUpdated)}`
+                : null}
+        </p>
         
         {/* Fechar pickers ao clicar fora */}
         {(showYearPicker || showMonthPicker) && (
@@ -302,7 +329,15 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
               `}
               onClick={() => {
                 if (day.isCurrentMonth) {
-                  setSelectedDate(day.date);
+                  if (
+                    selectedDate &&
+                    day.date &&
+                    selectedDate.toDateString() === day.date.toDateString()
+                  ) {
+                    setSelectedDate(null);
+                  } else {
+                    setSelectedDate(day.date);
+                  }
                 }
               }}
             >
@@ -320,61 +355,79 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
           ))}
         </div>
 
-        {/* Eventos para a data selecionada */}
         {selectedDate && (
-          <div className={`mt-4 pt-3 border-t ${isModal ? 'border-gray-200' : 'border-white/20'}`}>
+          <div
+            className={`mt-3 pt-3 border-t ${
+              isModal ? 'border-gray-200' : 'border-white/20'
+            }`}
+          >
             <h4 className={`font-headline-sm text-[15px] font-semibold ${getTextColor()} mb-2`}>
               {formatDate(selectedDate)}
             </h4>
-            <div className="max-h-40 overflow-y-auto custom-scrollbar">
-              {isLoading ? (
-                <div className="space-y-2">
-                  {[1, 2].map(i => (
-                    <div key={i} className="animate-pulse">
-                      <div className={`h-3 ${isModal ? 'bg-gray-200' : 'bg-white/30'} rounded w-3/4 mb-1`}></div>
-                      <div className={`h-2 ${isModal ? 'bg-gray-100' : 'bg-white/20'} rounded w-1/2`}></div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {getEventsForDate(selectedDate).length === 0 ? (
-                    <p className={`font-body-md text-[13px] ${isModal ? 'text-gray-500' : getTextColor() + '/60'}`}>
-                      Nenhum evento para esta data
-                    </p>
-                  ) : (
-                    getEventsForDate(selectedDate).map((event) => (
-                      <div
-                        key={event.id}
-                        className={`${isModal ? 'bg-gray-50' : 'bg-white/10'} rounded-xl p-2.5`}
-                      >
-                        <p className={`font-body-md text-[13px] font-semibold ${getTextColor()}`}>
-                          {event.title}
+
+            {isLoading ? (
+              <div className="space-y-2">
+                {[1, 2].map((i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className={`h-3 ${isModal ? 'bg-gray-200' : 'bg-white/30'} rounded w-3/4 mb-1`}></div>
+                    <div className={`h-2 ${isModal ? 'bg-gray-100' : 'bg-white/20'} rounded w-1/2`}></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {getEventsForDate(selectedDate).length === 0 ? (
+                  <p className={`font-body-md text-[13px] ${isModal ? 'text-gray-500' : `${getTextColor()}/60`}`}>
+                    Nenhum evento para esta data
+                  </p>
+                ) : (
+                  getEventsForDate(selectedDate).map((event) => (
+                    <div
+                      key={event.id}
+                      className={`${isModal ? 'bg-gray-50' : 'bg-white/10'} rounded-xl p-2.5`}
+                    >
+                      <p className={`font-body-md text-[13px] font-semibold ${getTextColor()}`}>
+                        {event.title}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span
+                          className={`material-symbols-outlined text-[14px] ${
+                            isModal ? 'text-gray-500' : 'opacity-60'
+                          }`}
+                        >
+                          schedule
+                        </span>
+                        <p
+                          className={`font-body-md text-[11px] ${
+                            isModal ? 'text-gray-600' : `${getTextColor()}/70`
+                          }`}
+                        >
+                          {formatTime(event.startDate, event.isAllDay)}
                         </p>
+                      </div>
+                      {event.location && (
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className={`material-symbols-outlined text-[14px] ${isModal ? 'text-gray-500' : 'opacity-60'}`}>
-                            schedule
+                          <span
+                            className={`material-symbols-outlined text-[14px] ${
+                              isModal ? 'text-gray-500' : 'opacity-60'
+                            }`}
+                          >
+                            location_on
                           </span>
-                          <p className={`font-body-md text-[11px] ${isModal ? 'text-gray-600' : getTextColor() + '/70'}`}>
-                            {formatTime(event.startDate, event.isAllDay)}
+                          <p
+                            className={`font-body-md text-[11px] ${
+                              isModal ? 'text-gray-600' : `${getTextColor()}/70`
+                            }`}
+                          >
+                            {event.location}
                           </p>
                         </div>
-                        {event.location && (
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className={`material-symbols-outlined text-[14px] ${isModal ? 'text-gray-500' : 'opacity-60'}`}>
-                              location_on
-                            </span>
-                            <p className={`font-body-md text-[11px] ${isModal ? 'text-gray-600' : getTextColor() + '/70'}`}>
-                              {event.location}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

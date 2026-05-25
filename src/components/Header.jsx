@@ -99,7 +99,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
 
   return (
     <>
-      <header className="w-full pt-4 flex justify-between items-center px-6 md:px-16">
+      <header className="w-full pt-3 pb-2 flex justify-between items-center px-4 md:px-8">
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
             <span className={`material-symbols-outlined ${getIconColor} icon-glow transition-transform duration-300 hover:scale-110 cursor-pointer`} style={{ fontVariationSettings: 'FILL 1' }}>

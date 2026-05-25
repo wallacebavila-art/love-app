@@ -114,6 +114,88 @@ const parseICalDate = (dateStr) => {
   return new Date(year, month, day, hours, minutes, seconds);
 };
 
+export const getUpcomingEvents = (events, { daysAhead = 14, limit = 10 } = {}) => {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const endDate = new Date(startOfToday);
+  endDate.setDate(endDate.getDate() + daysAhead);
+  endDate.setHours(23, 59, 59, 999);
+
+  return events
+    .filter((event) => event.startDate >= startOfToday && event.startDate <= endDate)
+    .slice(0, limit);
+};
+
+export const formatEventForTicker = (event) => {
+  const dateStr = event.startDate.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+  });
+  const timeStr = event.isAllDay
+    ? 'Todo dia'
+    : event.startDate.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+  return `${dateStr} ${timeStr} — ${event.title}`;
+};
+
+export const CALENDAR_CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 horas
+
+const CALENDAR_EVENTS_CACHE_KEY = 'love-app-calendar-events';
+const CALENDAR_UPDATED_CACHE_KEY = 'love-app-calendar-updated-at';
+
+const serializeEventsForCache = (events) =>
+  events.map((event) => ({
+    ...event,
+    startDate: event.startDate.toISOString(),
+    endDate: event.endDate.toISOString(),
+  }));
+
+const deserializeEventsFromCache = (events) =>
+  events.map((event) => ({
+    ...event,
+    startDate: new Date(event.startDate),
+    endDate: new Date(event.endDate),
+  }));
+
+export const readCalendarCache = () => {
+  try {
+    const updatedAtStr = sessionStorage.getItem(CALENDAR_UPDATED_CACHE_KEY);
+    const eventsStr = sessionStorage.getItem(CALENDAR_EVENTS_CACHE_KEY);
+
+    if (!updatedAtStr || !eventsStr) return null;
+
+    const lastUpdated = new Date(updatedAtStr);
+    if (Number.isNaN(lastUpdated.getTime())) return null;
+
+    if (Date.now() - lastUpdated.getTime() > CALENDAR_CACHE_TTL_MS) {
+      return null;
+    }
+
+    const parsed = JSON.parse(eventsStr);
+    if (!Array.isArray(parsed)) return null;
+
+    return {
+      events: deserializeEventsFromCache(parsed),
+      lastUpdated,
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const writeCalendarCache = (events) => {
+  const lastUpdated = new Date();
+  sessionStorage.setItem(
+    CALENDAR_EVENTS_CACHE_KEY,
+    JSON.stringify(serializeEventsForCache(events))
+  );
+  sessionStorage.setItem(CALENDAR_UPDATED_CACHE_KEY, lastUpdated.toISOString());
+  return lastUpdated;
+};
+
 export const fetchICloudCalendar = async () => {
   try {
     const response = await fetch(getCalendarUrl());

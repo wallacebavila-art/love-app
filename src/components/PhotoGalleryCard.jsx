@@ -1,0 +1,207 @@
+import { useState, useEffect } from 'react';
+import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { fetchAllPhotos } from '../services/photoService';
+
+const PhotoGalleryCard = () => {
+  const { period } = useTimePeriod();
+  const [photos, setPhotos] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Carregar fotos do Firebase
+  useEffect(() => {
+    const loadPhotos = async () => {
+      try {
+        const photosData = await fetchAllPhotos();
+        setPhotos(photosData);
+      } catch (error) {
+        console.error('Erro ao carregar fotos:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadPhotos();
+  }, []);
+
+  // Slide automático
+  useEffect(() => {
+    if (photos.length <= 1 || isPaused) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % photos.length);
+    }, 5000); // Troca a cada 5 segundos
+
+    return () => clearInterval(interval);
+  }, [photos.length, isPaused]);
+
+  const goToPrevious = () => {
+    setCurrentIndex((prevIndex) => 
+      prevIndex === 0 ? photos.length - 1 : prevIndex - 1
+    );
+  };
+
+  const goToNext = () => {
+    setCurrentIndex((prevIndex) => 
+      (prevIndex + 1) % photos.length
+    );
+  };
+
+  const goToSlide = (index) => {
+    setCurrentIndex(index);
+  };
+
+  const getCardBackground = () => {
+    switch (period) {
+      case 'morning':
+        return 'bg-white/25';
+      case 'afternoon':
+        return 'bg-white/25';
+      case 'night':
+        return 'bg-white/15';
+      default:
+        return 'bg-white/25';
+    }
+  };
+
+  const getBorderColor = () => {
+    switch (period) {
+      case 'morning':
+        return 'border-white/30';
+      case 'afternoon':
+        return 'border-white/30';
+      case 'night':
+        return 'border-white/20';
+      default:
+        return 'border-white/30';
+    }
+  };
+
+  const getTextColor = () => {
+    switch (period) {
+      case 'morning':
+      case 'afternoon':
+      case 'night':
+        return 'text-white';
+      default:
+        return 'text-white';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <section className="w-full">
+        <div className="w-full flex justify-center">
+          <div className="w-full max-w-2xl">
+            <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[500px] rounded-[28px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center`}>
+              <div className="animate-pulse">
+                <div className="w-12 h-12 bg-white/30 rounded-full mb-2"></div>
+                <div className="h-3 bg-white/30 rounded w-24"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (photos.length === 0) {
+    return (
+      <section className="w-full">
+        <div className="w-full flex justify-center">
+          <div className="w-full max-w-2xl">
+            <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[500px] rounded-[28px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center p-4`}>
+              <span className="material-symbols-outlined text-white/60 text-[36px] mb-2">photo_library</span>
+              <p className={`font-body-md text-[12px] ${getTextColor()}/70`}>
+                Nenhuma foto ainda
+              </p>
+              <p className={`font-body-md text-[10px] ${getTextColor()}/50 mt-1`}>
+                Adicione fotos no painel administrativo
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const currentPhoto = photos[currentIndex];
+
+  return (
+    <section className="w-full">
+      <div className="w-full flex justify-center">
+        <div className="w-full max-w-2xl">
+          <div 
+            className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[180px] rounded-[28px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20`}
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+          >
+            {/* Header */}
+            <div className="absolute top-3 left-3 right-3 flex justify-between items-center z-10">
+              <span className={`font-label-md text-[9px] uppercase tracking-[0.2em] ${getTextColor()}/60`}>
+                Nossas Memórias
+              </span>
+              <div className="flex gap-1">
+                <button
+                  onClick={goToPrevious}
+                  className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 transition-all flex items-center justify-center"
+                >
+                  <span className="material-symbols-outlined text-white text-[16px]">chevron_left</span>
+                </button>
+                <button
+                  onClick={goToNext}
+                  className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 transition-all flex items-center justify-center"
+                >
+                  <span className="material-symbols-outlined text-white text-[16px]">chevron_right</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Photo */}
+            <div className="w-full h-full flex items-center justify-center p-2">
+              {currentPhoto.url ? (
+                <img
+                  src={currentPhoto.url}
+                  alt={currentPhoto.caption || 'Foto'}
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  className="w-full h-full object-cover rounded-xl shadow-lg"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-white/10 rounded-xl">
+                  <span className="material-symbols-outlined text-white/30 text-[48px]">image</span>
+                </div>
+              )}
+            </div>
+
+            {/* Caption */}
+            {currentPhoto.caption && (
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-[24px]">
+                <p className={`font-body-md text-[10px] ${getTextColor()} text-center`}>
+                  {currentPhoto.caption}
+                </p>
+              </div>
+            )}
+
+            {/* Dots */}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+              {photos.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${
+                    index === currentIndex 
+                      ? 'bg-white scale-125' 
+                      : 'bg-white/40 hover:bg-white/60'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default PhotoGalleryCard;

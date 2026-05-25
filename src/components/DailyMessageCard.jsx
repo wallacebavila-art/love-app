@@ -64,14 +64,14 @@ const DailyMessageCard = ({ message }) => {
 
   return (
     <section className="w-full flex justify-center">
-      <div className="w-full max-w-2xl flex flex-col items-center space-y-6">
+      <div className="w-full max-w-2xl flex flex-col items-center">
         {/* Central Message Card (Glassmorphism) */}
         <div 
-          className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full min-h-[200px] p-8 md:p-12 rounded-[40px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20 cursor-pointer`}
+          className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[160px] p-4 md:p-5 rounded-[32px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20 cursor-pointer`}
           onClick={() => setIsRevealed(true)}
         >
-          <span className={`font-label-md text-[12px] uppercase tracking-[0.2em] ${getTextColor}/60 mb-4`}>Mensagem do dia</span>
-          <p className={`font-quote-italic font-thin text-[14px] ${getTextColor} italic leading-relaxed transition-all duration-700 ease-out ${!isRevealed ? 'blur-md scale-95 opacity-60' : 'blur-0 scale-100 opacity-100'}`}>
+          <span className={`font-label-md text-[11px] uppercase tracking-[0.2em] ${getTextColor}/60 mb-3`}>Mensagem do dia</span>
+          <p className={`font-quote-italic font-thin text-[13px] ${getTextColor} italic leading-relaxed transition-all duration-700 ease-out ${!isRevealed ? 'blur-md scale-95 opacity-60' : 'blur-0 scale-100 opacity-100'}`}>
             "{message}"
           </p>
         </div>

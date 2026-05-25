@@ -228,7 +228,7 @@ const JourneyCard = () => {
     <section className="w-full">
       <div className="w-full flex flex-col items-start space-y-2">
         <div 
-          className={`group flex items-center gap-3 ${getCardBackground()} p-4 rounded-3xl border ${getBorderColor()} backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] hover:bg-white/40 cursor-pointer shadow-lg hover:shadow-xl`}
+          className={`group flex items-center gap-3 ${getCardBackground()} p-3 rounded-3xl border ${getBorderColor()} backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] hover:bg-white/40 cursor-pointer shadow-lg hover:shadow-xl`}
           onClick={() => setShowTimeline(true)}
         >
           <div className={`relative flex-shrink-0`}>

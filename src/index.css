@@ -63,6 +63,17 @@ html, body {
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
+/* Scroll ativo, barra invisível */
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 @layer base {
   .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -105,8 +116,107 @@ html, body {
     box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
   }
   
+  .events-ticker {
+    overflow: hidden;
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
+  }
+
+  .events-ticker__track {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    animation: ticker-scroll 40s linear infinite;
+  }
+
+  .events-ticker:hover .events-ticker__track {
+    animation-play-state: paused;
+  }
+
+  .events-ticker__segment {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding-right: 2.5rem;
+  }
+
+  .events-ticker__item {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 0 0.75rem;
+  }
+
+  .events-ticker__divider {
+    flex-shrink: 0;
+    width: 4px;
+    height: 1.35rem;
+    border-radius: 9999px;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.25),
+      rgba(255, 255, 255, 0.65),
+      rgba(255, 255, 255, 0.25)
+    );
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+  }
+
+  @keyframes ticker-scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .events-ticker {
+      mask-image: none;
+      -webkit-mask-image: none;
+    }
+
+    .events-ticker__track {
+      animation: none;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    .events-ticker__segment {
+      flex-wrap: wrap;
+      padding-right: 0;
+      gap: 0.5rem 0;
+    }
+
+    .events-ticker__segment[aria-hidden='true'] {
+      display: none;
+    }
+
+    .events-ticker__item {
+      white-space: normal;
+      padding: 0;
+    }
+  }
+
   .status-bar-spacer {
-    height: 32px;
+    height: max(12px, env(safe-area-inset-top, 0px));
+  }
+
+  @media (min-width: 768px) {
+    .status-bar-spacer {
+      height: 12px;
+    }
   }
 }
 
