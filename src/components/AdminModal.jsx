@@ -2,19 +2,23 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { fetchAllPhotos, savePhotoWithUpload, deletePhoto, deletePhotoFromStorage } from '../services/photoService';
 
 const AdminModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('messages'); // 'messages' or 'verses'
+  const [activeTab, setActiveTab] = useState('messages'); // 'messages', 'verses', or 'photos'
   
   // Dados das mensagens
   const [messages, setMessages] = useState([]);
   // Dados dos versículos
   const [verses, setVerses] = useState([]);
+  // Dados das fotos
+  const [photos, setPhotos] = useState([]);
   
   const [loading, setLoading] = useState(true);
   const [messageCount, setMessageCount] = useState(0);
   const [verseCount, setVerseCount] = useState(0);
+  const [photoCount, setPhotoCount] = useState(0);
   const [duplicateMessages, setDuplicateMessages] = useState([]);
   const [duplicateVerses, setDuplicateVerses] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -22,14 +26,18 @@ const AdminModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     date: '',
     content: '',
-    reference: ''
+    reference: '',
+    caption: '',
+    file: null
   });
+  const [selectedFilePreview, setSelectedFilePreview] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       fetchStatistics();
       fetchMessages();
       fetchVerses();
+      fetchPhotos();
     }
   }, [isOpen]);
 
@@ -101,6 +109,9 @@ const AdminModal = ({ isOpen, onClose }) => {
 
       const versesSnapshot = await getDocs(collection(db, 'verses'));
       setVerseCount(versesSnapshot.size);
+
+      const photosSnapshot = await getDocs(collection(db, 'photos'));
+      setPhotoCount(photosSnapshot.size);
     } catch (error) {
       console.error('Erro ao buscar estatísticas:', error);
     }
@@ -138,30 +149,69 @@ const AdminModal = ({ isOpen, onClose }) => {
     }
   };
 
+  const fetchPhotos = async () => {
+    try {
+      const photosData = await fetchAllPhotos();
+      setPhotos(photosData);
+    } catch (error) {
+      console.error('Erro ao buscar fotos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddSubmit = async (e) => {
     e.preventDefault();
+    console.log('🚀 handleAddSubmit chamado, activeTab:', activeTab);
     try {
-      const collectionName = activeTab === 'messages' ? 'mensagens' : 'verses';
-      
-      if (activeTab === 'messages') {
-        await addDoc(collection(db, collectionName), {
-          date: formData.date,
-          mensagem: formData.content
+      if (activeTab === 'photos') {
+        console.log('📷 Processando upload de foto');
+        if (!formData.file) {
+          alert('Por favor, selecione uma foto');
+          return;
+        }
+        
+        console.log('📸 Arquivo selecionado:', formData.file.name, 'Tamanho:', formData.file.size);
+        
+        const photoId = await savePhotoWithUpload(formData.file, {
+          caption: formData.caption,
+          order: photos.length
         });
+        
+        console.log('🆔 Photo ID retornado:', photoId);
+        
+        if (photoId) {
+          alert('Foto enviada com sucesso!');
+          resetForm();
+          fetchStatistics();
+          fetchPhotos();
+        } else {
+          alert('Erro ao enviar a foto. Verifique o console para detalhes.');
+        }
       } else {
-        await addDoc(collection(db, collectionName), {
-          date: formData.date,
-          text: formData.content,
-          reference: formData.reference
-        });
+        const collectionName = activeTab === 'messages' ? 'mensagens' : 'verses';
+        
+        if (activeTab === 'messages') {
+          await addDoc(collection(db, collectionName), {
+            date: formData.date,
+            mensagem: formData.content
+          });
+        } else {
+          await addDoc(collection(db, collectionName), {
+            date: formData.date,
+            text: formData.content,
+            reference: formData.reference
+          });
+        }
+        
+        resetForm();
+        fetchStatistics();
+        if (activeTab === 'messages') fetchMessages();
+        else fetchVerses();
       }
-      
-      resetForm();
-      fetchStatistics();
-      if (activeTab === 'messages') fetchMessages();
-      else fetchVerses();
     } catch (error) {
       console.error('Erro ao adicionar item:', error);
+      alert('Erro ao adicionar item: ' + error.message);
     }
   };
 
@@ -196,12 +246,22 @@ const AdminModal = ({ isOpen, onClose }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Tem certeza que deseja excluir este item?')) {
       try {
-        const collectionName = activeTab === 'messages' ? 'mensagens' : 'verses';
-        await deleteDoc(doc(db, collectionName, id));
-        
-        fetchStatistics();
-        if (activeTab === 'messages') fetchMessages();
-        else fetchVerses();
+        if (activeTab === 'photos') {
+          const photo = photos.find(p => p.id === id);
+          if (photo && !photo.isLocal) {
+            await deletePhotoFromStorage(photo.url);
+          }
+          await deletePhoto(id);
+          fetchStatistics();
+          fetchPhotos();
+        } else {
+          const collectionName = activeTab === 'messages' ? 'mensagens' : 'verses';
+          await deleteDoc(doc(db, collectionName, id));
+          
+          fetchStatistics();
+          if (activeTab === 'messages') fetchMessages();
+          else fetchVerses();
+        }
       } catch (error) {
         console.error('Erro ao excluir item:', error);
       }
@@ -227,7 +287,8 @@ const AdminModal = ({ isOpen, onClose }) => {
   };
 
   const resetForm = () => {
-    setFormData({ date: '', content: '', reference: '' });
+    setFormData({ date: '', content: '', reference: '', caption: '', file: null });
+    setSelectedFilePreview(null);
     setShowAddForm(false);
     setEditingItem(null);
   };
@@ -255,7 +316,7 @@ const AdminModal = ({ isOpen, onClose }) => {
           {/* Estatísticas */}
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-3">Estatísticas</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-xl p-4">
                 <div className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-pink-600 text-3xl">chat_bubble</span>
@@ -271,6 +332,15 @@ const AdminModal = ({ isOpen, onClose }) => {
                   <div>
                     <p className="text-sm text-gray-600">Versículos do Dia</p>
                     <p className="text-3xl font-bold text-blue-600">{verseCount}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-green-50 to-teal-50 border border-green-200 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-green-600 text-3xl">photo_library</span>
+                  <div>
+                    <p className="text-sm text-gray-600">Fotos na Galeria</p>
+                    <p className="text-3xl font-bold text-green-600">{photoCount}</p>
                   </div>
                 </div>
               </div>
@@ -395,27 +465,39 @@ const AdminModal = ({ isOpen, onClose }) => {
             >
               Versículos do Dia
             </button>
+            <button
+              onClick={() => { setActiveTab('photos'); resetForm(); }}
+              className={`px-6 py-3 font-semibold transition-all border-b-2 ${
+                activeTab === 'photos' 
+                  ? 'border-green-500 text-green-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Galeria de Fotos
+            </button>
           </div>
 
           {/* Add Button */}
           <div className="mb-6">
-            <button
-              onClick={() => {
-                if (showAddForm) resetForm();
-                else setShowAddForm(true);
-              }}
-              className={`px-6 py-3 rounded-lg transition font-semibold ${
-                activeTab === 'messages'
-                  ? 'bg-pink-600 text-white hover:bg-pink-700'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              {showAddForm ? 'Cancelar' : `+ Adicionar ${activeTab === 'messages' ? 'Mensagem' : 'Versículo'}`}
-            </button>
+            {activeTab !== 'photos' && (
+              <button
+                onClick={() => {
+                  if (showAddForm) resetForm();
+                  else setShowAddForm(true);
+                }}
+                className={`px-6 py-3 rounded-lg transition font-semibold ${
+                  activeTab === 'messages'
+                    ? 'bg-pink-600 text-white hover:bg-pink-700'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {showAddForm ? 'Cancelar' : `+ Adicionar ${activeTab === 'messages' ? 'Mensagem' : 'Versículo'}`}
+              </button>
+            )}
           </div>
 
           {/* Add/Edit Form */}
-          {showAddForm && (
+          {showAddForm && activeTab !== 'photos' && (
             <div className={`rounded-lg p-6 mb-6 border ${
               activeTab === 'messages' 
                 ? 'bg-pink-50 border-pink-200' 
@@ -471,7 +553,7 @@ const AdminModal = ({ isOpen, onClose }) => {
                     className={`px-6 py-2 rounded-lg transition font-semibold text-white ${
                       activeTab === 'messages'
                         ? 'bg-pink-600 hover:bg-pink-700'
-                        : 'bg-blue-600 hover:bg-blue-700'
+                        : 'bg-blue-600 hover:bg-blue-600'
                     }`}
                   >
                     {editingItem ? 'Atualizar' : 'Salvar'}
@@ -490,57 +572,161 @@ const AdminModal = ({ isOpen, onClose }) => {
             </div>
           )}
 
-          {/* List */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 className="text-lg font-semibold">
-                {activeTab === 'messages' ? 'Mensagens' : 'Versículos'} ({activeTab === 'messages' ? messages.length : verses.length})
-              </h3>
-            </div>
-            <div className="divide-y divide-gray-200 max-h-64 overflow-y-auto">
-              {loading ? (
-                <div className="px-6 py-8 text-center text-gray-500">Carregando...</div>
-              ) : (activeTab === 'messages' ? messages : verses).length === 0 ? (
-                <div className="px-6 py-8 text-center text-gray-500">
-                  Nenhum item encontrado
+          {/* Photo Upload Form */}
+          {activeTab === 'photos' && (
+            <div className="rounded-lg p-6 mb-6 border bg-green-50 border-green-200">
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">Adicionar Nova Foto</h3>
+              <form onSubmit={handleAddSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Selecione uma Foto
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setFormData({ ...formData, file });
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setSelectedFilePreview(reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                  />
+                  {selectedFilePreview && (
+                    <div className="mt-3">
+                      <img
+                        src={selectedFilePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded-lg border border-gray-300"
+                      />
+                      <p className="text-xs text-gray-600 mt-1">{formData.file?.name}</p>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                (activeTab === 'messages' ? messages : verses).map((item) => (
-                  <div key={item.id} className="px-6 py-4 hover:bg-gray-50 transition">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-500 mb-1">{item.date || item.id}</p>
-                        <p className="text-gray-800 font-medium mb-1">
-                          {activeTab === 'messages' ? item.mensagem : item.text}
-                        </p>
-                        {activeTab === 'verses' && item.reference && (
-                          <p className="text-sm text-purple-600 font-semibold">{item.reference}</p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Legenda (opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.caption}
+                    onChange={(e) => setFormData({ ...formData, caption: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                    placeholder="Nossa memória especial..."
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
+                >
+                  Upload Foto
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* List */}
+          {activeTab === 'photos' ? (
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <h3 className="text-lg font-semibold">
+                  Fotos na Galeria ({photos.length})
+                </h3>
+              </div>
+              <div className="p-4 max-h-96 overflow-y-auto">
+                {loading ? (
+                  <div className="px-6 py-8 text-center text-gray-500">Carregando...</div>
+                ) : photos.length === 0 ? (
+                  <div className="px-6 py-8 text-center text-gray-500">
+                    Nenhuma foto encontrada
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {photos.map((photo) => (
+                      <div key={photo.id} className="relative group">
+                        <img
+                          src={photo.url}
+                          alt={photo.caption || 'Foto'}
+                          className="w-full h-32 object-cover rounded-lg shadow-md"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleDelete(photo.id)}
+                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                        {photo.caption && (
+                          <p className="text-xs text-gray-600 mt-1 truncate">{photo.caption}</p>
+                        )}
+                        {photo.isLocal && (
+                          <span className="text-[8px] text-gray-400">Local</span>
                         )}
                       </div>
-                      <div className="flex gap-2 ml-4">
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className={`px-3 py-1 rounded transition text-sm text-white ${
-                            activeTab === 'messages'
-                              ? 'bg-pink-500 hover:bg-pink-600'
-                              : 'bg-blue-500 hover:bg-blue-600'
-                          }`}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
-                        >
-                          Excluir
-                        </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <h3 className="text-lg font-semibold">
+                  {activeTab === 'messages' ? 'Mensagens' : 'Versículos'} ({activeTab === 'messages' ? messages.length : verses.length})
+                </h3>
+              </div>
+              <div className="divide-y divide-gray-200 max-h-64 overflow-y-auto">
+                {loading ? (
+                  <div className="px-6 py-8 text-center text-gray-500">Carregando...</div>
+                ) : (activeTab === 'messages' ? messages : verses).length === 0 ? (
+                  <div className="px-6 py-8 text-center text-gray-500">
+                    Nenhum item encontrado
+                  </div>
+                ) : (
+                  (activeTab === 'messages' ? messages : verses).map((item) => (
+                    <div key={item.id} className="px-6 py-4 hover:bg-gray-50 transition">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-500 mb-1">{item.date || item.id}</p>
+                          <p className="text-gray-800 font-medium mb-1">
+                            {activeTab === 'messages' ? item.mensagem : item.text}
+                          </p>
+                          {activeTab === 'verses' && item.reference && (
+                            <p className="text-sm text-purple-600 font-semibold">{item.reference}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <button
+                            onClick={() => handleEdit(item)}
+                            className={`px-3 py-1 rounded transition text-sm text-white ${
+                              activeTab === 'messages'
+                                ? 'bg-pink-500 hover:bg-pink-600'
+                                : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
+                          >
+                            Excluir
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

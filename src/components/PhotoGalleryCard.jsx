@@ -110,7 +110,7 @@ const PhotoGalleryCard = () => {
       <section className="w-full">
         <div className="w-full flex justify-center">
           <div className="w-full max-w-2xl">
-            <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[500px] rounded-[28px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center p-4`}>
+            <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[150px] rounded-[28px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center p-4`}>
               <span className="material-symbols-outlined text-white/60 text-[36px] mb-2">photo_library</span>
               <p className={`font-body-md text-[12px] ${getTextColor()}/70`}>
                 Nenhuma foto ainda
@@ -132,10 +132,17 @@ const PhotoGalleryCard = () => {
       <div className="w-full flex justify-center">
         <div className="w-full max-w-2xl">
           <div 
-            className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[180px] rounded-[28px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20`}
+            className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[400px] rounded-[28px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20`}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >
+            {/* Badge de Origem (Opcional, apenas para debug interno se necessário, mas vamos deixar discreto) */}
+            {currentPhoto.isLocal && (
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-white/10 backdrop-blur-md rounded-full z-20 pointer-events-none">
+                <span className="text-[8px] text-white/40 uppercase tracking-tighter">Modo Offline</span>
+              </div>
+            )}
+
             {/* Header */}
             <div className="absolute top-3 left-3 right-3 flex justify-between items-center z-10">
               <span className={`font-label-md text-[9px] uppercase tracking-[0.2em] ${getTextColor()}/60`}>
@@ -161,11 +168,12 @@ const PhotoGalleryCard = () => {
             <div className="w-full h-full flex items-center justify-center p-2">
               {currentPhoto.url ? (
                 <img
-                  src={currentPhoto.url}
+                  src={currentPhoto.url.startsWith('http') ? currentPhoto.url : currentPhoto.url}
                   alt={currentPhoto.caption || 'Foto'}
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
+                  referrerPolicy={currentPhoto.url.startsWith('http') ? "no-referrer" : undefined}
+                  crossOrigin={currentPhoto.url.startsWith('http') ? "anonymous" : undefined}
                   className="w-full h-full object-cover rounded-xl shadow-lg"
+                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-white/10 rounded-xl">

@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Regras para mensagens
+    match /mensagens/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Regras para versículos
+    match /verses/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Regras para fotos
+    match /photos/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Regras para timeline
+    match /timeline/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Regras para fcm_tokens (permitir gravação pública para registrar o token do PWA ao abrir o app)
+    match /fcm_tokens/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if true;
+    }
+    
+    // Regras para usuários (se existir)
+    match /users/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
