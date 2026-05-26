@@ -53,8 +53,8 @@ const DailyVerseCard = ({ verse }) => {
   if (!verse) {
     return (
       <section className="w-full flex justify-center">
-        <div className="w-full max-w-2xl flex flex-col items-center">
-          <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[160px] p-4 md:p-5 rounded-[32px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center relative overflow-hidden cursor-pointer`} onClick={() => setIsRevealed(true)}>
+        <div className="w-full flex flex-col items-center">
+          <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full min-h-[240px] p-4 md:p-5 rounded-[32px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center relative overflow-hidden cursor-pointer`} onClick={() => setIsRevealed(true)}>
             <span className={`font-label-md text-[11px] uppercase tracking-[0.2em] ${getTextColor}/60 mb-3`}>Versículo do dia</span>
             <div className="animate-pulse">
               <div className="h-4 bg-white/30 rounded w-3/4 mb-2"></div>
@@ -69,10 +69,10 @@ const DailyVerseCard = ({ verse }) => {
 
   return (
     <section className="w-full flex justify-center">
-      <div className="w-full max-w-2xl flex flex-col items-center">
+      <div className="w-full flex flex-col items-center">
         {/* Verse Card (Glassmorphism) */}
-        <div 
-          className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[160px] p-4 md:p-5 rounded-[32px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20 cursor-pointer`}
+        <div
+          className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full min-h-[240px] p-4 md:p-5 rounded-[32px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20 cursor-pointer`}
           onClick={() => setIsRevealed(true)}
         >
           <span className={`font-label-md text-[11px] uppercase tracking-[0.2em] ${getTextColor}/60 mb-3`}>Versículo do dia</span>

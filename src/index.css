@@ -63,6 +63,27 @@ html, body {
   scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
+/* Barra de scroll customizada para modal de jornada */
+.journey-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.journey-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+.journey-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  border-radius: 4px;
+  border: 2px solid white;
+}
+.journey-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
+}
+.journey-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #a855f7 rgba(0, 0, 0, 0.05);
+}
+
 /* Scroll ativo, barra invisível */
 .scrollbar-hidden {
   -ms-overflow-style: none;

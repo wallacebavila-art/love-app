@@ -28,9 +28,9 @@ const AdminModal = ({ isOpen, onClose }) => {
     content: '',
     reference: '',
     caption: '',
-    file: null
+    files: []
   });
-  const [selectedFilePreview, setSelectedFilePreview] = useState(null);
+  const [selectedFilePreviews, setSelectedFilePreviews] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -165,29 +165,50 @@ const AdminModal = ({ isOpen, onClose }) => {
     console.log('🚀 handleAddSubmit chamado, activeTab:', activeTab);
     try {
       if (activeTab === 'photos') {
-        console.log('📷 Processando upload de foto');
-        if (!formData.file) {
-          alert('Por favor, selecione uma foto');
+        console.log('📷 Processando upload de fotos');
+        if (!formData.files || formData.files.length === 0) {
+          alert('Por favor, selecione pelo menos uma foto');
           return;
         }
-        
-        console.log('📸 Arquivo selecionado:', formData.file.name, 'Tamanho:', formData.file.size);
-        
-        const photoId = await savePhotoWithUpload(formData.file, {
-          caption: formData.caption,
-          order: photos.length
-        });
-        
-        console.log('🆔 Photo ID retornado:', photoId);
-        
-        if (photoId) {
-          alert('Foto enviada com sucesso!');
-          resetForm();
-          fetchStatistics();
-          fetchPhotos();
-        } else {
-          alert('Erro ao enviar a foto. Verifique o console para detalhes.');
+
+        console.log('📸 Arquivos selecionados:', formData.files.length);
+
+        const successfulUploads = [];
+        const failedUploads = [];
+
+        // Processar cada arquivo
+        for (let i = 0; i < formData.files.length; i++) {
+          const file = formData.files[i];
+          console.log(`📸 Processando arquivo ${i + 1}/${formData.files.length}:`, file.name, 'Tamanho:', file.size);
+
+          try {
+            const photoId = await savePhotoWithUpload(file, {
+              caption: formData.caption || '',
+              order: photos.length + i
+            });
+
+            if (photoId) {
+              console.log(`✅ Foto ${i + 1} salva com sucesso, ID:`, photoId);
+              successfulUploads.push(file.name);
+            } else {
+              console.log(`❌ Foto ${i + 1} falhou ao salvar`);
+              failedUploads.push(file.name);
+            }
+          } catch (error) {
+            console.error(`❌ Erro ao processar foto ${i + 1} (${file.name}):`, error);
+            failedUploads.push(file.name);
+          }
         }
+
+        if (failedUploads.length > 0) {
+          alert(`${successfulUploads.length} foto(s) enviada(s) com sucesso!\n\nFalhas: ${failedUploads.length} foto(s)\n${failedUploads.join(', ')}`);
+        } else {
+          alert(`${successfulUploads.length} foto(s) enviada(s) com sucesso!`);
+        }
+        resetForm();
+        fetchStatistics();
+        fetchPhotos();
+        window.location.reload();
       } else {
         const collectionName = activeTab === 'messages' ? 'mensagens' : 'verses';
         
@@ -287,8 +308,8 @@ const AdminModal = ({ isOpen, onClose }) => {
   };
 
   const resetForm = () => {
-    setFormData({ date: '', content: '', reference: '', caption: '', file: null });
-    setSelectedFilePreview(null);
+    setFormData({ date: '', content: '', reference: '', caption: '', files: [] });
+    setSelectedFilePreviews([]);
     setShowAddForm(false);
     setEditingItem(null);
   };
@@ -579,33 +600,49 @@ const AdminModal = ({ isOpen, onClose }) => {
               <form onSubmit={handleAddSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Selecione uma Foto
+                    Selecione Fotos (pode selecionar múltiplas)
                   </label>
                   <input
                     type="file"
                     accept="image/*"
+                    multiple
                     onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        setFormData({ ...formData, file });
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setSelectedFilePreview(reader.result);
-                        };
-                        reader.readAsDataURL(file);
+                      const files = Array.from(e.target.files);
+                      if (files.length > 0) {
+                        setFormData({ ...formData, files });
+
+                        // Criar previews para todos os arquivos
+                        const previews = [];
+                        files.forEach((file) => {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            previews.push({ file, preview: reader.result });
+                            if (previews.length === files.length) {
+                              setSelectedFilePreviews(previews);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        });
                       }
                     }}
                     required
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                   />
-                  {selectedFilePreview && (
+                  {selectedFilePreviews.length > 0 && (
                     <div className="mt-3">
-                      <img
-                        src={selectedFilePreview}
-                        alt="Preview"
-                        className="w-full h-48 object-cover rounded-lg border border-gray-300"
-                      />
-                      <p className="text-xs text-gray-600 mt-1">{formData.file?.name}</p>
+                      <p className="text-sm text-gray-600 mb-2">{selectedFilePreviews.length} foto(s) selecionada(s)</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {selectedFilePreviews.map((item, index) => (
+                          <div key={index}>
+                            <img
+                              src={item.preview}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg border border-gray-300"
+                            />
+                            <p className="text-xs text-gray-600 mt-1 truncate">{item.file.name}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

@@ -194,6 +194,60 @@ export const deletePhotoFromStorage = async (photoUrl) => {
 };
 
 /**
+ * Faz upload para Google Drive via Google Apps Script
+ * O script salva a URL diretamente no Firestore, contornando o problema do no-cors
+ * @param {File} file - Arquivo de imagem
+ * @param {Object} photoData - Dados da foto { caption, order }
+ * @returns {Promise<boolean>} True se enviado com sucesso
+ */
+export const uploadToGoogleDrive = async (file, photoData) => {
+  try {
+    console.log('📤 Tentando upload para Google Drive:', file.name);
+    
+    // Converter arquivo para base64
+    const reader = new FileReader();
+    const base64Promise = new Promise((resolve, reject) => {
+      reader.onload = () => {
+        const result = reader.result;
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    
+    const base64Data = await base64Promise;
+    
+    // Substitua pela URL do seu Google Apps Script deployado
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHtX__KBc7VaMrmNtetLKzc-FVnsUJJ7khXJ3ar59II6rW3lHPfmgy-V6c2bqx2yeWRQ/exec';
+    
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors', // Necessário para evitar CORS com Google Apps Script
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: base64Data,
+        fileName: file.name,
+        mimeType: file.type,
+        caption: photoData.caption || '',
+        order: photoData.order || 0
+      })
+    });
+    
+    // Como usamos no-cors, não podemos ler a resposta diretamente
+    // Mas o script salva no Firestore automaticamente
+    console.log('✅ Upload para Google Drive enviado (script salva no Firestore automaticamente)');
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Erro ao fazer upload para Google Drive:', error);
+    return false;
+  }
+};
+
+/**
  * Faz upload para Imgur API (alternativa ao Firebase Storage)
  * @param {File} file - Arquivo de imagem
  * @returns {Promise<string|null>} URL da imagem ou null
@@ -228,6 +282,72 @@ export const uploadToImgur = async (file) => {
 };
 
 /**
+ * Comprime e redimensiona imagem usando Canvas
+ * @param {File} file - Arquivo de imagem
+ * @param {number} maxWidth - Largura máxima (padrão: 1024)
+ * @param {number} quality - Qualidade (0-1, padrão: 0.7)
+ * @returns {Promise<string>} String base64 comprimida
+ */
+export const compressImage = (file, maxWidth = 1024, quality = 0.7) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Calcular novas dimensões mantendo proporção
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Converter para base64 com compressão
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(compressedDataUrl);
+        } catch (error) {
+          reject(new Error(`Erro ao processar imagem ${file.name}: ${error.message}`));
+        }
+      };
+      img.onerror = () => {
+        reject(new Error(`Erro ao carregar imagem ${file.name}: formato não suportado ou arquivo corrompido`));
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = () => {
+      reject(new Error(`Erro ao ler arquivo ${file.name}`));
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+/**
+ * Converte arquivo para base64
+ * @param {File} file - Arquivo de imagem
+ * @returns {Promise<string>} String base64
+ */
+export const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      resolve(result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+/**
  * Salva uma nova foto com upload para o Storage
  * @param {File} file - Arquivo de imagem
  * @param {Object} photoData - Dados da foto { caption, order }
@@ -235,37 +355,36 @@ export const uploadToImgur = async (file) => {
  */
 export const savePhotoWithUpload = async (file, photoData) => {
   try {
-    console.log('📸 Iniciando upload da foto:', file.name, 'Tamanho:', file.size);
-    
-    let downloadURL = null;
-    
-    // Tentar Firebase Storage primeiro
-    try {
-      const fileName = `${Date.now()}_${file.name}`;
-      console.log('📝 Tentando Firebase Storage, nome:', fileName);
-      downloadURL = await uploadPhotoToStorage(file, fileName);
-      console.log('✅ Firebase Storage funcionou!');
-    } catch (storageError) {
-      console.warn('⚠️ Firebase Storage falhou (provavelmente CORS), tentando Imgur:', storageError);
-      downloadURL = await uploadToImgur(file);
+    console.log('📸 Iniciando upload da foto:', file.name, 'Tamanho original:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+
+    // Verificar se é HEIC e alertar para converter manualmente
+    if (file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic') {
+      throw new Error('Arquivos HEIC não são suportados. Por favor, converta a imagem para JPEG ou PNG antes de fazer upload.');
     }
-    
-    if (!downloadURL) {
-      throw new Error('Falha no upload da imagem (Firebase Storage e Imgur falharam)');
+
+    // Comprimir imagem antes de converter para base64
+    const compressedBase64 = await compressImage(file, 1024, 0.7);
+
+    // Verificar tamanho comprimido (Firestore limite é 1MB por documento)
+    const sizeInMB = (compressedBase64.length * 0.75) / (1024 * 1024); // aprox
+    console.log('✅ Imagem comprimida, tamanho:', sizeInMB.toFixed(2), 'MB');
+
+    if (sizeInMB > 0.9) {
+      alert('A imagem comprimida ainda é muito grande. Tente uma imagem menor ou reduza a qualidade.');
+      return null;
     }
-    
-    console.log('✅ Upload concluído, URL:', downloadURL);
-    
-    // Salvar metadados no Firestore
+
+    // Salvar diretamente no Firestore
     const photosRef = collection(db, PHOTOS_COLLECTION);
     const docRef = await addDoc(photosRef, {
-      url: downloadURL,
+      url: compressedBase64,
       caption: photoData.caption || '',
       order: photoData.order || 0,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      isBase64: true
     });
-    
-    console.log('✅ Foto salva no Firestore, ID:', docRef.id);
+
+    console.log('✅ Foto salva no Firestore (base64 comprimido), ID:', docRef.id);
     return docRef.id;
   } catch (error) {
     console.error('❌ Erro ao salvar foto com upload:', error);

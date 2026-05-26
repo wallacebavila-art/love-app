@@ -230,9 +230,9 @@ function AppContent() {
 
           <UpcomingEventsTicker />
           
-          <div className="flex-1 px-4 md:px-8 pt-2 pb-2 overflow-hidden">
+          <div className="flex-1 px-4 md:px-8 pt-4 pb-4 overflow-hidden">
             {/* Desktop: grid com 3 colunas - altura total da tela */}
-            <div className="flex flex-col gap-3 mt-1 h-full md:grid md:grid-cols-[1fr_auto_20rem] md:grid-rows-[auto_1fr] md:gap-x-3 md:gap-y-2">
+            <div className="flex flex-col gap-4 mt-0 h-full md:grid md:grid-cols-[1fr_auto_20rem] md:grid-rows-[auto_1fr] md:gap-x-4 md:gap-y-4">
               {/* Coluna 1: Mensagem (linha 1) */}
               <div className="md:col-start-1 md:row-start-1 md:row-span-1 min-h-0">
                 <DailyMessageCard
@@ -250,17 +250,17 @@ function AppContent() {
               </div>
 
               {/* Coluna 2: Nossa Jornada (linha 1) */}
-              <div className="hidden md:block md:col-start-2 md:row-start-1 md:row-span-1 md:px-3 min-h-0">
+              <div className="hidden md:block md:col-start-2 md:row-start-1 md:row-span-1 min-h-0">
                 <JourneyCard />
               </div>
 
               {/* Coluna 2: Galeria de Fotos (linha 2 - logo abaixo do JourneyCard) */}
-              <div className="hidden md:block md:col-start-2 md:row-start-2 md:row-span-1 md:px-3 min-h-0 overflow-hidden">
+              <div className="hidden md:block md:col-start-2 md:row-start-2 md:row-span-1 min-h-0 overflow-hidden -mt-[165px]">
                 <PhotoGalleryCard />
               </div>
 
               {/* Coluna 3: Calendário iCloud (ocupa 2 linhas - altura total) */}
-              <div className="hidden md:block md:col-start-3 md:row-start-1 md:row-span-2 md:pl-3 min-h-0 overflow-hidden">
+              <div className="hidden md:block md:col-start-3 md:row-start-1 md:row-span-2 min-h-0 overflow-hidden">
                 <ICloudCalendarWidget />
               </div>
             </div>

@@ -175,26 +175,26 @@ const JourneyCard = () => {
   const getCardBackground = () => {
     switch (period) {
       case 'morning':
-        return 'bg-white/25';
+        return 'bg-black/40';
       case 'afternoon':
-        return 'bg-white/25';
+        return 'bg-black/40';
       case 'night':
-        return 'bg-white/15';
+        return 'bg-black/50';
       default:
-        return 'bg-white/25';
+        return 'bg-black/40';
     }
   };
 
   const getBorderColor = () => {
     switch (period) {
       case 'morning':
-        return 'border-white/30';
+        return 'border-white/35';
       case 'afternoon':
-        return 'border-white/30';
+        return 'border-white/35';
       case 'night':
-        return 'border-white/20';
+        return 'border-white/25';
       default:
-        return 'border-white/30';
+        return 'border-white/35';
     }
   };
 
@@ -227,8 +227,8 @@ const JourneyCard = () => {
   return (
     <section className="w-full">
       <div className="w-full flex flex-col items-start space-y-2">
-        <div 
-          className={`group flex items-center gap-3 ${getCardBackground()} p-3 rounded-3xl border ${getBorderColor()} backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] hover:bg-white/40 cursor-pointer shadow-lg hover:shadow-xl`}
+        <div
+          className={`group flex items-center gap-3 ${getCardBackground()} p-3 rounded-3xl border ${getBorderColor()} backdrop-blur-[24px] transition-all duration-500 hover:scale-[1.02] hover:bg-white/40 cursor-pointer shadow-2xl shadow-black/10 hover:shadow-2xl hover:shadow-black/20`}
           onClick={() => setShowTimeline(true)}
         >
           <div className={`relative flex-shrink-0`}>
@@ -261,17 +261,17 @@ const JourneyCard = () => {
       {showTimeline && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowTimeline(false)}></div>
-          <div className="relative bg-white/95 backdrop-blur-xl rounded-3xl p-5 md:p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-300">
-            <button 
-              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-all hover:scale-110"
+          <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border-2 ${getBorderColor()} rounded-3xl p-5 md:p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl shadow-black/10 animate-in zoom-in-95 duration-300 journey-scrollbar`}>
+            <button
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-all hover:scale-110"
               onClick={() => setShowTimeline(false)}
             >
-              <span className="material-symbols-outlined text-gray-600 text-[20px]">close</span>
+              <span className="material-symbols-outlined text-white text-[20px]">close</span>
             </button>
-            
+
             <div className="mb-6">
               <h2 className="font-headline-lg text-[24px] bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-bold text-center mb-2">Nossa Jornada</h2>
-              <p className="text-center text-gray-500 text-[13px]">Cada momento especial da nossa história</p>
+              <p className="text-center text-white/70 text-[13px]">Cada momento especial da nossa história</p>
             </div>
             
             <div className="relative">
@@ -300,27 +300,27 @@ const JourneyCard = () => {
                     }`}></div>
                     
                     {/* Milestone Card */}
-                    <div className={`bg-gradient-to-br from-gray-50 to-white rounded-2xl p-3 border border-gray-100 hover:border-purple-200 hover:shadow-lg transition-all duration-300 cursor-move ${
-                      draggedIndex !== null && draggedIndex === index ? 'border-purple-300 bg-purple-50/30' : 'hover:scale-[1.02]'
+                    <div className={`bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/30 hover:border-white/50 hover:shadow-lg transition-all duration-300 cursor-move ${
+                      draggedIndex !== null && draggedIndex === index ? 'border-purple-300 bg-purple-500/20' : 'hover:scale-[1.02]'
                     }`}>
                       <div className="flex justify-between items-start mb-2">
-                        <div className="font-label-md text-[10px] text-purple-600 uppercase tracking-wider font-semibold">
+                        <div className="font-label-md text-[10px] text-white/80 uppercase tracking-wider font-semibold">
                           {formatDateDisplay(milestone.date)}
                         </div>
                         <div className="flex gap-1">
                           <button
                             onClick={() => setEditingMilestoneIndex(index)}
-                            className="p-1.5 rounded-lg hover:bg-purple-100 text-gray-400 hover:text-purple-600 transition-all"
+                            className="p-1.5 rounded-lg hover:bg-white/20 text-white/60 hover:text-white transition-all"
                           >
                             <span className="material-symbols-outlined text-[16px]">edit</span>
                           </button>
                           <button
                             onClick={() => handleDeleteMilestone(index)}
-                            className="p-1.5 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-600 transition-all"
+                            className="p-1.5 rounded-lg hover:bg-red-500/30 text-white/60 hover:text-red-400 transition-all"
                           >
                             <span className="material-symbols-outlined text-[16px]">delete</span>
                           </button>
-                          <span className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-300 cursor-move">
+                          <span className="p-1.5 rounded-lg hover:bg-white/20 text-white/40 cursor-move">
                             <span className="material-symbols-outlined text-[16px]">drag_indicator</span>
                           </span>
                         </div>
@@ -335,7 +335,7 @@ const JourneyCard = () => {
                               max="31"
                               value={milestone.date.split('/')[0] || ''}
                               onChange={(e) => handleDayChange(index, e.target.value)}
-                              className="w-16 px-3 py-2 rounded-xl bg-gray-300 border border-gray-200 text-gray-700 text-[14px] font-medium focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:bg-gray-400 transition-all"
+                              className="w-16 px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white text-[14px] font-medium focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:bg-black/50 transition-all"
                             />
                             <input
                               type="number"
@@ -344,7 +344,7 @@ const JourneyCard = () => {
                               max="12"
                               value={milestone.date.split('/')[1] || ''}
                               onChange={(e) => handleMonthChange(index, e.target.value)}
-                              className="w-16 px-3 py-2 rounded-xl bg-gray-300 border border-gray-200 text-gray-700 text-[14px] font-medium focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:bg-gray-400 transition-all"
+                              className="w-16 px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white text-[14px] font-medium focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:bg-black/50 transition-all"
                             />
                             <input
                               type="number"
@@ -353,7 +353,7 @@ const JourneyCard = () => {
                               max="2100"
                               value={milestone.date.split('/')[2] || ''}
                               onChange={(e) => handleYearChange(index, e.target.value)}
-                              className="w-20 px-3 py-2 rounded-xl bg-gray-300 border border-gray-200 text-gray-700 text-[14px] font-medium focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:bg-gray-400 transition-all"
+                              className="w-20 px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white text-[14px] font-medium focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:bg-black/50 transition-all"
                             />
                           </div>
                           <div className="relative">
@@ -366,7 +366,7 @@ const JourneyCard = () => {
                                 setMilestones(updated);
                                 saveMilestones(updated);
                               }}
-                              className="w-full px-3 py-2 rounded-xl bg-gray-300 border border-gray-200 text-gray-700 text-[14px] font-semibold focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:bg-gray-400 transition-all"
+                              className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white text-[14px] font-semibold focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:bg-black/50 transition-all"
                             />
                           </div>
                           <div className="relative">
@@ -378,7 +378,7 @@ const JourneyCard = () => {
                                 setMilestones(updated);
                                 saveMilestones(updated);
                               }}
-                              className="w-full px-3 py-2 rounded-xl bg-gray-300 border border-gray-200 text-gray-600 text-[13px] focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:bg-gray-400 resize-none transition-all"
+                              className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/20 text-white/80 text-[13px] focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:bg-black/50 resize-none transition-all"
                               rows="2"
                             />
                           </div>
@@ -391,10 +391,10 @@ const JourneyCard = () => {
                         </div>
                       ) : (
                         <>
-                          <h3 className="font-body-md text-[15px] text-gray-800 mb-1.5 font-semibold">
+                          <h3 className="font-body-md text-[15px] text-white mb-1.5 font-semibold">
                             {milestone.title}
                           </h3>
-                          <p className="font-body-md text-[13px] text-gray-600 leading-relaxed">
+                          <p className="font-body-md text-[13px] text-white/70 leading-relaxed">
                             {milestone.description}
                           </p>
                         </>
