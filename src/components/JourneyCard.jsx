@@ -220,7 +220,7 @@ const JourneyCard = () => {
 
   return (
     <section className="w-full flex justify-center">
-      <div className="w-full flex flex-col items-center md:items-start space-y-2">
+      <div className="w-full flex flex-col items-start space-y-2">
         <div
           className={`group flex items-center gap-3 ${getCardBackground()} px-6 py-3 md:px-3 md:py-3 rounded-3xl border ${getBorderColor()} backdrop-blur-[24px] transition-all duration-500 hover:scale-[1.02] hover:bg-white/40 cursor-pointer shadow-2xl shadow-black/10 hover:shadow-2xl hover:shadow-black/20`}
           onClick={() => setShowTimeline(true)}
