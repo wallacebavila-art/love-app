@@ -6,7 +6,7 @@ import { fetchAllPhotos, savePhotoWithUpload, deletePhoto, deletePhotoFromStorag
 
 const AdminModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('messages'); // 'messages', 'verses', or 'photos'
+  const [activeTab, setActiveTab] = useState('messages'); // 'messages', 'verses', 'photos', or 'notifications'
   
   // Dados das mensagens
   const [messages, setMessages] = useState([]);
@@ -32,12 +32,21 @@ const AdminModal = ({ isOpen, onClose }) => {
   });
   const [selectedFilePreviews, setSelectedFilePreviews] = useState([]);
 
+  // Estados para notificações
+  const [notificationTitle, setNotificationTitle] = useState('');
+  const [notificationBody, setNotificationBody] = useState('');
+  const [sendToActive, setSendToActive] = useState(false);
+  const [sendingNotification, setSendingNotification] = useState(false);
+  const [notificationResult, setNotificationResult] = useState(null);
+  const [tokens, setTokens] = useState([]);
+
   useEffect(() => {
     if (isOpen) {
       fetchStatistics();
       fetchMessages();
       fetchVerses();
       fetchPhotos();
+      fetchTokens();
     }
   }, [isOpen]);
 
@@ -157,6 +166,56 @@ const AdminModal = ({ isOpen, onClose }) => {
       console.error('Erro ao buscar fotos:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTokens = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/tokens');
+      const data = await response.json();
+      setTokens(data.tokens || []);
+    } catch (error) {
+      console.error('Erro ao buscar tokens:', error);
+    }
+  };
+
+  const sendNotification = async () => {
+    if (!notificationTitle.trim() || !notificationBody.trim()) {
+      alert('Por favor, preencha título e corpo da notificação');
+      return;
+    }
+
+    setSendingNotification(true);
+    setNotificationResult(null);
+
+    try {
+      const endpoint = sendToActive ? '/api/send-active' : '/api/send-all';
+      const response = await fetch(`http://localhost:3001${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: notificationTitle,
+          body: notificationBody,
+        }),
+      });
+
+      const data = await response.json();
+      setNotificationResult(data);
+
+      if (data.success) {
+        alert(`Notificação enviada com sucesso!\n\nTotal: ${data.total}\nSucesso: ${data.successCount}\nFalhas: ${data.failureCount}`);
+        setNotificationTitle('');
+        setNotificationBody('');
+      } else {
+        alert('Erro ao enviar notificação: ' + (data.error || 'Erro desconhecido'));
+      }
+    } catch (error) {
+      console.error('Erro ao enviar notificação:', error);
+      alert('Erro ao enviar notificação: ' + error.message);
+    } finally {
+      setSendingNotification(false);
     }
   };
 
@@ -469,8 +528,8 @@ const AdminModal = ({ isOpen, onClose }) => {
             <button
               onClick={() => { setActiveTab('messages'); resetForm(); }}
               className={`px-6 py-3 font-semibold transition-all border-b-2 ${
-                activeTab === 'messages' 
-                  ? 'border-pink-500 text-pink-600' 
+                activeTab === 'messages'
+                  ? 'border-pink-500 text-pink-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -479,8 +538,8 @@ const AdminModal = ({ isOpen, onClose }) => {
             <button
               onClick={() => { setActiveTab('verses'); resetForm(); }}
               className={`px-6 py-3 font-semibold transition-all border-b-2 ${
-                activeTab === 'verses' 
-                  ? 'border-blue-500 text-blue-600' 
+                activeTab === 'verses'
+                  ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -489,18 +548,28 @@ const AdminModal = ({ isOpen, onClose }) => {
             <button
               onClick={() => { setActiveTab('photos'); resetForm(); }}
               className={`px-6 py-3 font-semibold transition-all border-b-2 ${
-                activeTab === 'photos' 
-                  ? 'border-green-500 text-green-600' 
+                activeTab === 'photos'
+                  ? 'border-green-500 text-green-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
               Galeria de Fotos
             </button>
+            <button
+              onClick={() => { setActiveTab('notifications'); resetForm(); }}
+              className={`px-6 py-3 font-semibold transition-all border-b-2 ${
+                activeTab === 'notifications'
+                  ? 'border-purple-500 text-purple-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Notificações
+            </button>
           </div>
 
           {/* Add Button */}
           <div className="mb-6">
-            {activeTab !== 'photos' && (
+            {activeTab !== 'photos' && activeTab !== 'notifications' && (
               <button
                 onClick={() => {
                   if (showAddForm) resetForm();
@@ -665,6 +734,90 @@ const AdminModal = ({ isOpen, onClose }) => {
                   Upload Foto
                 </button>
               </form>
+            </div>
+          )}
+
+          {/* Notifications Tab */}
+          {activeTab === 'notifications' && (
+            <div className="space-y-6">
+              {/* Send Notification Form */}
+              <div className="rounded-lg p-6 border bg-purple-50 border-purple-200">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">Enviar Notificação Manual</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Título da Notificação
+                    </label>
+                    <input
+                      type="text"
+                      value={notificationTitle}
+                      onChange={(e) => setNotificationTitle(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      placeholder="Te amo! 💕"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Corpo da Notificação
+                    </label>
+                    <textarea
+                      value={notificationBody}
+                      onChange={(e) => setNotificationBody(e.target.value)}
+                      rows="3"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      placeholder="Pensei em você hoje..."
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="sendToActive"
+                      checked={sendToActive}
+                      onChange={(e) => setSendToActive(e.target.checked)}
+                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                    />
+                    <label htmlFor="sendToActive" className="text-sm text-gray-700">
+                      Enviar apenas para dispositivos ativos (última atividade &lt; 5 minutos)
+                    </label>
+                  </div>
+                  <button
+                    onClick={sendNotification}
+                    disabled={sendingNotification}
+                    className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {sendingNotification ? 'Enviando...' : '🔔 Enviar Notificação'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Tokens List */}
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                  <h3 className="text-lg font-semibold">
+                    Tokens Registrados ({tokens.length})
+                  </h3>
+                </div>
+                <div className="divide-y divide-gray-200 max-h-64 overflow-y-auto">
+                  {tokens.length === 0 ? (
+                    <div className="px-6 py-8 text-center text-gray-500">
+                      Nenhum token encontrado
+                    </div>
+                  ) : (
+                    tokens.map((token, index) => (
+                      <div key={index} className="px-6 py-4 hover:bg-gray-50 transition">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="text-sm text-gray-500 font-mono mb-1">{token.token}</p>
+                            <p className="text-xs text-gray-400">
+                              Último uso: {token.lastUsed ? new Date(token.lastUsed).toLocaleString('pt-BR') : 'Nunca'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
