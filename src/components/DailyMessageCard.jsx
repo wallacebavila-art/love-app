@@ -67,7 +67,7 @@ const DailyMessageCard = ({ message }) => {
       <div className="w-full flex flex-col items-center">
         {/* Central Message Card (Glassmorphism) - Altura fixa com scroll interno */}
         <div
-          className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[240px] p-4 md:p-5 rounded-[32px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20 cursor-pointer`}
+          className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[160px] md:h-[240px] p-4 md:p-5 rounded-[32px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20 cursor-pointer`}
           onClick={() => setIsRevealed(true)}
         >
           <div className="flex items-center gap-3 mb-3 flex-shrink-0 w-full max-w-[80%]">

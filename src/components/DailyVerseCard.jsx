@@ -54,7 +54,7 @@ const DailyVerseCard = ({ verse }) => {
     return (
       <section className="w-full flex justify-center">
         <div className="w-full flex flex-col items-center">
-          <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[240px] p-4 md:p-5 rounded-[32px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center relative overflow-hidden cursor-pointer`} onClick={() => setIsRevealed(true)}>
+          <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[160px] md:h-[240px] p-4 md:p-5 rounded-[32px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center relative overflow-hidden cursor-pointer`} onClick={() => setIsRevealed(true)}>
             <span className={`font-label-md text-[11px] uppercase tracking-[0.2em] ${getTextColor}/60 mb-3 flex-shrink-0`}>Versículo do dia</span>
             <div className="animate-pulse flex-1 flex items-center justify-center">
               <div className="h-4 bg-white/30 rounded w-3/4 mb-2"></div>
@@ -72,7 +72,7 @@ const DailyVerseCard = ({ verse }) => {
       <div className="w-full flex flex-col items-center">
         {/* Verse Card (Glassmorphism) - Altura fixa com scroll interno */}
         <div
-          className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[240px] p-4 md:p-5 rounded-[32px] shadow-2xl shadow-black/10 flex flex-col items-center text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20 cursor-pointer`}
+          className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[160px] md:h-[240px] p-4 md:p-5 rounded-[32px] shadow-2xl shadow-black/10 flex flex-col items-center text-center relative overflow-hidden transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20 cursor-pointer`}
           onClick={() => setIsRevealed(true)}
         >
           <div className="flex items-center gap-3 mb-2 flex-shrink-0 w-full max-w-[80%]">
