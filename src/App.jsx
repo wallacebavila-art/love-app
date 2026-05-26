@@ -11,6 +11,7 @@ import WeatherModal from './components/WeatherModal';
 import Login from './components/Login';
 import AdminModal from './components/AdminModal';
 import SettingsModal from './components/SettingsModal';
+import NotificationToast, { NotificationProvider } from './components/NotificationToast';
 import ICloudCalendarWidget from './components/ICloudCalendarWidget';
 import UpcomingEventsTicker from './components/UpcomingEventsTicker';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -83,11 +84,6 @@ function AppContent() {
       }
     });
 
-    // Configura listener para mensagens em foreground
-    const unsubscribe = onForegroundMessage((payload) => {
-      showNotification(payload);
-    });
-
     // Agenda notificação diária (web)
     scheduleDailyNotification(async () => {
       const message = await fetchDailyMessage();
@@ -95,7 +91,6 @@ function AppContent() {
     });
 
     return () => {
-      unsubscribe();
       cancelDailyNotification();
     };
   }, []);
@@ -268,7 +263,7 @@ function AppContent() {
         <div className="relative z-10 flex flex-col min-h-screen">
           <StatusBarSpacer />
           
-          <Header 
+          <Header
             onOpenCalendar={() => setIsCalendarOpen(true)}
             onOpenWeather={() => setIsWeatherModalOpen(true)}
             onOpenAdmin={() => setIsAdminModalOpen(true)}
@@ -369,6 +364,8 @@ function AppContent() {
             onClose={() => setIsSettingsModalOpen(false)}
           />
 
+          <NotificationToast />
+
           {isICloudCalendarModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setIsICloudCalendarModalOpen(false)}>
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
@@ -405,7 +402,9 @@ function App() {
               <ProtectedRoute>
                 <TimePeriodProvider>
                   <CalendarEventsProvider>
-                    <AppContent />
+                    <NotificationProvider>
+                      <AppContent />
+                    </NotificationProvider>
                   </CalendarEventsProvider>
                 </TimePeriodProvider>
               </ProtectedRoute>
@@ -416,7 +415,9 @@ function App() {
             element={
               <TimePeriodProvider>
                 <CalendarEventsProvider>
-                  <AppContent />
+                  <NotificationProvider>
+                    <AppContent />
+                  </NotificationProvider>
                 </CalendarEventsProvider>
               </TimePeriodProvider>
             }

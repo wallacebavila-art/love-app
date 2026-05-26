@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { db } from '../services/firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { fetchAllPhotos, savePhotoWithUpload, deletePhoto, deletePhotoFromStorage } from '../services/photoService';
 
 const AdminModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
+  const { period } = useTimePeriod();
   const [activeTab, setActiveTab] = useState('messages'); // 'messages', 'verses', 'photos', or 'notifications'
   
   // Dados das mensagens
@@ -39,6 +41,45 @@ const AdminModal = ({ isOpen, onClose }) => {
   const [sendingNotification, setSendingNotification] = useState(false);
   const [notificationResult, setNotificationResult] = useState(null);
   const [tokens, setTokens] = useState([]);
+
+  const getCardBackground = () => {
+    switch (period) {
+      case 'morning':
+        return 'bg-black/40';
+      case 'afternoon':
+        return 'bg-black/40';
+      case 'night':
+        return 'bg-black/50';
+      default:
+        return 'bg-black/40';
+    }
+  };
+
+  const getBorderColor = () => {
+    switch (period) {
+      case 'morning':
+        return 'border-white/35';
+      case 'afternoon':
+        return 'border-white/35';
+      case 'night':
+        return 'border-white/25';
+      default:
+        return 'border-white/35';
+    }
+  };
+
+  const getTextColor = () => {
+    switch (period) {
+      case 'morning':
+        return 'text-white';
+      case 'afternoon':
+        return 'text-white';
+      case 'night':
+        return 'text-white';
+      default:
+        return 'text-white';
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -187,35 +228,79 @@ const AdminModal = ({ isOpen, onClose }) => {
 
     setSendingNotification(true);
     setNotificationResult(null);
+    console.log('Iniciando envio de notificação...');
 
     try {
-      const endpoint = sendToActive ? '/api/send-active' : '/api/send-all';
-      const response = await fetch(`http://localhost:3001${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: notificationTitle,
-          body: notificationBody,
-        }),
-      });
+      // Enviar notificação via Realtime Database
+      console.log('Importando sendRealtimeNotification...');
+      const { sendRealtimeNotification } = await import('../services/realtimeNotifications');
+      console.log('sendRealtimeNotification importado com sucesso');
+      
+      console.log('Chamando sendRealtimeNotification...');
+      const success = await sendRealtimeNotification(notificationTitle, notificationBody);
+      console.log('sendRealtimeNotification retornou:', success);
 
-      const data = await response.json();
-      setNotificationResult(data);
-
-      if (data.success) {
-        alert(`Notificação enviada com sucesso!\n\nTotal: ${data.total}\nSucesso: ${data.successCount}\nFalhas: ${data.failureCount}`);
+      if (success) {
+        alert('Notificação enviada com sucesso via Realtime Database!');
         setNotificationTitle('');
         setNotificationBody('');
       } else {
-        alert('Erro ao enviar notificação: ' + (data.error || 'Erro desconhecido'));
+        alert('Erro ao enviar notificação via Realtime Database');
       }
     } catch (error) {
       console.error('Erro ao enviar notificação:', error);
       alert('Erro ao enviar notificação: ' + error.message);
     } finally {
+      console.log('Finalizando envio de notificação...');
       setSendingNotification(false);
+    }
+  };
+
+  const deleteToken = async (tokenId) => {
+    if (!window.confirm('Tem certeza que deseja deletar este token?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/tokens/${tokenId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Token deletado com sucesso');
+        fetchTokens();
+      } else {
+        alert('Erro ao deletar token: ' + (data.error || 'Erro desconhecido'));
+      }
+    } catch (error) {
+      console.error('Erro ao deletar token:', error);
+      alert('Erro ao deletar token: ' + error.message);
+    }
+  };
+
+  const deleteAllTokens = async () => {
+    if (!window.confirm('Tem certeza que deseja deletar TODOS os tokens? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3001/api/tokens', {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Todos os tokens foram deletados com sucesso (${data.deletedCount} tokens)`);
+        fetchTokens();
+      } else {
+        alert('Erro ao deletar tokens: ' + (data.error || 'Erro desconhecido'));
+      }
+    } catch (error) {
+      console.error('Erro ao deletar tokens:', error);
+      alert('Erro ao deletar tokens: ' + error.message);
     }
   };
 
@@ -378,14 +463,14 @@ const AdminModal = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
-      
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+
+      <div className={`relative ${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} rounded-[32px] shadow-2xl shadow-black/10 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col`}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-white">Dashboard Administrativo</h2>
+        <div className={`px-6 py-4 flex justify-between items-center border-b ${getBorderColor()}`}>
+          <h2 className={`text-2xl font-bold ${getTextColor()}`}>Dashboard Administrativo</h2>
           <button
             onClick={onClose}
-            className="text-white hover:bg-white/20 rounded-full p-2 transition"
+            className={`${getTextColor()} hover:bg-white/20 rounded-full p-2 transition`}
           >
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -395,56 +480,56 @@ const AdminModal = ({ isOpen, onClose }) => {
         <div className="flex-1 overflow-y-auto p-6">
           {/* Estatísticas */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Estatísticas</h3>
+            <h3 className={`text-lg font-semibold ${getTextColor()} mb-3`}>Estatísticas</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-xl p-4">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-pink-600 text-3xl">chat_bubble</span>
+                  <span className="material-symbols-outlined text-pink-400 text-3xl">chat_bubble</span>
                   <div>
-                    <p className="text-sm text-gray-600">Mensagens do Dia</p>
-                    <p className="text-3xl font-bold text-pink-600">{messageCount}</p>
+                    <p className="text-sm text-white/60">Mensagens do Dia</p>
+                    <p className="text-3xl font-bold text-pink-400">{messageCount}</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-blue-600 text-3xl">menu_book</span>
+                  <span className="material-symbols-outlined text-blue-400 text-3xl">menu_book</span>
                   <div>
-                    <p className="text-sm text-gray-600">Versículos do Dia</p>
-                    <p className="text-3xl font-bold text-blue-600">{verseCount}</p>
+                    <p className="text-sm text-white/60">Versículos do Dia</p>
+                    <p className="text-3xl font-bold text-blue-400">{verseCount}</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-green-50 to-teal-50 border border-green-200 rounded-xl p-4">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-green-600 text-3xl">photo_library</span>
+                  <span className="material-symbols-outlined text-green-400 text-3xl">photo_library</span>
                   <div>
-                    <p className="text-sm text-gray-600">Fotos na Galeria</p>
-                    <p className="text-3xl font-bold text-green-600">{photoCount}</p>
+                    <p className="text-sm text-white/60">Fotos na Galeria</p>
+                    <p className="text-3xl font-bold text-green-400">{photoCount}</p>
                   </div>
                 </div>
               </div>
-              <div className={`rounded-xl p-4 border ${duplicateMessages.length > 0 ? 'bg-gradient-to-br from-red-50 to-orange-50 border-red-200' : 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'}`}>
+              <div className={`rounded-xl p-4 border backdrop-blur-md ${duplicateMessages.length > 0 ? 'bg-red-500/20 border-red-400/30' : 'bg-green-500/20 border-green-400/30'}`}>
                 <div className="flex items-center gap-3">
-                  <span className={`material-symbols-outlined text-3xl ${duplicateMessages.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <span className={`material-symbols-outlined text-3xl ${duplicateMessages.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
                     {duplicateMessages.length > 0 ? 'warning' : 'check_circle'}
                   </span>
                   <div>
-                    <p className="text-sm text-gray-600">Mensagens Duplicadas</p>
-                    <p className={`text-3xl font-bold ${duplicateMessages.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    <p className="text-sm text-white/60">Mensagens Duplicadas</p>
+                    <p className={`text-3xl font-bold ${duplicateMessages.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
                       {duplicateMessages.length}
                     </p>
                   </div>
                 </div>
               </div>
-              <div className={`rounded-xl p-4 border ${duplicateVerses.length > 0 ? 'bg-gradient-to-br from-red-50 to-orange-50 border-red-200' : 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'}`}>
+              <div className={`rounded-xl p-4 border backdrop-blur-md ${duplicateVerses.length > 0 ? 'bg-red-500/20 border-red-400/30' : 'bg-green-500/20 border-green-400/30'}`}>
                 <div className="flex items-center gap-3">
-                  <span className={`material-symbols-outlined text-3xl ${duplicateVerses.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <span className={`material-symbols-outlined text-3xl ${duplicateVerses.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
                     {duplicateVerses.length > 0 ? 'warning' : 'check_circle'}
                   </span>
                   <div>
-                    <p className="text-sm text-gray-600">Versículos Duplicados</p>
-                    <p className={`text-3xl font-bold ${duplicateVerses.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    <p className="text-sm text-white/60">Versículos Duplicados</p>
+                    <p className={`text-3xl font-bold ${duplicateVerses.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
                       {duplicateVerses.length}
                     </p>
                   </div>
@@ -456,27 +541,27 @@ const AdminModal = ({ isOpen, onClose }) => {
           {/* Duplicatas */}
           {(duplicateMessages.length > 0 || duplicateVerses.length > 0) && (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">⚠️ Itens Duplicados</h3>
-              
+              <h3 className={`text-lg font-semibold ${getTextColor()} mb-3`}>⚠️ Itens Duplicados</h3>
+
               {duplicateMessages.length > 0 && (
                 <div className="mb-4">
-                  <h4 className="text-md font-semibold text-pink-600 mb-2">Mensagens Duplicadas</h4>
+                  <h4 className="text-md font-semibold text-pink-400 mb-2">Mensagens Duplicadas</h4>
                   <div className="space-y-3">
                     {duplicateMessages.map((dup, idx) => (
-                      <div key={idx} className="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <p className="text-sm font-semibold text-red-700 mb-2">
+                      <div key={idx} className="bg-red-500/20 border border-red-400/30 rounded-lg p-4 backdrop-blur-md">
+                        <p className="text-sm font-semibold text-red-400 mb-2">
                           {dup.type === 'date' ? `Duplicado de data: ${dup.value}` : 'Duplicado de texto'}
                         </p>
                         <div className="space-y-2">
                           {dup.items.map((item, itemIdx) => (
-                            <div key={itemIdx} className="flex justify-between items-start bg-white p-3 rounded border border-red-100">
+                            <div key={itemIdx} className="flex justify-between items-start bg-white/10 p-3 rounded border border-red-400/20">
                               <div className="flex-1">
-                                <p className="text-xs text-gray-500">{item.date || item.id}</p>
-                                <p className="text-sm text-gray-800">{item.mensagem}</p>
+                                <p className="text-xs text-white/60">{item.date || item.id}</p>
+                                <p className="text-sm text-white">{item.mensagem}</p>
                               </div>
                               <button
                                 onClick={() => handleDelete(item.id)}
-                                className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition"
+                                className="ml-2 px-2 py-1 bg-red-500/50 text-white text-xs rounded hover:bg-red-500/70 transition"
                               >
                                 Excluir
                               </button>
@@ -491,24 +576,24 @@ const AdminModal = ({ isOpen, onClose }) => {
 
               {duplicateVerses.length > 0 && (
                 <div>
-                  <h4 className="text-md font-semibold text-blue-600 mb-2">Versículos Duplicados</h4>
+                  <h4 className="text-md font-semibold text-blue-400 mb-2">Versículos Duplicados</h4>
                   <div className="space-y-3">
                     {duplicateVerses.map((dup, idx) => (
-                      <div key={idx} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p className="text-sm font-semibold text-blue-700 mb-2">
+                      <div key={idx} className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-4 backdrop-blur-md">
+                        <p className="text-sm font-semibold text-blue-400 mb-2">
                           {dup.type === 'date' ? `Duplicado de data: ${dup.value}` : 'Duplicado de texto'}
                         </p>
                         <div className="space-y-2">
                           {dup.items.map((item, itemIdx) => (
-                            <div key={itemIdx} className="flex justify-between items-start bg-white p-3 rounded border border-blue-100">
+                            <div key={itemIdx} className="flex justify-between items-start bg-white/10 p-3 rounded border border-blue-400/20">
                               <div className="flex-1">
-                                <p className="text-xs text-gray-500">{item.date || item.id}</p>
-                                <p className="text-sm text-gray-800">{item.text}</p>
-                                {item.reference && <p className="text-xs text-purple-600 font-semibold">{item.reference}</p>}
+                                <p className="text-xs text-white/60">{item.date || item.id}</p>
+                                <p className="text-sm text-white">{item.text}</p>
+                                {item.reference && <p className="text-xs text-purple-400 font-semibold">{item.reference}</p>}
                               </div>
                               <button
                                 onClick={() => handleDelete(item.id)}
-                                className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition"
+                                className="ml-2 px-2 py-1 bg-red-500/50 text-white text-xs rounded hover:bg-red-500/70 transition"
                               >
                                 Excluir
                               </button>
@@ -524,13 +609,13 @@ const AdminModal = ({ isOpen, onClose }) => {
           )}
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-6 border-b border-gray-200">
+          <div className={`flex gap-2 mb-6 border-b ${getBorderColor()}`}>
             <button
               onClick={() => { setActiveTab('messages'); resetForm(); }}
               className={`px-6 py-3 font-semibold transition-all border-b-2 ${
                 activeTab === 'messages'
-                  ? 'border-pink-500 text-pink-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-pink-400 text-pink-400'
+                  : 'border-transparent text-white/60 hover:text-white'
               }`}
             >
               Mensagens do Dia
@@ -539,8 +624,8 @@ const AdminModal = ({ isOpen, onClose }) => {
               onClick={() => { setActiveTab('verses'); resetForm(); }}
               className={`px-6 py-3 font-semibold transition-all border-b-2 ${
                 activeTab === 'verses'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-400 text-blue-400'
+                  : 'border-transparent text-white/60 hover:text-white'
               }`}
             >
               Versículos do Dia
@@ -549,8 +634,8 @@ const AdminModal = ({ isOpen, onClose }) => {
               onClick={() => { setActiveTab('photos'); resetForm(); }}
               className={`px-6 py-3 font-semibold transition-all border-b-2 ${
                 activeTab === 'photos'
-                  ? 'border-green-500 text-green-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-green-400 text-green-400'
+                  : 'border-transparent text-white/60 hover:text-white'
               }`}
             >
               Galeria de Fotos
@@ -559,8 +644,8 @@ const AdminModal = ({ isOpen, onClose }) => {
               onClick={() => { setActiveTab('notifications'); resetForm(); }}
               className={`px-6 py-3 font-semibold transition-all border-b-2 ${
                 activeTab === 'notifications'
-                  ? 'border-purple-500 text-purple-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-purple-400 text-purple-400'
+                  : 'border-transparent text-white/60 hover:text-white'
               }`}
             >
               Notificações
@@ -588,17 +673,17 @@ const AdminModal = ({ isOpen, onClose }) => {
 
           {/* Add/Edit Form */}
           {showAddForm && activeTab !== 'photos' && (
-            <div className={`rounded-lg p-6 mb-6 border ${
-              activeTab === 'messages' 
-                ? 'bg-pink-50 border-pink-200' 
-                : 'bg-blue-50 border-blue-200'
+            <div className={`rounded-lg p-6 mb-6 border backdrop-blur-md ${
+              activeTab === 'messages'
+                ? 'bg-pink-500/20 border-pink-400/30'
+                : 'bg-blue-500/20 border-blue-400/30'
             }`}>
-              <h3 className="text-lg font-semibold mb-4 text-gray-800">
+              <h3 className={`text-lg font-semibold mb-4 ${getTextColor()}`}>
                 {editingItem ? 'Editar' : 'Adicionar Novo'} {activeTab === 'messages' ? 'Mensagem' : 'Versículo'}
               </h3>
               <form onSubmit={editingItem ? handleEditSubmit : handleAddSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium text-white/80 mb-2`}>
                     Data (YYYY-MM-DD)
                   </label>
                   <input
@@ -606,11 +691,11 @@ const AdminModal = ({ isOpen, onClose }) => {
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium text-white/80 mb-2`}>
                     {activeTab === 'messages' ? 'Texto da Mensagem' : 'Texto do Versículo'}
                   </label>
                   <textarea
@@ -618,13 +703,13 @@ const AdminModal = ({ isOpen, onClose }) => {
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                     required
                     rows="3"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none text-white"
                     placeholder={activeTab === 'messages' ? 'Sua mensagem de amor...' : 'Porque Deus amou o mundo...'}
                   />
                 </div>
                 {activeTab === 'verses' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium text-white/80 mb-2`}>
                       Referência
                     </label>
                     <input
@@ -632,7 +717,7 @@ const AdminModal = ({ isOpen, onClose }) => {
                       value={formData.reference}
                       onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none text-white"
                       placeholder="João 3:16"
                     />
                   </div>
@@ -640,10 +725,10 @@ const AdminModal = ({ isOpen, onClose }) => {
                 <div className="flex gap-2">
                   <button
                     type="submit"
-                    className={`px-6 py-2 rounded-lg transition font-semibold text-white ${
+                    className={`flex-1 px-6 py-2 rounded-lg transition font-semibold text-white ${
                       activeTab === 'messages'
-                        ? 'bg-pink-600 hover:bg-pink-700'
-                        : 'bg-blue-600 hover:bg-blue-600'
+                        ? 'bg-pink-500/50 hover:bg-pink-500/70'
+                        : 'bg-blue-500/50 hover:bg-blue-500/70'
                     }`}
                   >
                     {editingItem ? 'Atualizar' : 'Salvar'}
@@ -652,7 +737,7 @@ const AdminModal = ({ isOpen, onClose }) => {
                     <button
                       type="button"
                       onClick={resetForm}
-                      className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-semibold"
+                      className="flex-1 px-6 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition font-semibold"
                     >
                       Cancelar
                     </button>
@@ -664,11 +749,11 @@ const AdminModal = ({ isOpen, onClose }) => {
 
           {/* Photo Upload Form */}
           {activeTab === 'photos' && (
-            <div className="rounded-lg p-6 mb-6 border bg-green-50 border-green-200">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800">Adicionar Nova Foto</h3>
+            <div className="rounded-lg p-6 mb-6 border bg-green-500/20 border-green-400/30 backdrop-blur-md">
+              <h3 className={`text-lg font-semibold mb-4 ${getTextColor()}`}>Adicionar Nova Foto</h3>
               <form onSubmit={handleAddSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium text-white/80 mb-2`}>
                     Selecione Fotos (pode selecionar múltiplas)
                   </label>
                   <input
@@ -695,20 +780,20 @@ const AdminModal = ({ isOpen, onClose }) => {
                       }
                     }}
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none text-white"
                   />
                   {selectedFilePreviews.length > 0 && (
                     <div className="mt-3">
-                      <p className="text-sm text-gray-600 mb-2">{selectedFilePreviews.length} foto(s) selecionada(s)</p>
+                      <p className="text-sm text-white/60 mb-2">{selectedFilePreviews.length} foto(s) selecionada(s)</p>
                       <div className="grid grid-cols-3 gap-2">
                         {selectedFilePreviews.map((item, index) => (
                           <div key={index}>
                             <img
                               src={item.preview}
                               alt={`Preview ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg border border-gray-300"
+                              className="w-full h-24 object-cover rounded-lg border border-white/20"
                             />
-                            <p className="text-xs text-gray-600 mt-1 truncate">{item.file.name}</p>
+                            <p className="text-xs text-white/60 mt-1 truncate">{item.file.name}</p>
                           </div>
                         ))}
                       </div>
@@ -716,20 +801,20 @@ const AdminModal = ({ isOpen, onClose }) => {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium text-white/80 mb-2`}>
                     Legenda (opcional)
                   </label>
                   <input
                     type="text"
                     value={formData.caption}
                     onChange={(e) => setFormData({ ...formData, caption: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent outline-none text-white"
                     placeholder="Nossa memória especial..."
                   />
                 </div>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
+                  className="px-6 py-2 bg-green-500/50 text-white rounded-lg hover:bg-green-500/70 transition font-semibold"
                 >
                   Upload Foto
                 </button>
@@ -741,30 +826,30 @@ const AdminModal = ({ isOpen, onClose }) => {
           {activeTab === 'notifications' && (
             <div className="space-y-6">
               {/* Send Notification Form */}
-              <div className="rounded-lg p-6 border bg-purple-50 border-purple-200">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800">Enviar Notificação Manual</h3>
+              <div className="rounded-lg p-6 border bg-purple-500/20 border-purple-400/30 backdrop-blur-md">
+                <h3 className={`text-lg font-semibold mb-4 ${getTextColor()}`}>Enviar Notificação Manual</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium text-white/80 mb-2`}>
                       Título da Notificação
                     </label>
                     <input
                       type="text"
                       value={notificationTitle}
                       onChange={(e) => setNotificationTitle(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none text-white"
                       placeholder="Te amo! 💕"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium text-white/80 mb-2`}>
                       Corpo da Notificação
                     </label>
                     <textarea
                       value={notificationBody}
                       onChange={(e) => setNotificationBody(e.target.value)}
                       rows="3"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none text-white"
                       placeholder="Pensei em você hoje..."
                     />
                   </div>
@@ -774,16 +859,16 @@ const AdminModal = ({ isOpen, onClose }) => {
                       id="sendToActive"
                       checked={sendToActive}
                       onChange={(e) => setSendToActive(e.target.checked)}
-                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                      className="w-4 h-4 text-purple-400 rounded focus:ring-purple-400"
                     />
-                    <label htmlFor="sendToActive" className="text-sm text-gray-700">
+                    <label htmlFor="sendToActive" className="text-sm text-white/80">
                       Enviar apenas para dispositivos ativos (última atividade &lt; 5 minutos)
                     </label>
                   </div>
                   <button
                     onClick={sendNotification}
                     disabled={sendingNotification}
-                    className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-6 py-3 bg-purple-500/50 text-white rounded-lg hover:bg-purple-500/70 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {sendingNotification ? 'Enviando...' : '🔔 Enviar Notificação'}
                   </button>
@@ -791,27 +876,41 @@ const AdminModal = ({ isOpen, onClose }) => {
               </div>
 
               {/* Tokens List */}
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                  <h3 className="text-lg font-semibold">
+              <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 overflow-hidden">
+                <div className={`px-6 py-4 border-b ${getBorderColor()} bg-white/5 flex justify-between items-center`}>
+                  <h3 className={`text-lg font-semibold ${getTextColor()}`}>
                     Tokens Registrados ({tokens.length})
                   </h3>
+                  {tokens.length > 0 && (
+                    <button
+                      onClick={deleteAllTokens}
+                      className="px-3 py-1 bg-red-500/50 text-white rounded hover:bg-red-500/70 transition text-sm"
+                    >
+                      Deletar Todos
+                    </button>
+                  )}
                 </div>
-                <div className="divide-y divide-gray-200 max-h-64 overflow-y-auto">
+                <div className={`divide-y ${getBorderColor()} max-h-64 overflow-y-auto`}>
                   {tokens.length === 0 ? (
-                    <div className="px-6 py-8 text-center text-gray-500">
+                    <div className="px-6 py-8 text-center text-white/60">
                       Nenhum token encontrado
                     </div>
                   ) : (
                     tokens.map((token, index) => (
-                      <div key={index} className="px-6 py-4 hover:bg-gray-50 transition">
+                      <div key={index} className="px-6 py-4 hover:bg-white/10 transition">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <p className="text-sm text-gray-500 font-mono mb-1">{token.token}</p>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-sm text-white/60 font-mono mb-1">{token.token}</p>
+                            <p className="text-xs text-white/40">
                               Último uso: {token.lastUsed ? new Date(token.lastUsed).toLocaleString('pt-BR') : 'Nunca'}
                             </p>
                           </div>
+                          <button
+                            onClick={() => deleteToken(token.id)}
+                            className="px-3 py-1 bg-red-500/50 text-white rounded hover:bg-red-500/70 transition text-sm"
+                          >
+                            Deletar
+                          </button>
                         </div>
                       </div>
                     ))
@@ -823,17 +922,17 @@ const AdminModal = ({ isOpen, onClose }) => {
 
           {/* List */}
           {activeTab === 'photos' ? (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="text-lg font-semibold">
+            <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 overflow-hidden">
+              <div className={`px-6 py-4 border-b ${getBorderColor()} bg-white/5`}>
+                <h3 className={`text-lg font-semibold ${getTextColor()}`}>
                   Fotos na Galeria ({photos.length})
                 </h3>
               </div>
               <div className="p-4 max-h-96 overflow-y-auto">
                 {loading ? (
-                  <div className="px-6 py-8 text-center text-gray-500">Carregando...</div>
+                  <div className="px-6 py-8 text-center text-white/60">Carregando...</div>
                 ) : photos.length === 0 ? (
-                  <div className="px-6 py-8 text-center text-gray-500">
+                  <div className="px-6 py-8 text-center text-white/60">
                     Nenhuma foto encontrada
                   </div>
                 ) : (
@@ -848,16 +947,16 @@ const AdminModal = ({ isOpen, onClose }) => {
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
                           <button
                             onClick={() => handleDelete(photo.id)}
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
+                            className="px-3 py-1 bg-red-500/50 text-white rounded hover:bg-red-500/70 transition text-sm"
                           >
                             Excluir
                           </button>
                         </div>
                         {photo.caption && (
-                          <p className="text-xs text-gray-600 mt-1 truncate">{photo.caption}</p>
+                          <p className="text-xs text-white/60 mt-1 truncate">{photo.caption}</p>
                         )}
                         {photo.isLocal && (
-                          <span className="text-[8px] text-gray-400">Local</span>
+                          <span className="text-[8px] text-white/40">Local</span>
                         )}
                       </div>
                     ))}
@@ -866,30 +965,30 @@ const AdminModal = ({ isOpen, onClose }) => {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="text-lg font-semibold">
+            <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 overflow-hidden">
+              <div className={`px-6 py-4 border-b ${getBorderColor()} bg-white/5`}>
+                <h3 className={`text-lg font-semibold ${getTextColor()}`}>
                   {activeTab === 'messages' ? 'Mensagens' : 'Versículos'} ({activeTab === 'messages' ? messages.length : verses.length})
                 </h3>
               </div>
-              <div className="divide-y divide-gray-200 max-h-64 overflow-y-auto">
+              <div className={`divide-y ${getBorderColor()} max-h-64 overflow-y-auto`}>
                 {loading ? (
-                  <div className="px-6 py-8 text-center text-gray-500">Carregando...</div>
+                  <div className="px-6 py-8 text-center text-white/60">Carregando...</div>
                 ) : (activeTab === 'messages' ? messages : verses).length === 0 ? (
-                  <div className="px-6 py-8 text-center text-gray-500">
+                  <div className="px-6 py-8 text-center text-white/60">
                     Nenhum item encontrado
                   </div>
                 ) : (
                   (activeTab === 'messages' ? messages : verses).map((item) => (
-                    <div key={item.id} className="px-6 py-4 hover:bg-gray-50 transition">
+                    <div key={item.id} className="px-6 py-4 hover:bg-white/10 transition">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <p className="text-sm text-gray-500 mb-1">{item.date || item.id}</p>
-                          <p className="text-gray-800 font-medium mb-1">
+                          <p className="text-sm text-white/60 mb-1">{item.date || item.id}</p>
+                          <p className="text-white font-medium mb-1">
                             {activeTab === 'messages' ? item.mensagem : item.text}
                           </p>
                           {activeTab === 'verses' && item.reference && (
-                            <p className="text-sm text-purple-600 font-semibold">{item.reference}</p>
+                            <p className="text-sm text-purple-400 font-semibold">{item.reference}</p>
                           )}
                         </div>
                         <div className="flex gap-2 ml-4">
@@ -897,15 +996,15 @@ const AdminModal = ({ isOpen, onClose }) => {
                             onClick={() => handleEdit(item)}
                             className={`px-3 py-1 rounded transition text-sm text-white ${
                               activeTab === 'messages'
-                                ? 'bg-pink-500 hover:bg-pink-600'
-                                : 'bg-blue-500 hover:bg-blue-600'
+                                ? 'bg-pink-500/50 hover:bg-pink-500/70'
+                                : 'bg-blue-500/50 hover:bg-blue-500/70'
                             }`}
                           >
                             Editar
                           </button>
                           <button
                             onClick={() => handleDelete(item.id)}
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
+                            className="px-3 py-1 bg-red-500/50 text-white rounded hover:bg-red-500/70 transition text-sm"
                           >
                             Excluir
                           </button>

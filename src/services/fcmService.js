@@ -23,9 +23,15 @@ export const requestFCMToken = async () => {
     }
 
     // Obter token FCM com caminho correto do service worker
-    const token = await getToken(messaging, { 
+    const registration = await navigator.serviceWorker.register('/love-app/firebase-messaging-sw.js', {
+      updateViaCache: 'none'
+    });
+    await registration.update();
+    console.log('Service worker registrado e atualizado:', registration);
+
+    const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: await navigator.serviceWorker.register('/love-app/firebase-messaging-sw.js')
+      serviceWorkerRegistration: registration
     });
     
     if (token) {
@@ -47,6 +53,7 @@ export const requestFCMToken = async () => {
  * @param {Function} callback - Função a ser chamada quando receber uma mensagem
  */
 export const onForegroundMessage = (callback) => {
+  console.log('Configurando listener de mensagens em foreground');
   return onMessage(messaging, (payload) => {
     console.log('Mensagem recebida em foreground:', payload);
     callback(payload);

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import SideMenu from './SideMenu';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from './NotificationToast';
 
 const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar }) => {
   const { period } = useTimePeriod();
@@ -14,6 +15,11 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [weather, setWeather] = useState(null);
   const [useLoveName, setUseLoveName] = useState(false);
+  const { notifications, setNotifications } = useNotifications();
+
+  useEffect(() => {
+    console.log('Header - Notificações:', notifications);
+  }, [notifications]);
 
   useEffect(() => {
     // Carregar preferência do localStorage
@@ -121,7 +127,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
         
         {/* Botões Desktop */}
         <div className="hidden md:flex gap-4">
-          <button 
+          <button
             onClick={onOpenCalendar}
             className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
             title="Ver mensagens anteriores"
@@ -129,7 +135,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
             <span className="material-symbols-outlined text-white transition-transform duration-300">calendar_month</span>
             <span className="text-white text-xs font-medium">Histórico</span>
           </button>
-          <button 
+          <button
             onClick={onOpenWeather}
             className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
             title="Clima de hoje"
@@ -137,8 +143,20 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
             <span className="material-symbols-outlined text-white transition-transform duration-300">cloud</span>
             <span className="text-white text-xs font-medium">Clima</span>
           </button>
+          <button
+            className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2 relative"
+            title="Notificações"
+          >
+            <span className="material-symbols-outlined text-white transition-transform duration-300">notifications</span>
+            <span className="text-white text-xs font-medium">Notificações</span>
+            {notifications.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                {notifications.length}
+              </span>
+            )}
+          </button>
           {user && (
-            <button 
+            <button
               onClick={onOpenAdmin}
               className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
               title="Área administrativa"
@@ -147,7 +165,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
               <span className="text-white text-xs font-medium">Admin</span>
             </button>
           )}
-          <button 
+          <button
             onClick={() => setIsMenuOpen(true)}
             className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
             title="Menu de Funcionalidades"
@@ -166,7 +184,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
         </button>
       </header>
 
-      <SideMenu 
+      <SideMenu
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         onOpenCalendar={onOpenCalendar}

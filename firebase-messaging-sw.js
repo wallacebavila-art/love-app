@@ -1,8 +1,6 @@
 importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js');
 
-console.log('[SW] Service worker carregado');
-
 const firebaseConfig = {
   apiKey: "AIzaSyBpKxQ7X8kL9mN3oP4qR5sT6uV7wX8yZ9a0",
   authDomain: "love-app-12345.firebaseapp.com",
@@ -53,9 +51,9 @@ const addNotification = async (notification) => {
 
 // Background message handler
 messaging.onBackgroundMessage(async (payload) => {
-  console.log('[SW] Received background message:', payload);
-  console.log('[SW] Payload notification:', payload.notification);
-  console.log('[SW] Payload data:', payload.data);
+  console.log('[firebase-messaging-sw.js] Received background message:', payload);
+  console.log('[firebase-messaging-sw.js] Payload notification:', payload.notification);
+  console.log('[firebase-messaging-sw.js] Payload data:', payload.data);
 
   const notification = {
     id: Date.now().toString(),
@@ -64,15 +62,15 @@ messaging.onBackgroundMessage(async (payload) => {
     timestamp: Date.now()
   };
 
-  console.log('[SW] Notification object to store:', notification);
+  console.log('[firebase-messaging-sw.js] Notification object to store:', notification);
 
   // Store notification in IndexedDB
   try {
     await addNotification(notification);
-    console.log('[SW] Notification stored in IndexedDB successfully');
+    console.log('[firebase-messaging-sw.js] Notification stored in IndexedDB successfully');
   } catch (error) {
-    console.error('[SW] Error storing notification:', error);
-    console.error('[SW] Error details:', error.message);
+    console.error('[firebase-messaging-sw.js] Error storing notification:', error);
+    console.error('[firebase-messaging-sw.js] Error details:', error.message);
   }
 
   const notificationTitle = payload.notification?.title || 'Nova Mensagem';
@@ -83,28 +81,18 @@ messaging.onBackgroundMessage(async (payload) => {
     data: payload.data,
   };
 
-  console.log('[SW] Showing native notification');
+  console.log('[firebase-messaging-sw.js] Showing native notification');
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // Notification click handler
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification clicked');
   event.notification.close();
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if (client.url === '/' || client.url === '/love-app/') {
-          // Send message to client to update notification state
-          client.postMessage({
-            type: 'NOTIFICATION_CLICKED',
-            notification: {
-              title: event.notification.title,
-              body: event.notification.body,
-              timestamp: Date.now()
-            }
-          });
           return client.focus();
         }
       }

@@ -162,6 +162,11 @@ app.post('/api/send-active', async (req, res) => {
         title: title,
         body: body,
       },
+      data: {
+        title: title,
+        body: body,
+        timestamp: Date.now().toString()
+      },
       webpush: {
         notification: {
           icon: '/love-app/icon-192.svg',
@@ -205,6 +210,7 @@ app.get('/api/tokens', async (req, res) => {
     res.json({
       total: tokens.length,
       tokens: tokens.map(t => ({
+        id: t.id,
         token: t.token.substring(0, 20) + '...',
         lastUsed: t.lastUsed,
         createdAt: t.createdAt
@@ -213,6 +219,52 @@ app.get('/api/tokens', async (req, res) => {
   } catch (error) {
     console.error('❌ Erro ao buscar tokens:', error);
     res.status(500).json({ error: 'Erro ao buscar tokens' });
+  }
+});
+
+// Endpoint para deletar um token específico
+app.delete('/api/tokens/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = admin.firestore();
+    const tokensRef = db.collection('fcm_tokens');
+    const snapshot = await tokensRef.where('id', '==', id).get();
+
+    if (snapshot.empty) {
+      return res.status(404).json({ error: 'Token não encontrado' });
+    }
+
+    const doc = snapshot.docs[0];
+    await doc.ref.delete();
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Erro ao deletar token:', error);
+    res.status(500).json({ error: 'Erro ao deletar token' });
+  }
+});
+
+// Endpoint para deletar todos os tokens
+app.delete('/api/tokens', async (req, res) => {
+  try {
+    const db = admin.firestore();
+    const tokensRef = db.collection('fcm_tokens');
+    const snapshot = await tokensRef.get();
+
+    let deletedCount = 0;
+    const batch = db.batch();
+
+    snapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+      deletedCount++;
+    });
+
+    await batch.commit();
+
+    res.json({ success: true, deletedCount });
+  } catch (error) {
+    console.error('❌ Erro ao deletar todos os tokens:', error);
+    res.status(500).json({ error: 'Erro ao deletar todos os tokens' });
   }
 });
 
