@@ -149,13 +149,13 @@ const PhotoGalleryCard = () => {
               <div className="flex gap-1">
                 <button
                   onClick={goToPrevious}
-                  className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 transition-all flex items-center justify-center"
+                  className="w-6 h-6 rounded-full bg-black/40 hover:bg-black/50 transition-all flex items-center justify-center"
                 >
                   <span className="material-symbols-outlined text-white text-[16px]">chevron_left</span>
                 </button>
                 <button
                   onClick={goToNext}
-                  className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 transition-all flex items-center justify-center"
+                  className="w-6 h-6 rounded-full bg-black/40 hover:bg-black/50 transition-all flex items-center justify-center"
                 >
                   <span className="material-symbols-outlined text-white text-[16px]">chevron_right</span>
                 </button>
@@ -227,7 +227,7 @@ const PhotoGalleryCard = () => {
                 e.stopPropagation();
                 goToPrevious();
               }}
-              className="absolute left-4 w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 transition-all flex items-center justify-center z-10"
+              className="absolute left-4 w-12 h-12 rounded-full bg-black/40 hover:bg-black/50 transition-all flex items-center justify-center z-10"
             >
               <span className="material-symbols-outlined text-white text-[32px]">chevron_left</span>
             </button>
@@ -238,7 +238,7 @@ const PhotoGalleryCard = () => {
                 e.stopPropagation();
                 goToNext();
               }}
-              className="absolute right-4 w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 transition-all flex items-center justify-center z-10"
+              className="absolute right-4 w-12 h-12 rounded-full bg-black/40 hover:bg-black/50 transition-all flex items-center justify-center z-10"
             >
               <span className="material-symbols-outlined text-white text-[32px]">chevron_right</span>
             </button>
