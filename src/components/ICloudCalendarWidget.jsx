@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCalendarEvents } from '../contexts/CalendarEventsContext';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 
@@ -9,6 +9,8 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [showYearPicker, setShowYearPicker] = useState(false);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const eventsSectionRef = useRef(null);
+  const calendarContainerRef = useRef(null);
 
   const getCardBackground = () => {
     if (isModal) {
@@ -144,31 +146,44 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
     });
   };
 
+  // Scroll automático para a seção de eventos ao selecionar uma data
+  useEffect(() => {
+    if (selectedDate && eventsSectionRef.current && calendarContainerRef.current) {
+      setTimeout(() => {
+        eventsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [selectedDate]);
+
   return (
     <>
       {/* Calendário completo */}
       <div
+        ref={calendarContainerRef}
         className={`${getCardBackground()} backdrop-blur-[24px] border rounded-2xl p-4 shadow-2xl w-full overflow-y-auto scrollbar-hidden ${
-          isModal ? 'max-h-[60vh]' : 'max-h-[calc(100vh-10rem)]'
+          isModal ? 'max-h-[90vh]' : 'max-h-[calc(100vh-10rem)]'
         }`}
       >
         {/* Cabeçalho */}
         <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => {
-                const prevMonth = new Date(currentDate);
-                prevMonth.setMonth(prevMonth.getMonth() - 1);
-                setCurrentDate(prevMonth);
-                setSelectedDate(null);
-              }}
-              className="p-1 rounded-full hover:bg-white/20 transition-colors"
-            >
-              <span className="material-symbols-outlined">chevron_left</span>
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              const prevMonth = new Date(currentDate);
+              prevMonth.setMonth(prevMonth.getMonth() - 1);
+              setCurrentDate(prevMonth);
+              setSelectedDate(null);
+            }}
+            className={`p-2 rounded-full transition-all ${
+              isModal
+                ? 'hover:bg-gray-200 text-gray-700'
+                : 'hover:bg-white/30 text-white hover:scale-110'
+            }`}
+            title="Mês anterior"
+          >
+            <span className="material-symbols-outlined text-[22px]">chevron_left</span>
+          </button>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {/* Selecionar mês */}
             <div className="relative">
               <button
@@ -176,12 +191,16 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
                   setShowMonthPicker(!showMonthPicker);
                   setShowYearPicker(false);
                 }}
-                className={`px-2 py-1 rounded-lg hover:bg-white/20 transition-colors ${getTextColor()} font-semibold text-[13px]`}
+                className={`px-3 py-1.5 rounded-lg transition-all font-bold text-[14px] ${
+                  isModal
+                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                    : 'bg-white/20 hover:bg-white/30 text-white'
+                }`}
               >
-                {getMonthName(currentDate)}
+                {getMonthName(currentDate)} ▾
               </button>
               {showMonthPicker && (
-                <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 ${isModal ? 'bg-white backdrop-blur-xl border border-gray-200' : 'bg-black/80 backdrop-blur-xl border border-white/20'} rounded-xl p-2 z-10 w-40`}>
+                <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 ${isModal ? 'bg-white backdrop-blur-xl border border-gray-200' : 'bg-black/80 backdrop-blur-xl border border-white/20'} rounded-xl p-2 z-10 w-40 shadow-xl`}>
                   <div className="grid grid-cols-3 gap-1">
                     {months.map((month, index) => (
                       <button
@@ -212,12 +231,16 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
                   setShowYearPicker(!showYearPicker);
                   setShowMonthPicker(false);
                 }}
-                className={`px-2 py-1 rounded-lg hover:bg-white/20 transition-colors ${getTextColor()} font-semibold text-[13px]`}
+                className={`px-3 py-1.5 rounded-lg transition-all font-bold text-[14px] ${
+                  isModal
+                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                    : 'bg-white/20 hover:bg-white/30 text-white'
+                }`}
               >
-                {currentDate.getFullYear()}
+                {currentDate.getFullYear()} ▾
               </button>
               {showYearPicker && (
-                <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 ${isModal ? 'bg-white backdrop-blur-xl border border-gray-200' : 'bg-black/80 backdrop-blur-xl border border-white/20'} rounded-xl p-2 z-10 w-28 max-h-40 overflow-y-auto custom-scrollbar`}>
+                <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 ${isModal ? 'bg-white backdrop-blur-xl border border-gray-200' : 'bg-black/80 backdrop-blur-xl border border-white/20'} rounded-xl p-2 z-10 w-28 max-h-40 overflow-y-auto custom-scrollbar shadow-xl`}>
                   <div className="flex flex-col gap-1">
                     {getYears().map((year) => (
                       <button
@@ -242,12 +265,16 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
             </div>
           </div>
           
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => refresh()}
               disabled={isLoading || isRefreshing}
               title="Atualizar calendário"
-              className={`p-1 rounded-full hover:bg-white/20 transition-colors disabled:opacity-50 ${getTextColor()}`}
+              className={`p-2 rounded-full transition-all disabled:opacity-50 ${
+                isModal
+                  ? 'hover:bg-gray-200 text-gray-600'
+                  : 'hover:bg-white/30 text-white/80 hover:scale-110'
+              }`}
             >
               <span
                 className={`material-symbols-outlined text-[20px] ${isRefreshing ? 'animate-spin' : ''}`}
@@ -262,9 +289,14 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
                 setCurrentDate(nextMonth);
                 setSelectedDate(null);
               }}
-              className="p-1 rounded-full hover:bg-white/20 transition-colors"
+              className={`p-2 rounded-full transition-all ${
+                isModal
+                  ? 'hover:bg-gray-200 text-gray-700'
+                  : 'hover:bg-white/30 text-white hover:scale-110'
+              }`}
+              title="Próximo mês"
             >
-              <span className="material-symbols-outlined">chevron_right</span>
+              <span className="material-symbols-outlined text-[22px]">chevron_right</span>
             </button>
           </div>
         </div>
@@ -355,76 +387,82 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
           ))}
         </div>
 
-        {selectedDate && (
+          {selectedDate && (
           <div
-            className={`mt-3 pt-3 border-t ${
+            ref={eventsSectionRef}
+            className={`mt-4 pt-4 border-t scroll-mt-4 ${
               isModal ? 'border-gray-200' : 'border-white/20'
             }`}
           >
-            <h4 className={`font-headline-sm text-[15px] font-semibold ${getTextColor()} mb-2`}>
-              {formatDate(selectedDate)}
+            <h4 className={`font-headline-sm text-[16px] font-semibold ${getTextColor()} mb-3`}>
+              📅 {formatDate(selectedDate)}
             </h4>
 
             {isLoading ? (
               <div className="space-y-2">
                 {[1, 2].map((i) => (
                   <div key={i} className="animate-pulse">
-                    <div className={`h-3 ${isModal ? 'bg-gray-200' : 'bg-white/30'} rounded w-3/4 mb-1`}></div>
-                    <div className={`h-2 ${isModal ? 'bg-gray-100' : 'bg-white/20'} rounded w-1/2`}></div>
+                    <div className={`h-4 ${isModal ? 'bg-gray-200' : 'bg-white/30'} rounded w-3/4 mb-1`}></div>
+                    <div className={`h-3 ${isModal ? 'bg-gray-100' : 'bg-white/20'} rounded w-1/2`}></div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="space-y-2">
                 {getEventsForDate(selectedDate).length === 0 ? (
-                  <p className={`font-body-md text-[13px] ${isModal ? 'text-gray-500' : `${getTextColor()}/60`}`}>
-                    Nenhum evento para esta data
-                  </p>
+                  <div className={`text-center py-6 ${isModal ? 'text-gray-400' : `${getTextColor()}/50`}`}>
+                    <span className="material-symbols-outlined text-[32px] block mb-2">event_busy</span>
+                    <p className={`font-body-md text-[13px]`}>
+                      Nenhum evento para esta data
+                    </p>
+                  </div>
                 ) : (
-                  getEventsForDate(selectedDate).map((event) => (
-                    <div
-                      key={event.id}
-                      className={`${isModal ? 'bg-gray-50' : 'bg-white/10'} rounded-xl p-2.5`}
-                    >
-                      <p className={`font-body-md text-[13px] font-semibold ${getTextColor()}`}>
-                        {event.title}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span
-                          className={`material-symbols-outlined text-[14px] ${
-                            isModal ? 'text-gray-500' : 'opacity-60'
-                          }`}
-                        >
-                          schedule
-                        </span>
-                        <p
-                          className={`font-body-md text-[11px] ${
-                            isModal ? 'text-gray-600' : `${getTextColor()}/70`
-                          }`}
-                        >
-                          {formatTime(event.startDate, event.isAllDay)}
+                  <div className="space-y-2">
+                    {getEventsForDate(selectedDate).map((event) => (
+                      <div
+                        key={event.id}
+                        className={`${isModal ? 'bg-gray-50 border border-gray-200' : 'bg-white/10 border border-white/20'} rounded-xl p-3 transition-all hover:scale-[1.01]`}
+                      >
+                        <p className={`font-body-md text-[14px] font-semibold ${getTextColor()}`}>
+                          {event.title}
                         </p>
-                      </div>
-                      {event.location && (
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-2 mt-1">
                           <span
                             className={`material-symbols-outlined text-[14px] ${
                               isModal ? 'text-gray-500' : 'opacity-60'
                             }`}
                           >
-                            location_on
+                            schedule
                           </span>
                           <p
-                            className={`font-body-md text-[11px] ${
+                            className={`font-body-md text-[12px] ${
                               isModal ? 'text-gray-600' : `${getTextColor()}/70`
                             }`}
                           >
-                            {event.location}
+                            {formatTime(event.startDate, event.isAllDay)}
                           </p>
                         </div>
-                      )}
-                    </div>
-                  ))
+                        {event.location && (
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span
+                              className={`material-symbols-outlined text-[14px] ${
+                                isModal ? 'text-gray-500' : 'opacity-60'
+                              }`}
+                            >
+                              location_on
+                            </span>
+                            <p
+                              className={`font-body-md text-[11px] ${
+                                isModal ? 'text-gray-600' : `${getTextColor()}/70`
+                              }`}
+                            >
+                              {event.location}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}

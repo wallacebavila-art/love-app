@@ -35,6 +35,7 @@ function AppContent() {
   const [isICloudCalendarModalOpen, setIsICloudCalendarModalOpen] = useState(false);
   const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [bookOpenStage, setBookOpenStage] = useState('closed'); // 'closed' | 'opening' | 'open'
   const location = useLocation();
   const { period } = useTimePeriod();
 
@@ -135,7 +136,13 @@ function AppContent() {
     const checkLoadingComplete = () => {
       if (dailyMessage && dailyVerse) {
         timer = setTimeout(() => {
-          setIsLoading(false);
+          // Iniciar animação de abertura do livro
+          setBookOpenStage('opening');
+          // Após a animação de abertura, remover loading
+          setTimeout(() => {
+            setBookOpenStage('open');
+            setIsLoading(false);
+          }, 1200);
         }, 2000);
       }
     };
@@ -195,19 +202,60 @@ function AppContent() {
   return (
     <>
       <div className={`${getThemeClasses()} ${getSelectionClasses()} font-body-md min-h-screen overflow-x-hidden`}>
-        {/* Tela de Carregamento Discreta */}
-        {isLoading && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md">
-            <div className="flex flex-col items-center space-y-3">
-              <div className="w-12 h-12 flex items-center justify-center">
-                <svg className="w-12 h-12 text-white animate-pulse" fill="currentColor" viewBox="0 0 24 24" style={{ animationDuration: '1.5s' }}>
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-              </div>
-              <p className="text-white text-3xl font-bold tracking-wider">BdR</p>
-              <p className="text-white/80 text-sm font-medium">Carregando...</p>
+        {/* Tela de Carregamento com efeito de livro abrindo */}
+        {(isLoading || bookOpenStage === 'opening') && (
+          <>
+            {/* Metade esquerda do livro - apenas "BdR" bem colado no centro */}
+            <div
+              className={`fixed inset-y-0 left-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-end pr-4 md:pr-8 overflow-hidden transition-all duration-1000 ease-in-out ${
+                bookOpenStage === 'opening'
+                  ? 'w-0 opacity-0 [transform:perspective(1200px)_rotateY(15deg)_translateX(-30px)] backdrop-blur-xl'
+                  : 'w-1/2 opacity-100 [transform:perspective(1200px)_rotateY(0deg)_translateX(0)] backdrop-blur-lg'
+              }`}
+              style={{
+                transformOrigin: 'right center',
+              }}
+            >
+              <p className="text-white text-5xl font-bold tracking-wider text-right">BdR</p>
             </div>
-          </div>
+
+            {/* Metade direita do livro - apenas coração branco bem colado no centro */}
+            <div
+              className={`fixed inset-y-0 right-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-start pl-4 md:pl-8 overflow-hidden transition-all duration-1000 ease-in-out ${
+                bookOpenStage === 'opening'
+                  ? 'w-0 opacity-0 [transform:perspective(1200px)_rotateY(-15deg)_translateX(30px)] backdrop-blur-xl'
+                  : 'w-1/2 opacity-100 [transform:perspective(1200px)_rotateY(0deg)_translateX(0)] backdrop-blur-lg'
+              }`}
+              style={{
+                transformOrigin: 'left center',
+              }}
+            >
+              <svg className="w-20 h-20 text-white animate-pulse" fill="currentColor" viewBox="0 0 24 24" style={{ animationDuration: '1.2s' }}>
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </div>
+
+            {/* Linha horizontal entre a sigla/coração e o "Carregando..." */}
+            <div
+              className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-700 ${
+                bookOpenStage === 'opening' ? 'opacity-0 translate-y-4' : 'opacity-100'
+              }`}
+              style={{ bottom: '5.5rem' }}
+            >
+              <div className="w-64 h-[2px] bg-gradient-to-r from-white/10 via-pink-400/60 to-white/10 rounded-full"></div>
+            </div>
+
+            {/* Texto "Carregando..." abaixo */}
+            <div
+              className={`fixed bottom-12 left-1/2 -translate-x-1/2 z-50 transition-all duration-700 ${
+                bookOpenStage === 'opening' ? 'opacity-0 translate-y-4' : 'opacity-100'
+              }`}
+            >
+              <p className="text-white/60 text-sm font-medium tracking-wider animate-pulse">
+                Carregando...
+              </p>
+            </div>
+          </>
         )}
         
         {/* Hero Background Layer */}
@@ -241,6 +289,11 @@ function AppContent() {
                 />
               </div>
 
+              {/* Coluna 2: Nossa Jornada (mobile: abaixo da mensagem) */}
+              <div className="md:col-start-2 md:row-start-1 md:row-span-1 min-h-0 md:block">
+                <JourneyCard />
+              </div>
+
               {/* Coluna 1: Versículo (linha 2) */}
               <div className="md:col-start-1 md:row-start-2 md:row-span-1 min-h-0 overflow-hidden">
                 <DailyVerseCard
@@ -249,19 +302,24 @@ function AppContent() {
                 />
               </div>
 
-              {/* Coluna 2: Nossa Jornada (linha 1) */}
-              <div className="hidden md:block md:col-start-2 md:row-start-1 md:row-span-1 min-h-0">
-                <JourneyCard />
-              </div>
-
-              {/* Coluna 2: Galeria de Fotos (linha 2 - logo abaixo do JourneyCard) */}
-              <div className="hidden md:block md:col-start-2 md:row-start-2 md:row-span-1 min-h-0 overflow-hidden -mt-[165px]">
+              {/* Coluna 2: Galeria de Fotos (mobile: abaixo do versículo) */}
+              <div className="md:col-start-2 md:row-start-2 md:row-span-1 min-h-0 overflow-hidden -mt-[165px] md:block">
                 <PhotoGalleryCard />
               </div>
 
-              {/* Coluna 3: Calendário iCloud (ocupa 2 linhas - altura total) */}
-              <div className="hidden md:block md:col-start-3 md:row-start-1 md:row-span-2 min-h-0 overflow-hidden">
+              {/* Coluna 3: Calendário iCloud (mobile: abaixo da galeria) */}
+              <div className="md:col-start-3 md:row-start-1 md:row-span-2 min-h-0 overflow-hidden md:block">
                 <ICloudCalendarWidget />
+              </div>
+
+              {/* Move PhotoGalleryCard to be visible on mobile here if needed, or remove existing hidden class */}
+              <div className="md:hidden">
+                <PhotoGalleryCard />
+              </div>
+
+              {/* Move JourneyCard to be visible on mobile here if needed, or remove existing hidden class */}
+              <div className="md:hidden">
+                <JourneyCard />
               </div>
             </div>
           </div>
@@ -296,12 +354,12 @@ function AppContent() {
           />
 
           {isICloudCalendarModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsICloudCalendarModalOpen(false)}></div>
-              <div className="relative bg-white/90 backdrop-blur-xl border border-white/30 rounded-2xl p-5 shadow-2xl w-full max-w-md">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setIsICloudCalendarModalOpen(false)}>
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+              <div className="relative bg-white/90 backdrop-blur-xl border border-white/30 rounded-2xl p-5 shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={() => setIsICloudCalendarModalOpen(false)}
-                  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors z-10"
                 >
                   <span className="material-symbols-outlined text-gray-600">close</span>
                 </button>

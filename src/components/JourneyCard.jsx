@@ -270,7 +270,7 @@ const JourneyCard = () => {
             </button>
 
             <div className="mb-6">
-              <h2 className="font-headline-lg text-[24px] bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-bold text-center mb-2">Nossa Jornada</h2>
+              <h2 className="font-headline-lg text-[24px] text-white font-bold text-center mb-2">Nossa Jornada</h2>
               <p className="text-center text-white/70 text-[13px]">Cada momento especial da nossa história</p>
             </div>
             

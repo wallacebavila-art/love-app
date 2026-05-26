@@ -32,7 +32,7 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin,
       ></div>
       
       {/* Sidebar */}
-      <div className={`fixed top-0 right-0 h-full w-64 bg-white shadow-2xl z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="p-6">
           <button
             onClick={onClose}
@@ -52,7 +52,7 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin,
               className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 transition-colors"
             >
               <span className="material-symbols-outlined text-gray-600">calendar_month</span>
-              <span className="font-body-md text-[16px] text-gray-700">Calendário de Mensagens</span>
+              <span className="font-body-md text-[16px] text-gray-700">Histórico de Mensagens</span>
             </button>
             
             <button

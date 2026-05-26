@@ -115,7 +115,11 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
           <span className="material-symbols-outlined text-gray-600 text-[20px]">close</span>
         </button>
 
-        <h2 className="font-headline-lg text-[28px] text-gray-800 mb-4 text-center">Calendário</h2>
+        <h2 className="font-headline-lg text-[28px] text-gray-800 mb-4 text-center">Histórico de Mensagens</h2>
+
+        <p className="font-body-md text-[13px] text-gray-600 text-center mb-4">
+          Clique nos dias anteriores para ver o histórico de mensagens
+        </p>
 
         {/* Navegação do mês */}
         <div className="flex items-center justify-between mb-4">

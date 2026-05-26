@@ -127,7 +127,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
             title="Ver mensagens anteriores"
           >
             <span className="material-symbols-outlined text-white transition-transform duration-300">calendar_month</span>
-            <span className="text-white text-xs font-medium">Calendário</span>
+            <span className="text-white text-xs font-medium">Histórico</span>
           </button>
           <button 
             onClick={onOpenWeather}
