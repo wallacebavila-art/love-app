@@ -11,6 +11,7 @@ const JourneyCard = () => {
   const [editingMilestoneIndex, setEditingMilestoneIndex] = useState(null);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [newMilestone, setNewMilestone] = useState({
     date: '',
     title: '',
@@ -113,17 +114,20 @@ const JourneyCard = () => {
   };
 
   const handleDragStart = (index) => {
+    if (!isEditMode) return;
     setDraggedIndex(index);
   };
 
   const handleDragOver = (e) => {
+    if (!isEditMode) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (index) => {
+    if (!isEditMode) return;
     if (draggedIndex === null || draggedIndex === index) return;
-    
+
     const updated = [...milestones];
     const [removed] = updated.splice(draggedIndex, 1);
     updated.splice(index, 0, removed);
@@ -133,6 +137,7 @@ const JourneyCard = () => {
   };
 
   const handleDragEnd = () => {
+    if (!isEditMode) return;
     setDraggedIndex(null);
   };
 
@@ -225,10 +230,10 @@ const JourneyCard = () => {
   };
 
   return (
-    <section className="w-full">
-      <div className="w-full flex flex-col items-start space-y-2">
+    <section className="w-full flex justify-center">
+      <div className="w-full flex flex-col items-center md:items-start space-y-2">
         <div
-          className={`group flex items-center gap-3 ${getCardBackground()} p-3 rounded-3xl border ${getBorderColor()} backdrop-blur-[24px] transition-all duration-500 hover:scale-[1.02] hover:bg-white/40 cursor-pointer shadow-2xl shadow-black/10 hover:shadow-2xl hover:shadow-black/20`}
+          className={`group flex items-center gap-3 ${getCardBackground()} px-6 py-3 md:px-3 md:py-3 rounded-3xl border ${getBorderColor()} backdrop-blur-[24px] transition-all duration-500 hover:scale-[1.02] hover:bg-white/40 cursor-pointer shadow-2xl shadow-black/10 hover:shadow-2xl hover:shadow-black/20`}
           onClick={() => setShowTimeline(true)}
         >
           <div className={`relative flex-shrink-0`}>
@@ -270,7 +275,19 @@ const JourneyCard = () => {
             </button>
 
             <div className="mb-6">
-              <h2 className="font-headline-lg text-[24px] text-white font-bold text-center mb-2">Nossa Jornada</h2>
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="font-headline-lg text-[24px] text-white font-bold">Nossa Jornada</h2>
+                <button
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    isEditMode
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                      : 'bg-white/10 text-white/70 hover:bg-white/20'
+                  }`}
+                >
+                  {isEditMode ? '✓ Modo Edição Ativo' : '✏️ Modo Edição'}
+                </button>
+              </div>
               <p className="text-center text-white/70 text-[13px]">Cada momento especial da nossa história</p>
             </div>
             
@@ -281,16 +298,16 @@ const JourneyCard = () => {
               {/* Timeline Items */}
               <div className="space-y-5">
                 {milestones.map((milestone, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className={`relative pl-12 md:pl-14 group transition-all duration-300 ${
                       draggedIndex === index ? 'opacity-40 scale-95' : ''
-                    }`}
-                    draggable
+                    } ${isEditMode ? 'cursor-move' : ''}`}
+                    draggable={isEditMode}
                     onDragStart={() => handleDragStart(index)}
-                    onDragOver={handleDragOver}
+                    onDragOver={(e) => handleDragOver(e)}
                     onDrop={() => handleDrop(index)}
-                    onDragEnd={handleDragEnd}
+                    onDragEnd={() => handleDragEnd()}
                   >
                     {/* Timeline Dot */}
                     <div className={`absolute left-2 md:left-3 w-4 h-4 rounded-full border-4 border-white cursor-move shadow-md transition-all duration-300 group-hover:scale-125 ${
@@ -300,8 +317,10 @@ const JourneyCard = () => {
                     }`}></div>
                     
                     {/* Milestone Card */}
-                    <div className={`bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/30 hover:border-white/50 hover:shadow-lg transition-all duration-300 cursor-move ${
-                      draggedIndex !== null && draggedIndex === index ? 'border-purple-300 bg-purple-500/20' : 'hover:scale-[1.02]'
+                    <div className={`bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/30 hover:border-white/50 hover:shadow-lg transition-all duration-300 ${
+                      isEditMode ? 'cursor-move hover:border-purple-400 hover:scale-[1.02]' : 'cursor-default'
+                    } ${
+                      draggedIndex !== null && draggedIndex === index ? 'border-purple-300 bg-purple-500/20' : ''
                     }`}>
                       <div className="flex justify-between items-start mb-2">
                         <div className="font-label-md text-[10px] text-white/80 uppercase tracking-wider font-semibold">

@@ -282,7 +282,7 @@ function AppContent() {
             {/* Desktop: grid com 3 colunas - altura total da tela */}
             <div className="flex flex-col gap-4 mt-0 h-full md:grid md:grid-cols-[1fr_auto_20rem] md:grid-rows-[auto_1fr] md:gap-x-4 md:gap-y-4">
               {/* Coluna 1: Mensagem (linha 1) */}
-              <div className="md:col-start-1 md:row-start-1 md:row-span-1 min-h-0">
+              <div className="hidden md:col-start-1 md:row-start-1 md:row-span-1 min-h-0 md:block">
                 <DailyMessageCard
                   key={selectedDate || 'today'}
                   message={dailyMessage}
@@ -290,12 +290,12 @@ function AppContent() {
               </div>
 
               {/* Coluna 2: Nossa Jornada (mobile: abaixo da mensagem) */}
-              <div className="md:col-start-2 md:row-start-1 md:row-span-1 min-h-0 md:block">
+              <div className="hidden md:col-start-2 md:row-start-1 md:row-span-1 min-h-0 md:block">
                 <JourneyCard />
               </div>
 
               {/* Coluna 1: Versículo (linha 2) */}
-              <div className="md:col-start-1 md:row-start-2 md:row-span-1 min-h-0 overflow-hidden">
+              <div className="hidden md:col-start-1 md:row-start-2 md:row-span-1 min-h-0 overflow-hidden md:block">
                 <DailyVerseCard
                   key={selectedDate || 'today'}
                   verse={dailyVerse}
@@ -303,23 +303,39 @@ function AppContent() {
               </div>
 
               {/* Coluna 2: Galeria de Fotos (mobile: abaixo do versículo) */}
-              <div className="md:col-start-2 md:row-start-2 md:row-span-1 min-h-0 overflow-hidden -mt-[165px] md:block">
+              <div className="hidden md:col-start-2 md:row-start-2 md:row-span-1 min-h-0 overflow-hidden -mt-[165px] md:block">
                 <PhotoGalleryCard />
               </div>
 
               {/* Coluna 3: Calendário iCloud (mobile: abaixo da galeria) */}
-              <div className="md:col-start-3 md:row-start-1 md:row-span-2 min-h-0 overflow-hidden md:block">
+              <div className="hidden md:col-start-3 md:row-start-1 md:row-span-2 min-h-0 overflow-hidden md:block">
                 <ICloudCalendarWidget />
-              </div>
-
-              {/* Move PhotoGalleryCard to be visible on mobile here if needed, or remove existing hidden class */}
-              <div className="md:hidden">
-                <PhotoGalleryCard />
               </div>
 
               {/* Move JourneyCard to be visible on mobile here if needed, or remove existing hidden class */}
               <div className="md:hidden">
                 <JourneyCard />
+              </div>
+
+              {/* DailyMessageCard mobile version */}
+              <div className="md:hidden">
+                <DailyMessageCard
+                  key={selectedDate || 'today'}
+                  message={dailyMessage}
+                />
+              </div>
+
+              {/* DailyVerseCard mobile version */}
+              <div className="md:hidden">
+                <DailyVerseCard
+                  key={selectedDate || 'today'}
+                  verse={dailyVerse}
+                />
+              </div>
+
+              {/* Move PhotoGalleryCard to be visible on mobile here if needed, or remove existing hidden class */}
+              <div className="md:hidden">
+                <PhotoGalleryCard />
               </div>
             </div>
           </div>
