@@ -255,7 +255,9 @@ const JourneyCard = () => {
       {showTimeline && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowTimeline(false)}></div>
-          <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border-2 ${getBorderColor()} rounded-3xl p-5 md:p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl shadow-black/10 animate-in zoom-in-95 duration-300 journey-scrollbar`}>
+          <div 
+            className={`journey-scrollbar ${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border-2 ${getBorderColor()} rounded-3xl p-5 md:p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl shadow-black/10 animate-in zoom-in-95 duration-300`}
+          >
             <button
               className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-all hover:scale-110"
               onClick={() => setShowTimeline(false)}

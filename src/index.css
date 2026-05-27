@@ -68,20 +68,19 @@ html, body {
   width: 8px;
 }
 .journey-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
 }
 .journey-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
-  border: 2px solid white;
 }
 .journey-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
+  background: rgba(255, 255, 255, 0.5);
 }
 .journey-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #a855f7 rgba(0, 0, 0, 0.05);
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
 }
 
 /* Scroll ativo, barra invisível */
