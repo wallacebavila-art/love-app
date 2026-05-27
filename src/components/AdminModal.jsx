@@ -228,30 +228,23 @@ const AdminModal = ({ isOpen, onClose }) => {
 
     setSendingNotification(true);
     setNotificationResult(null);
-    console.log('Iniciando envio de notificação...');
 
     try {
-      // Enviar notificação via Realtime Database
-      console.log('Importando sendRealtimeNotification...');
+      // Enviar notificação via Firestore
       const { sendRealtimeNotification } = await import('../services/realtimeNotifications');
-      console.log('sendRealtimeNotification importado com sucesso');
-      
-      console.log('Chamando sendRealtimeNotification...');
       const success = await sendRealtimeNotification(notificationTitle, notificationBody);
-      console.log('sendRealtimeNotification retornou:', success);
 
       if (success) {
-        alert('Notificação enviada com sucesso via Realtime Database!');
+        alert('Mensagem enviada com sucesso!');
         setNotificationTitle('');
         setNotificationBody('');
       } else {
-        alert('Erro ao enviar notificação via Realtime Database');
+        alert('Erro ao enviar mensagem');
       }
     } catch (error) {
       console.error('Erro ao enviar notificação:', error);
       alert('Erro ao enviar notificação: ' + error.message);
     } finally {
-      console.log('Finalizando envio de notificação...');
       setSendingNotification(false);
     }
   };

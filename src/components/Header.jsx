@@ -6,6 +6,7 @@ import SideMenu from './SideMenu';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from './NotificationToast';
+import NotificationModal from './NotificationModal';
 
 const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar }) => {
   const { period } = useTimePeriod();
@@ -15,11 +16,8 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [weather, setWeather] = useState(null);
   const [useLoveName, setUseLoveName] = useState(false);
-  const { notifications, setNotifications } = useNotifications();
-
-  useEffect(() => {
-    console.log('Header - Notificações:', notifications);
-  }, [notifications]);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const { notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp } = useNotifications();
 
   useEffect(() => {
     // Carregar preferência do localStorage
@@ -103,6 +101,15 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
     }
   };
 
+  // Calcular notificações não visualizadas
+  const getUnreadCount = () => {
+    if (!lastViewedTimestamp) return notifications.length;
+    return notifications.filter(n => {
+      const timestamp = n.timestamp instanceof Date ? n.timestamp.getTime() : new Date(n.timestamp).getTime();
+      return timestamp > lastViewedTimestamp;
+    }).length;
+  };
+
   return (
     <>
       <header className="w-full pt-3 pb-2 flex justify-between items-center px-4 md:px-8">
@@ -144,14 +151,18 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
             <span className="text-white text-xs font-medium">Clima</span>
           </button>
           <button
+            onClick={() => {
+              setIsNotificationModalOpen(true);
+              setLastViewedTimestamp(Date.now());
+            }}
             className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2 relative"
             title="Notificações"
           >
             <span className="material-symbols-outlined text-white transition-transform duration-300">notifications</span>
             <span className="text-white text-xs font-medium">Notificações</span>
-            {notifications.length > 0 && (
+            {getUnreadCount() > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                {notifications.length}
+                {getUnreadCount()}
               </span>
             )}
           </button>
@@ -175,13 +186,30 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
           </button>
         </div>
 
-        {/* Botão Hamburger Mobile */}
-        <button 
-          onClick={() => setIsMenuOpen(true)}
-          className="md:hidden w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95"
-        >
-          <span className="material-symbols-outlined text-white transition-transform duration-300 text-[24px]">menu</span>
-        </button>
+        {/* Botões Mobile */}
+        <div className="md:hidden flex gap-2">
+          <button
+            onClick={() => {
+              setIsNotificationModalOpen(true);
+              setLastViewedTimestamp(Date.now());
+            }}
+            className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 relative"
+            title="Notificações"
+          >
+            <span className="material-symbols-outlined text-white transition-transform duration-300 text-[24px]">notifications</span>
+            {getUnreadCount() > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                {getUnreadCount()}
+              </span>
+            )}
+          </button>
+          <button 
+            onClick={() => setIsMenuOpen(true)}
+            className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95"
+          >
+            <span className="material-symbols-outlined text-white transition-transform duration-300 text-[24px]">menu</span>
+          </button>
+        </div>
       </header>
 
       <SideMenu
@@ -192,6 +220,11 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
         onOpenAdmin={onOpenAdmin}
         onOpenSettings={onOpenSettings}
         onOpenICloudCalendar={onOpenICloudCalendar}
+      />
+      
+      <NotificationModal
+        isOpen={isNotificationModalOpen}
+        onClose={() => setIsNotificationModalOpen(false)}
       />
     </>
   );

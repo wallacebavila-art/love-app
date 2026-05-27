@@ -5,30 +5,18 @@ const NOTIFICATIONS_COLLECTION = 'notifications';
 
 export const sendRealtimeNotification = async (title, body) => {
   try {
-    console.log('sendRealtimeNotification: Iniciando...');
-    console.log('sendRealtimeNotification: title:', title);
-    console.log('sendRealtimeNotification: body:', body);
-    
     const notificationsRef = collection(db, NOTIFICATIONS_COLLECTION);
-    console.log('sendRealtimeNotification: notificationsRef criado');
-    
     const notificationData = {
       title,
       body,
       timestamp: Date.now(),
       read: false
     };
-    console.log('sendRealtimeNotification: notificationData:', notificationData);
     
     await addDoc(notificationsRef, notificationData);
-    console.log('sendRealtimeNotification: addDoc() concluído');
-    
-    console.log('Notificação enviada para Firestore');
     return true;
   } catch (error) {
     console.error('Erro ao enviar notificação para Firestore:', error);
-    console.error('Erro detalhes:', error.message);
-    console.error('Erro stack:', error.stack);
     return false;
   }
 };
@@ -45,7 +33,6 @@ export const listenToNotifications = (callback) => {
       timestamp: new Date(doc.data().timestamp)
     }));
     
-    console.log('Notificações recebidas do Firestore:', notifications);
     callback(notifications);
   }, (error) => {
     console.error('Erro ao ouvir notificações:', error);

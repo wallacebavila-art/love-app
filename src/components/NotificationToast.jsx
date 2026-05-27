@@ -8,41 +8,46 @@ const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
+  const [lastViewedTimestamp, setLastViewedTimestamp] = useState(null);
 
   useEffect(() => {
-    console.log('NotificationProvider montado, configurando listener de notificações');
-    
+    // Carregar timestamp da última visualização
+    const savedTimestamp = localStorage.getItem('lastViewedTimestamp');
+    if (savedTimestamp) {
+      setLastViewedTimestamp(parseInt(savedTimestamp));
+    }
+  }, []);
+
+  // Atualizar timestamp quando mudar
+  useEffect(() => {
+    if (lastViewedTimestamp !== null) {
+      localStorage.setItem('lastViewedTimestamp', lastViewedTimestamp.toString());
+    }
+  }, [lastViewedTimestamp]);
+
+  useEffect(() => {
     // Listener para notificações em foreground (FCM)
     const unsubscribeFCM = onForegroundMessage((payload) => {
-      console.log('Notificação recebida no NotificationProvider (FCM):', payload);
       const notification = {
         title: payload.notification?.title || 'Notificação',
         body: payload.notification?.body || '',
         timestamp: new Date()
       };
-      console.log('Adicionando notificação ao estado:', notification);
-      setNotifications(prev => {
-        console.log('Notificações anteriores:', prev);
-        return [notification, ...prev];
-      });
+      setNotifications(prev => [notification, ...prev]);
     });
 
-    // Listener para notificações em tempo real (Realtime Database)
+    // Listener para notificações em tempo real (Firestore)
     const unsubscribeRTDB = listenToNotifications((realtimeNotifications) => {
-      console.log('Notificações recebidas do Realtime Database:', realtimeNotifications);
       setNotifications(realtimeNotifications);
     });
 
     // Listener para quando o app ganha foco (para capturar notificações recebidas em background)
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
-        console.log('App ganhou foco, verificando notificações pendentes no IndexedDB');
         try {
           const backgroundNotifications = await getAllNotifications();
-          console.log('Notificações encontradas no IndexedDB:', backgroundNotifications);
 
           if (backgroundNotifications.length > 0) {
-            console.log('Adicionando notificações do IndexedDB ao estado');
             // Limpar notificações antigas (mais de 24 horas)
             await deleteOldNotifications();
 
@@ -53,18 +58,11 @@ export const NotificationProvider = ({ children }) => {
                 body: n.body,
                 timestamp: new Date(n.timestamp)
               }));
-              console.log('Novas notificações:', newNotifications);
-              console.log('Notificações anteriores:', prev);
-              const result = [...newNotifications, ...prev];
-              console.log('Resultado final:', result);
-              return result;
+              return [...newNotifications, ...prev];
             });
 
             // Limpar IndexedDB após ler
             await clearNotifications();
-            console.log('IndexedDB limpo após ler notificações');
-          } else {
-            console.log('Nenhuma notificação encontrada no IndexedDB');
           }
         } catch (error) {
           console.error('Erro ao ler notificações do IndexedDB:', error);
@@ -77,7 +75,6 @@ export const NotificationProvider = ({ children }) => {
     // Listener para mensagens do service worker
     const handleServiceWorkerMessage = (event) => {
       if (event.data && event.data.type === 'NOTIFICATION_CLICKED') {
-        console.log('Mensagem do service worker recebida:', event.data);
         const notification = {
           title: event.data.notification.title,
           body: event.data.notification.body,
@@ -93,7 +90,6 @@ export const NotificationProvider = ({ children }) => {
     handleVisibilityChange();
 
     return () => {
-      console.log('NotificationProvider desmontado, limpando listener');
       unsubscribeFCM();
       unsubscribeRTDB();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -102,7 +98,7 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   return (
-    <NotificationContext.Provider value={{ notifications, setNotifications }}>
+    <NotificationContext.Provider value={{ notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp }}>
       {children}
     </NotificationContext.Provider>
   );
@@ -118,7 +114,7 @@ export const useNotifications = () => {
 
 const NotificationToast = () => {
   const { period } = useTimePeriod();
-  const { notifications, setNotifications } = useNotifications();
+  const { notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp } = useNotifications();
   const [visible, setVisible] = useState(false);
 
   const getCardBackground = () => {
@@ -160,9 +156,16 @@ const NotificationToast = () => {
     }
   };
 
+  // Filtrar apenas notificações não visualizadas
+  const unreadNotifications = notifications.filter(n => {
+    if (!lastViewedTimestamp) return true;
+    const timestamp = n.timestamp instanceof Date ? n.timestamp.getTime() : new Date(n.timestamp).getTime();
+    return timestamp > lastViewedTimestamp;
+  });
+
   // Show toast when new notification arrives
   useEffect(() => {
-    if (notifications.length > 0) {
+    if (unreadNotifications.length > 0) {
       setVisible(true);
       // Auto-hide after 5 seconds
       const timer = setTimeout(() => {
@@ -170,11 +173,11 @@ const NotificationToast = () => {
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [notifications.length]);
+  }, [unreadNotifications.length]);
 
-  if (!visible || notifications.length === 0) return null;
+  if (!visible || unreadNotifications.length === 0) return null;
 
-  const latestNotification = notifications[0];
+  const latestNotification = unreadNotifications[0];
 
   return (
     <div className="fixed top-20 right-4 md:right-8 z-50">
