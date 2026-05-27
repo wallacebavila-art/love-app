@@ -16,6 +16,10 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" />;
   }
 
+  if (user.userType !== 'admin') {
+    return <Navigate to="/" />;
+  }
+
   return children;
 };
 

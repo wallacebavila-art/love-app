@@ -1,13 +1,17 @@
 ﻿import { calculateDaysTogether } from '../utils/dateUtils';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { fetchTimelineData, saveMilestones, saveCustomDays } from '../services/timelineService';
 
 const JourneyCard = () => {
   const daysTogether = calculateDaysTogether();
   const { period } = useTimePeriod();
+  const { user } = useAuth();
   const [showTimeline, setShowTimeline] = useState(false);
-  const [customDays, setCustomDays] = useState(daysTogether);
+  const [showLoginAlert, setShowLoginAlert] = useState(false);
+  // Sempre usar o cálculo atual, ignorar Firebase
+  const customDays = daysTogether;
   const [editingMilestoneIndex, setEditingMilestoneIndex] = useState(null);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [isAddingMilestone, setIsAddingMilestone] = useState(false);
@@ -32,9 +36,7 @@ const JourneyCard = () => {
         if (data.milestones && data.milestones.length > 0) {
           setMilestones(data.milestones);
         }
-        if (data.customDays !== null && data.customDays !== undefined) {
-          setCustomDays(data.customDays);
-        }
+        // customDays agora é calculado diretamente, não carregar do Firebase
       }
     };
     loadTimelineData();
@@ -223,7 +225,13 @@ const JourneyCard = () => {
       <div className="w-full flex flex-col items-start space-y-2">
         <div
           className={`group flex items-center gap-3 ${getCardBackground()} px-6 py-3 md:px-3 md:py-3 rounded-3xl border ${getBorderColor()} backdrop-blur-[24px] transition-all duration-500 hover:scale-[1.02] hover:bg-white/40 cursor-pointer shadow-2xl shadow-black/10 hover:shadow-2xl hover:shadow-black/20`}
-          onClick={() => setShowTimeline(true)}
+          onClick={() => {
+            if (user) {
+              setShowTimeline(true);
+            } else {
+              setShowLoginAlert(true);
+            }
+          }}
         >
           <div className={`relative flex-shrink-0`}>
             <div className={`absolute inset-0 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full blur-md opacity-60 group-hover:opacity-80 transition-opacity duration-300`}></div>
@@ -240,7 +248,11 @@ const JourneyCard = () => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowTimeline(true);
+                  if (user) {
+                    setShowTimeline(true);
+                  } else {
+                    setShowLoginAlert(true);
+                  }
                 }}
                 className="opacity-40 hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-white/20"
               >
@@ -504,6 +516,30 @@ const JourneyCard = () => {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Login Alert Modal */}
+      {showLoginAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowLoginAlert(false)}></div>
+          <div 
+            className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border-2 ${getBorderColor()} rounded-3xl p-6 max-w-sm w-full shadow-2xl shadow-black/10 animate-in zoom-in-95 duration-300`}
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center">
+                <span className="material-symbols-outlined text-white text-[32px]">lock</span>
+              </div>
+              <h3 className="font-headline-lg text-[20px] text-white font-bold mb-2">Faça login</h3>
+              <p className="text-white/70 text-[14px] mb-6">Você precisa estar logado para acessar a Nossa Jornada</p>
+              <button
+                onClick={() => setShowLoginAlert(false)}
+                className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl text-[14px] font-semibold hover:from-pink-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg"
+              >
+                Entendi
+              </button>
             </div>
           </div>
         </div>

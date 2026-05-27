@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const Login = () => {
+const RaissaLogin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,7 +15,7 @@ const Login = () => {
     
     try {
       await login(username, password);
-      navigate('/admin');
+      navigate('/');
     } catch (error) {
       setError('Usuário ou senha inválidos');
       console.error('Erro ao fazer login:', error);
@@ -27,8 +27,8 @@ const Login = () => {
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Área Administrativa</h1>
-            <p className="text-gray-600">Faça login para acessar</p>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Área da Raíssa 💕</h1>
+            <p className="text-gray-600">Faça login para acessar suas mensagens</p>
           </div>
           
           {error && (
@@ -90,4 +90,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default RaissaLogin;

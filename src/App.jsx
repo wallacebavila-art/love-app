@@ -9,6 +9,7 @@ import PhotoGalleryCard from './components/PhotoGalleryCard';
 import CalendarModal from './components/CalendarModal';
 import WeatherModal from './components/WeatherModal';
 import Login from './components/Login';
+import RaissaLogin from './components/RaissaLogin';
 import AdminModal from './components/AdminModal';
 import SettingsModal from './components/SettingsModal';
 import NotificationToast, { NotificationProvider } from './components/NotificationToast';
@@ -396,6 +397,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/raissa-login" element={<RaissaLogin />} />
           <Route
             path="/admin"
             element={

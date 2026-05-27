@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCalendarEvents } from '../contexts/CalendarEventsContext';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const ICloudCalendarWidget = ({ isModal = false }) => {
   const { period } = useTimePeriod();
   const { events, isLoading, isRefreshing, lastUpdated, refresh } = useCalendarEvents();
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [showYearPicker, setShowYearPicker] = useState(false);
@@ -407,7 +409,7 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : user ? (
               <div className="space-y-2">
                 {getEventsForDate(selectedDate).length === 0 ? (
                   <div className={`text-center py-6 ${isModal ? 'text-gray-400' : `${getTextColor()}/50`}`}>
@@ -464,6 +466,13 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
                     ))}
                   </div>
                 )}
+              </div>
+            ) : (
+              <div className={`text-center py-6 ${isModal ? 'text-gray-400' : `${getTextColor()}/50`}`}>
+                <span className="material-symbols-outlined text-[32px] block mb-2">lock</span>
+                <p className={`font-body-md text-[13px]`}>
+                  Faça login para ver os eventos
+                </p>
               </div>
             )}
           </div>

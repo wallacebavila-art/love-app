@@ -88,7 +88,7 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin,
               <span className="font-body-md text-[16px] text-gray-700">Configurações</span>
             </button>
 
-            {user && (
+            {user?.userType === 'admin' && (
               <button
                 onClick={() => {
                   onOpenAdmin();

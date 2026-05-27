@@ -1,9 +1,14 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import naocliqueImage from '/naoclique.png';
+import raissaAvatar from '/favicon.png';
 
 const SettingsModal = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [showSecretImage, setShowSecretImage] = useState(false);
+  const [secretStep, setSecretStep] = useState(0);
 
   const handleLogin = () => {
     onClose();
@@ -17,6 +22,30 @@ const SettingsModal = ({ isOpen, onClose }) => {
       navigate('/');
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
+    }
+  };
+
+  const handleSecretClick = () => {
+    if (secretStep < 3) {
+      setSecretStep(secretStep + 1);
+    } else {
+      setShowSecretImage(true);
+      setSecretStep(0);
+    }
+  };
+
+  const getSecretText = () => {
+    switch (secretStep) {
+      case 0:
+        return 'Não clique';
+      case 1:
+        return 'Por favor, não clique';
+      case 2:
+        return 'Raíssa, não é para clicar aqui';
+      case 3:
+        return '...';
+      default:
+        return 'Não clique';
     }
   };
 
@@ -46,12 +75,26 @@ const SettingsModal = ({ isOpen, onClose }) => {
             {user ? (
               <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-white">person</span>
-                  </div>
+                  {user.userType === 'raissa' ? (
+                    <div className="w-12 h-12 rounded-full overflow-hidden">
+                      <img
+                        src={raissaAvatar}
+                        alt="Raíssa"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                      <span className="material-symbols-outlined text-white">person</span>
+                    </div>
+                  )}
                   <div>
-                    <p className="font-semibold text-gray-800">Administrador</p>
-                    <p className="text-sm text-gray-600">{user.email}</p>
+                    <p className="font-semibold text-gray-800">
+                      {user.userType === 'raissa' ? 'Raíssa' : 'Administrador'}
+                    </p>
+                    {user.userType !== 'raissa' && (
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                    )}
                   </div>
                 </div>
                 <button
@@ -97,8 +140,43 @@ const SettingsModal = ({ isOpen, onClose }) => {
               ~para Raíssa. Com amor, Wallace. 💕
             </p>
           </div>
+
+          {/* Secret Box */}
+          <div className="mt-4">
+            <button
+              onClick={handleSecretClick}
+              className="w-full p-3 bg-gray-100 rounded-lg border border-gray-200 hover:bg-gray-200 transition text-gray-400 text-sm font-medium cursor-pointer"
+            >
+              {getSecretText()}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Secret Image Modal */}
+      {showSecretImage && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowSecretImage(false)}></div>
+          <div className="relative max-w-2xl w-full overflow-hidden">
+            <button
+              onClick={() => setShowSecretImage(false)}
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/80 hover:bg-white transition-all hover:scale-110 z-10"
+            >
+              <span className="material-symbols-outlined text-gray-800 text-[20px]">close</span>
+            </button>
+            <div className="p-4">
+              <img
+                src={naocliqueImage}
+                alt="Surpresa"
+                className="w-[70%] h-auto rounded-lg mx-auto"
+                onError={(e) => {
+                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20" fill="%239ca3af"%3EImagem não encontrada%3C/text%3E%3C/svg%3E';
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

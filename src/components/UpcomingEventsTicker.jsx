@@ -1,6 +1,7 @@
 import { Fragment, useMemo } from 'react';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { useCalendarEvents } from '../contexts/CalendarEventsContext';
+import { useAuth } from '../contexts/AuthContext';
 import {
   formatEventForTicker,
   getUpcomingEvents,
@@ -25,6 +26,7 @@ const TickerSegment = ({ items, textColor, duplicate = false }) => (
 const UpcomingEventsTicker = () => {
   const { period } = useTimePeriod();
   const { events, isLoading } = useCalendarEvents();
+  const { user } = useAuth();
 
   const tickerItems = useMemo(
     () => getUpcomingEvents(events).map(formatEventForTicker),
@@ -74,14 +76,20 @@ const UpcomingEventsTicker = () => {
         </div>
 
         <div className={`flex-1 min-w-0 flex items-center ${hasEvents ? 'events-ticker' : ''}`}>
-          {hasEvents ? (
-            <div className="events-ticker__track">
-              <TickerSegment items={tickerItems} textColor={textColor} />
-              <TickerSegment items={tickerItems} textColor={textColor} duplicate />
-            </div>
+          {user ? (
+            hasEvents ? (
+              <div className="events-ticker__track">
+                <TickerSegment items={tickerItems} textColor={textColor} />
+                <TickerSegment items={tickerItems} textColor={textColor} duplicate />
+              </div>
+            ) : (
+              <p className={`font-body-md text-[11px] text-center w-full ${textColor} opacity-80`}>
+                Nenhum evento nos próximos 14 dias
+              </p>
+            )
           ) : (
             <p className={`font-body-md text-[11px] text-center w-full ${textColor} opacity-80`}>
-              Nenhum evento nos próximos 14 dias
+              Faça login para ver os eventos
             </p>
           )}
         </div>

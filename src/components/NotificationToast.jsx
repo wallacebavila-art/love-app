@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useAuth } from '../contexts/AuthContext';
 import { onForegroundMessage } from '../services/fcmService';
 import { getAllNotifications, clearNotifications, deleteOldNotifications } from '../utils/indexedDB';
 import { listenToNotifications } from '../services/realtimeNotifications';
@@ -114,6 +115,7 @@ export const useNotifications = () => {
 
 const NotificationToast = () => {
   const { period } = useTimePeriod();
+  const { user } = useAuth();
   const { notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp } = useNotifications();
   const [visible, setVisible] = useState(false);
 
@@ -175,7 +177,7 @@ const NotificationToast = () => {
     }
   }, [unreadNotifications.length]);
 
-  if (!visible || unreadNotifications.length === 0) return null;
+  if (!visible || unreadNotifications.length === 0 || !user) return null;
 
   const latestNotification = unreadNotifications[0];
 

@@ -16,21 +16,31 @@ export const formatDateInPortuguese = () => {
 
 /**
  * Calcula a diferença de dias entre hoje e uma data inicial
+ * O dia inicial conta como dia 1
  * @param {string} startDate - Data inicial no formato YYYY-MM-DD (padrão: "2026-01-12")
- * @returns {number} Número de dias desde a data inicial
+ * @returns {number} Número de dias desde a data inicial (dia inicial = dia 1)
  */
 export const calculateDaysTogether = (startDate = "2026-01-12") => {
-  const start = new Date(startDate);
+  // Parse da data inicial usando hora local
+  const startParts = startDate.split('-');
+  const start = new Date(
+    parseInt(startParts[0]),
+    parseInt(startParts[1]) - 1, // Mês é 0-indexed em JavaScript
+    parseInt(startParts[2]),
+    12, 0, 0, 0 // Meio-dia para evitar problemas de fuso horário
+  );
+  
   const now = new Date();
+  now.setHours(12, 0, 0, 0); // Meio-dia para evitar problemas de fuso horário
   
-  // Resetar as horas para meia-noite para cálculo preciso
-  start.setHours(0, 0, 0, 0);
-  now.setHours(0, 0, 0, 0);
+  // Calcular diferença em milissegundos
+  const diffTime = now.getTime() - start.getTime();
   
-  const diffTime = Math.abs(now - start);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  // Converter para dias (arredondar para baixo)
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   
-  return diffDays;
+  // Adicionar 1 para contar o dia inicial como dia 1
+  return diffDays + 1;
 };
 
 /**

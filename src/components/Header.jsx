@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from './NotificationToast';
 import NotificationModal from './NotificationModal';
+import raissaAvatar from '/favicon.png';
 
 const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar }) => {
   const { period } = useTimePeriod();
@@ -17,6 +18,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
   const [weather, setWeather] = useState(null);
   const [useLoveName, setUseLoveName] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [showRaissaMessage, setShowRaissaMessage] = useState(false);
   const { notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp } = useNotifications();
 
   useEffect(() => {
@@ -134,6 +136,20 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
         
         {/* Botões Desktop */}
         <div className="hidden md:flex gap-4">
+          {user?.userType === 'raissa' && (
+            <button
+              onClick={() => setShowRaissaMessage(true)}
+              className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
+              title="Perfil da Raíssa"
+            >
+              <img
+                src={raissaAvatar}
+                alt="Raíssa"
+                className="w-10 h-10 object-cover -mt-4"
+              />
+              <span className="text-white text-xs font-medium">Raíssa</span>
+            </button>
+          )}
           <button
             onClick={onOpenCalendar}
             className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
@@ -152,8 +168,12 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
           </button>
           <button
             onClick={() => {
-              setIsNotificationModalOpen(true);
-              setLastViewedTimestamp(Date.now());
+              if (user) {
+                setIsNotificationModalOpen(true);
+                setLastViewedTimestamp(Date.now());
+              } else {
+                navigate('/raissa-login');
+              }
             }}
             className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2 relative"
             title="Notificações"
@@ -166,7 +186,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
               </span>
             )}
           </button>
-          {user && (
+          {user?.userType === 'admin' && (
             <button
               onClick={onOpenAdmin}
               className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
@@ -190,8 +210,12 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
         <div className="md:hidden flex gap-2">
           <button
             onClick={() => {
-              setIsNotificationModalOpen(true);
-              setLastViewedTimestamp(Date.now());
+              if (user) {
+                setIsNotificationModalOpen(true);
+                setLastViewedTimestamp(Date.now());
+              } else {
+                navigate('/raissa-login');
+              }
             }}
             className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 relative"
             title="Notificações"
@@ -203,6 +227,19 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
               </span>
             )}
           </button>
+          {user?.userType === 'raissa' && (
+            <button
+              onClick={() => setShowRaissaMessage(true)}
+              className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95"
+              title="Perfil da Raíssa"
+            >
+              <img
+                src={raissaAvatar}
+                alt="Raíssa"
+                className="w-10 h-10 object-cover"
+              />
+            </button>
+          )}
           <button 
             onClick={() => setIsMenuOpen(true)}
             className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95"
@@ -226,6 +263,39 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
         isOpen={isNotificationModalOpen}
         onClose={() => setIsNotificationModalOpen(false)}
       />
+
+      {/* Raíssa Message Modal */}
+      {showRaissaMessage && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowRaissaMessage(false)}></div>
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-300">
+            <button
+              onClick={() => setShowRaissaMessage(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+            >
+              <span className="material-symbols-outlined text-gray-600 text-[20px]">close</span>
+            </button>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full overflow-hidden">
+                <img
+                  src={raissaAvatar}
+                  alt="Raíssa"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <p className="text-gray-600 leading-relaxed text-lg">
+                Amor, você está logada na sua conta, agora pode usar a caixinha de mandar mensagens 💕
+              </p>
+              <button
+                onClick={() => setShowRaissaMessage(false)}
+                className="mt-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-6 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition duration-200"
+              >
+                Entendi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
