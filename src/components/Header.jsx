@@ -1,16 +1,16 @@
 import { getGreeting } from '../utils/dateUtils';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { fetchWeather } from '../services/weatherService';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import SideMenu from './SideMenu';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from './NotificationToast';
 import NotificationModal from './NotificationModal';
 import { useLoginModal } from '../contexts/LoginModalContext';
-import raissaAvatar from '/favicon.png';
-
-const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar }) => {
+import raissaAvatar from '../assets/raissa-avatar.png';
+import wallaceAvatar from '../assets/wallace-avatar.png';
+const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, volume, onVolumeChange }) => {
   const { period } = useTimePeriod();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -22,6 +22,19 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
   const [showRaissaMessage, setShowRaissaMessage] = useState(false);
   const { notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp } = useNotifications();
   const { setIsRaissaLoginModalOpen } = useLoginModal();
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const volumeRef = useRef(null);
+
+  // Fechar volume slider ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (volumeRef.current && !volumeRef.current.contains(event.target)) {
+        setShowVolumeSlider(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     // Carregar preferência do localStorage
@@ -105,10 +118,11 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
     }
   };
 
-  // Calcular notificações não visualizadas
+  // Calcular notificações não visualizadas (ignorando as enviadas por mim)
   const getUnreadCount = () => {
-    if (!lastViewedTimestamp) return notifications.length;
+    if (!lastViewedTimestamp) return notifications.filter(n => n.sender !== user?.userType).length;
     return notifications.filter(n => {
+      if (n.sender === user?.userType) return false;
       const timestamp = n.timestamp instanceof Date ? n.timestamp.getTime() : new Date(n.timestamp).getTime();
       return timestamp > lastViewedTimestamp;
     }).length;
@@ -125,6 +139,73 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
             <h1 className={`font-headline-lg-mobile ${getTextColor} italic transition-all duration-300 hover:scale-105 cursor-default text-[20px]`}>
               {greeting}, {useLoveName ? 'Amor' : 'Raíssa'}
             </h1>
+            <div className="flex items-center gap-0.5">
+              <span className={`${getTextColor} p-0.5 flex items-center relative`}>
+                <span className="material-symbols-outlined text-[18px]">music_note</span>
+                {isPlaying && (
+                  <span className="absolute -top-0.5 -right-0.5 flex gap-[1px]">
+                    <span className="w-[2px] h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                    <span className="w-[2px] h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></span>
+                    <span className="w-[2px] h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></span>
+                  </span>
+                )}
+              </span>
+              <button
+                onClick={(e) => { e.stopPropagation(); onPrevTrack(); }}
+                className={`${getTextColor} transition-all duration-300 hover:scale-110 active:scale-95 p-0.5 rounded-full`}
+                title="Música anterior"
+              >
+                <span className="material-symbols-outlined text-[16px]">skip_previous</span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleMusic(); }}
+                className={`${getTextColor} transition-all duration-300 hover:scale-110 active:scale-95 p-0.5 rounded-full`}
+                title={isPlaying ? 'Pausar música' : 'Tocar música'}
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  {isPlaying ? 'pause' : 'play_arrow'}
+                </span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onNextTrack(); }}
+                className={`${getTextColor} transition-all duration-300 hover:scale-110 active:scale-95 p-0.5 rounded-full`}
+                title="Próxima música"
+              >
+                <span className="material-symbols-outlined text-[16px]">skip_next</span>
+              </button>
+              <div className="relative" ref={volumeRef}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowVolumeSlider(!showVolumeSlider); }}
+                  className={`${getTextColor} transition-all duration-300 hover:scale-110 active:scale-95 p-0.5 rounded-full`}
+                  title="Volume"
+                >
+                  <span className="material-symbols-outlined text-[16px]">
+                    {volume === 0 ? 'volume_off' : volume < 50 ? 'volume_down' : 'volume_up'}
+                  </span>
+                </button>
+                {showVolumeSlider && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-gray-900/90 backdrop-blur-xl border border-white/20 rounded-xl p-2 z-20 shadow-xl">
+                    <div className="flex items-center gap-2">
+                      <span className={`material-symbols-outlined text-[14px] ${getTextColor}`}>
+                        {volume === 0 ? 'volume_off' : 'volume_down'}
+                      </span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={volume}
+                        onChange={(e) => { e.stopPropagation(); onVolumeChange(parseInt(e.target.value)); }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-20 h-1 appearance-none bg-white/30 rounded-full cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md"
+                      />
+                      <span className={`material-symbols-outlined text-[14px] ${getTextColor}`}>
+                        volume_up
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           <p className={`font-label-md ${getTextColor} text-[12px] ml-8 opacity-80`}>
             {getFullDate()}
@@ -138,18 +219,18 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
         
         {/* Botões Desktop */}
         <div className="hidden md:flex gap-4">
-          {user?.userType === 'raissa' && (
+          {(user?.userType === 'raissa' || user?.userType === 'admin') && (
             <button
-              onClick={() => setShowRaissaMessage(true)}
+              onClick={() => user?.userType === 'raissa' ? setShowRaissaMessage(true) : null}
               className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
-              title="Perfil da Raíssa"
+              title={user?.userType === 'raissa' ? 'Perfil da Raíssa' : 'Wallace'}
             >
               <img
-                src={raissaAvatar}
-                alt="Raíssa"
-                className="w-10 h-10 object-cover -mt-4"
+                src={user?.userType === 'raissa' ? raissaAvatar : wallaceAvatar}
+                alt={user?.userType === 'raissa' ? 'Raíssa' : 'Wallace'}
+                className="w-10 h-10 object-cover -mt-4 rounded-full"
               />
-              <span className="text-white text-xs font-medium">Raíssa</span>
+              <span className="text-white text-xs font-medium">{user?.userType === 'raissa' ? 'Raíssa' : 'Wallace'}</span>
             </button>
           )}
           <button
@@ -229,16 +310,16 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
               </span>
             )}
           </button>
-          {user?.userType === 'raissa' && (
+          {(user?.userType === 'raissa' || user?.userType === 'admin') && (
             <button
-              onClick={() => setShowRaissaMessage(true)}
+              onClick={() => user?.userType === 'raissa' ? setShowRaissaMessage(true) : null}
               className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95"
-              title="Perfil da Raíssa"
+              title={user?.userType === 'raissa' ? 'Perfil da Raíssa' : 'Wallace'}
             >
               <img
-                src={raissaAvatar}
-                alt="Raíssa"
-                className="w-10 h-10 object-cover"
+                src={user?.userType === 'raissa' ? raissaAvatar : wallaceAvatar}
+                alt={user?.userType === 'raissa' ? 'Raíssa' : 'Wallace'}
+                className="w-10 h-10 object-cover rounded-full"
               />
             </button>
           )}

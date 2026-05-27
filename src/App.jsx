@@ -13,6 +13,7 @@ import RaissaLogin from './components/RaissaLogin';
 import AdminModal from './components/AdminModal';
 import SettingsModal from './components/SettingsModal';
 import NotificationToast, { NotificationProvider } from './components/NotificationToast';
+import { useMusicPlayer } from './components/MusicPlayer';
 import ICloudCalendarWidget from './components/ICloudCalendarWidget';
 import UpcomingEventsTicker from './components/UpcomingEventsTicker';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -28,6 +29,7 @@ import { requestFCMToken, onForegroundMessage, showNotification } from './servic
 import { saveFCMToken } from './services/fcmTokenService';
 
 function AppContent() {
+  const { isPlaying, toggleMusic, nextTrack, prevTrack, volume, setVolume } = useMusicPlayer();
   const [dailyMessage, setDailyMessage] = useState(null);
   const [dailyVerse, setDailyVerse] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -272,6 +274,12 @@ function AppContent() {
             onOpenAdmin={() => setIsAdminModalOpen(true)}
             onOpenSettings={() => setIsSettingsModalOpen(true)}
             onOpenICloudCalendar={() => setIsICloudCalendarModalOpen(true)}
+            isPlaying={isPlaying}
+            onToggleMusic={toggleMusic}
+            onNextTrack={nextTrack}
+            onPrevTrack={prevTrack}
+            volume={volume}
+            onVolumeChange={setVolume}
           />
 
           <UpcomingEventsTicker />

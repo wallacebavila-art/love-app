@@ -158,8 +158,10 @@ const NotificationToast = () => {
     }
   };
 
-  // Filtrar apenas notificações não visualizadas
+  // Filtrar apenas notificações não visualizadas e que não foram enviadas por mim
   const unreadNotifications = notifications.filter(n => {
+    // Ignorar notificações enviadas pelo próprio usuário
+    if (n.sender === user?.userType) return false;
     if (!lastViewedTimestamp) return true;
     const timestamp = n.timestamp instanceof Date ? n.timestamp.getTime() : new Date(n.timestamp).getTime();
     return timestamp > lastViewedTimestamp;

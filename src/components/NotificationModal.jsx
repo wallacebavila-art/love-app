@@ -4,6 +4,35 @@ import { sendRealtimeNotification } from '../services/realtimeNotifications';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { useAuth } from '../contexts/AuthContext';
 import raissaAvatar from '../assets/raissa-avatar.png';
+import wallaceAvatar from '../assets/wallace-avatar.png';
+
+const EMOJI_CATEGORIES = [
+  {
+    name: 'Carinhas',
+    icon: '😊',
+    emojis: ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '🤗', '🤩', '😛', '😜', '😝', '🤑', '🤪', '😎', '🤓', '🥳', '😏', '😒', '🙄', '😤', '😢', '😭', '😩', '🥺', '😡', '🤬', '💀', '👻']
+  },
+  {
+    name: 'Corações',
+    icon: '❤️',
+    emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💕', '💞', '💗', '💖', '💘', '💝', '❣️', '💟', '🫶']
+  },
+  {
+    name: 'Gestos',
+    icon: '👍',
+    emojis: ['👍', '👎', '👊', '✊', '🤛', '🤜', '👏', '🙌', '🤝', '🙏', '✌️', '🤘', '🤙', '💪', '🖕', '👋', '🤚', '🖐️', '✋', '👌', '🤌', '🤏', '💅', '🫶']
+  },
+  {
+    name: 'Símbolos',
+    icon: '🔥',
+    emojis: ['🔥', '⭐', '✨', '💫', '🌟', '💥', '💯', '✅', '❌', '💢', '💤', '💦', '💨', '🎉', '🎊', '🎈', '🎀', '🎁', '🏆', '👑', '💎', '🔮', '💡', '🕯️', '🌹', '🌺', '🌸', '🌻', '🌞', '🌈', '☀️', '🌙', '⭐', '🪐']
+  },
+  {
+    name: 'Comida',
+    icon: '🍕',
+    emojis: ['🍕', '🍔', '🌭', '🥪', '🌮', '🌯', '🥗', '🍿', '🥨', '🥯', '🍞', '🧀', '🥚', '🍳', '🥓', '🧇', '🥞', '🍦', '🍩', '🍪', '🎂', '🍫', '🍬', '🍭', '🧁', '🍉', '🍓', '🍇', '🍊', '🍋', '🍌', '🍎', '🍑', '🍒', '☕', '🧃', '🥤']
+  }
+];
 
 const NotificationModal = ({ isOpen, onClose }) => {
   const { notifications } = useNotifications();
@@ -11,7 +40,10 @@ const NotificationModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiCategory, setEmojiCategory] = useState(0);
   const messagesEndRef = useRef(null);
+  const emojiPickerRef = useRef(null);
 
   const getCardBackground = () => {
     switch (period) {
@@ -57,12 +89,21 @@ const NotificationModal = ({ isOpen, onClose }) => {
     return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const getAvatarColor = (sender) => {
-    return sender === 'raissa' ? 'bg-purple-500' : 'bg-green-500';
+  // Renderizar texto separando emojis (maiores) do texto normal
+  const renderMessageContent = (text) => {
+    const emojiRegex = /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu;
+    const parts = text.split(emojiRegex);
+    return parts.map((part, i) => {
+      if (emojiRegex.test(part)) {
+        return <span key={i} className="text-2xl">{part}</span>;
+      }
+      return part;
+    });
   };
 
-  const getAvatarInitials = (sender) => {
-    return sender === 'raissa' ? 'R' : 'W';
+  const handleEmojiClick = (emoji) => {
+    setReplyText(prev => prev + emoji);
+    setShowEmojiPicker(false);
   };
 
   const handleSendReply = async () => {
@@ -91,6 +132,17 @@ const NotificationModal = ({ isOpen, onClose }) => {
   useEffect(() => {
     scrollToBottom();
   }, [notifications, isOpen]);
+
+  // Fechar emoji picker ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -125,13 +177,11 @@ const NotificationModal = ({ isOpen, onClose }) => {
                 className={`flex mb-3 ${notification.sender === user?.userType ? 'justify-end' : 'justify-start'}`}
               >
                 {notification.sender !== user?.userType && (
-                  <div className={`w-10 h-10 rounded-full mr-3 flex-shrink-0 overflow-hidden ${
-                    notification.sender === 'raissa' ? '' : getAvatarColor(notification.sender) + ' flex items-center justify-center'
-                  }`}>
+                  <div className="w-10 h-10 rounded-full mr-3 flex-shrink-0 overflow-hidden">
                     {notification.sender === 'raissa' ? (
                       <img src={raissaAvatar} alt="Raíssa" className="w-full h-full object-cover rounded-full" />
                     ) : (
-                      <span className="text-white font-semibold">{getAvatarInitials(notification.sender)}</span>
+                      <img src={wallaceAvatar} alt="Wallace" className="w-full h-full object-cover rounded-full" />
                     )}
                   </div>
                 )}
@@ -144,7 +194,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
                     }`}
                   >
                     <p className={`text-sm ${notification.sender === user?.userType ? 'text-white' : 'text-gray-800'}`}>
-                      {notification.body}
+                      {renderMessageContent(notification.body)}
                     </p>
                   </div>
                   <div className={`flex items-center mt-1 ${notification.sender === user?.userType ? 'justify-end' : 'justify-start'}`}>
@@ -157,11 +207,11 @@ const NotificationModal = ({ isOpen, onClose }) => {
                   </div>
                 </div>
                 {notification.sender === user?.userType && (
-                  <div className={`w-10 h-10 rounded-full ml-3 flex-shrink-0 overflow-hidden ${getAvatarColor(notification.sender)} flex items-center justify-center`}>
+                  <div className="w-10 h-10 rounded-full ml-3 flex-shrink-0 overflow-hidden">
                     {notification.sender === 'raissa' ? (
                       <img src={raissaAvatar} alt="Raíssa" className="w-full h-full object-cover rounded-full" />
                     ) : (
-                      <span className="text-white font-semibold">{getAvatarInitials(notification.sender)}</span>
+                      <img src={wallaceAvatar} alt="Wallace" className="w-full h-full object-cover rounded-full" />
                     )}
                   </div>
                 )}
@@ -171,11 +221,50 @@ const NotificationModal = ({ isOpen, onClose }) => {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-3 border-t border-white/20 bg-white/5">
+        <div className="p-3 border-t border-white/20 bg-white/5 relative">
           <div className="flex gap-2 items-center">
-            <button className="p-2 text-white/60 hover:text-white transition">
-              <span className="material-symbols-outlined">sentiment_satisfied</span>
-            </button>
+            <div className="relative" ref={emojiPickerRef}>
+              <button
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="p-2 text-white/60 hover:text-white transition"
+              >
+                <span className="material-symbols-outlined">sentiment_satisfied</span>
+              </button>
+              {showEmojiPicker && (
+                <div className="absolute bottom-14 left-0 z-20 bg-gray-900/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl w-[260px] overflow-hidden">
+                  {/* Categorias */}
+                  <div className="flex gap-1 px-2 pt-2 pb-1 border-b border-white/10">
+                    {EMOJI_CATEGORIES.map((cat, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setEmojiCategory(idx)}
+                        className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm transition-all ${
+                          idx === emojiCategory
+                            ? 'bg-white/20 scale-110'
+                            : 'hover:bg-white/10'
+                        }`}
+                      >
+                        {cat.icon}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Grid de Emojis */}
+                  <div className="p-2 max-h-[200px] overflow-y-auto custom-scrollbar">
+                    <div className="grid grid-cols-6 gap-1">
+                      {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleEmojiClick(emoji)}
+                          className="w-10 h-10 flex items-center justify-center text-2xl hover:bg-white/10 rounded-xl transition-colors"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             <input
               type="text"
               value={replyText}
@@ -201,18 +290,18 @@ const NotificationModal = ({ isOpen, onClose }) => {
       </div>
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
+          width: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 3px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.3);
-          border-radius: 4px;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 3px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.5);
+          background: rgba(255, 255, 255, 0.35);
         }
       `}</style>
     </div>
