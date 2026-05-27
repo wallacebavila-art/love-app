@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { db } from '../services/firebaseConfig';
@@ -9,6 +9,7 @@ import { listenToNotifications } from '../services/realtimeNotifications';
 const AdminModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const { period } = useTimePeriod();
+  const messagesEndRef = useRef(null);
   const [activeTab, setActiveTab] = useState('messages'); // 'messages', 'verses', 'photos', or 'notifications'
   
   // Dados das mensagens
@@ -107,6 +108,14 @@ const AdminModal = ({ isOpen, onClose }) => {
       detectDuplicates();
     }
   }, [messages, verses]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages, isOpen]);
 
   const findDuplicates = (items, getText, getDate) => {
     const duplicates = [];
@@ -839,20 +848,24 @@ const AdminModal = ({ isOpen, onClose }) => {
                       <p>Nenhuma mensagem</p>
                     </div>
                   ) : (
-                    chatMessages.map((message, index) => (
+                    [...chatMessages].sort((a, b) => {
+                      const dateA = a.timestamp instanceof Date ? a.timestamp : new Date(a.timestamp);
+                      const dateB = b.timestamp instanceof Date ? b.timestamp : new Date(b.timestamp);
+                      return dateA - dateB;
+                    }).map((message, index) => (
                       <div
                         key={index}
-                        className={`p-4 rounded-lg ${
-                          message.sender === 'admin' 
-                            ? 'bg-purple-100 ml-8' 
-                            : 'bg-gray-100 mr-8'
+                        className={`p-4 rounded-lg max-w-[80%] ${
+                          message.sender === user?.userType
+                            ? 'bg-purple-100 ml-auto'
+                            : 'bg-gray-100 mr-auto'
                         }`}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <span className={`text-xs font-semibold ${
                             message.sender === 'admin' ? 'text-purple-700' : 'text-gray-600'
                           }`}>
-                            {message.sender === 'admin' ? 'Você' : 'Amor da sua Vida'}
+                            {message.sender === user?.userType ? 'Você' : (user?.userType === 'admin' ? 'Raíssa' : 'Meu Amor')}
                           </span>
                           <span className="text-xs text-gray-500">
                             {message.timestamp instanceof Date 
@@ -865,6 +878,7 @@ const AdminModal = ({ isOpen, onClose }) => {
                       </div>
                     ))
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
                 <div className="p-4 border-t border-white/20">
                   <div className="space-y-4">

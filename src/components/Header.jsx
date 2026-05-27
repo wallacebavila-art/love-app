@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from './NotificationToast';
 import NotificationModal from './NotificationModal';
+import { useLoginModal } from '../contexts/LoginModalContext';
 import raissaAvatar from '/favicon.png';
 
 const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar }) => {
@@ -20,6 +21,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [showRaissaMessage, setShowRaissaMessage] = useState(false);
   const { notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp } = useNotifications();
+  const { setIsRaissaLoginModalOpen } = useLoginModal();
 
   useEffect(() => {
     // Carregar preferência do localStorage
@@ -172,7 +174,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
                 setIsNotificationModalOpen(true);
                 setLastViewedTimestamp(Date.now());
               } else {
-                navigate('/raissa-login');
+                setIsRaissaLoginModalOpen(true);
               }
             }}
             className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2 relative"
@@ -214,7 +216,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
                 setIsNotificationModalOpen(true);
                 setLastViewedTimestamp(Date.now());
               } else {
-                navigate('/raissa-login');
+                setIsRaissaLoginModalOpen(true);
               }
             }}
             className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 relative"

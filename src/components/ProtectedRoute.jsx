@@ -1,8 +1,10 @@
 import { useAuth } from '../contexts/AuthContext';
+import { useLoginModal } from '../contexts/LoginModalContext';
 import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const { setIsLoginModalOpen } = useLoginModal();
 
   if (loading) {
     return (
@@ -13,7 +15,8 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" />;
+    setIsLoginModalOpen(true);
+    return null;
   }
 
   if (user.userType !== 'admin') {

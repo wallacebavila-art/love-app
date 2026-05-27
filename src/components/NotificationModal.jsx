@@ -1,13 +1,16 @@
 import { useNotifications } from './NotificationToast';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { sendRealtimeNotification } from '../services/realtimeNotifications';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const NotificationModal = ({ isOpen, onClose }) => {
   const { notifications } = useNotifications();
   const { period } = useTimePeriod();
+  const { user } = useAuth();
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
 
   const getCardBackground = () => {
     switch (period) {
@@ -67,6 +70,14 @@ const NotificationModal = ({ isOpen, onClose }) => {
     }
   };
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [notifications, isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -90,20 +101,24 @@ const NotificationModal = ({ isOpen, onClose }) => {
               <p>Nenhuma mensagem</p>
             </div>
           ) : (
-            notifications.map((notification, index) => (
+            [...notifications].sort((a, b) => {
+              const dateA = a.timestamp instanceof Date ? a.timestamp : new Date(a.timestamp);
+              const dateB = b.timestamp instanceof Date ? b.timestamp : new Date(b.timestamp);
+              return dateA - dateB;
+            }).map((notification, index) => (
               <div
                 key={index}
-                className={`mb-3 p-4 rounded-lg ${
-                  notification.sender === 'raissa' 
-                    ? 'bg-purple-500/30 ml-8' 
-                    : 'bg-white/10 mr-8'
+                className={`mb-3 p-4 rounded-lg max-w-[80%] ${
+                  notification.sender === user?.userType
+                    ? 'bg-purple-500/30 ml-auto'
+                    : 'bg-white/10 mr-auto'
                 }`}
               >
                 <div className="flex justify-between items-start mb-2">
                   <span className={`text-xs font-semibold ${
                     notification.sender === 'raissa' ? 'text-purple-300' : 'text-white/80'
                   }`}>
-                    {notification.sender === 'raissa' ? 'Você' : 'Amor da sua Vida'}
+                    {notification.sender === user?.userType ? 'Você' : (user?.userType === 'admin' ? 'Raíssa' : 'Meu Amor')}
                   </span>
                   <span className="text-xs text-white/60">
                     {notification.timestamp instanceof Date 
@@ -116,6 +131,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
               </div>
             ))
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="p-4 border-t border-white/20">

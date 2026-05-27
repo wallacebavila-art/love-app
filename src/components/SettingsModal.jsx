@@ -1,18 +1,37 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLoginModal } from '../contexts/LoginModalContext';
 import naocliqueImage from '/naoclique.png';
 import raissaAvatar from '/favicon.png';
 
 const SettingsModal = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { setIsLoginModalOpen } = useLoginModal();
   const [showSecretImage, setShowSecretImage] = useState(false);
   const [secretStep, setSecretStep] = useState(0);
+  const [useLoveName, setUseLoveName] = useState(false);
+
+  useEffect(() => {
+    // Carregar preferência do localStorage
+    const saved = localStorage.getItem('useLoveName');
+    if (saved) {
+      setUseLoveName(JSON.parse(saved));
+    }
+
+    // Ouvir evento de toggle
+    const handleToggle = (e) => {
+      setUseLoveName(e.detail);
+    };
+
+    window.addEventListener('loveNameToggled', handleToggle);
+    return () => window.removeEventListener('loveNameToggled', handleToggle);
+  }, []);
 
   const handleLogin = () => {
     onClose();
-    navigate('/login');
+    setIsLoginModalOpen(true);
   };
 
   const handleLogout = async () => {
@@ -41,7 +60,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
       case 1:
         return 'Por favor, não clique';
       case 2:
-        return 'Raíssa, não é para clicar aqui';
+        return `${useLoveName ? 'Amor' : 'Raíssa'}, não é para clicar aqui`;
       case 3:
         return '...';
       default:
@@ -79,7 +98,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                     <div className="w-12 h-12 rounded-full overflow-hidden">
                       <img
                         src={raissaAvatar}
-                        alt="Raíssa"
+                        alt={useLoveName ? 'Amor' : 'Raíssa'}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -90,7 +109,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                   )}
                   <div>
                     <p className="font-semibold text-gray-800">
-                      {user.userType === 'raissa' ? 'Raíssa' : 'Administrador'}
+                      {user.userType === 'raissa' ? (useLoveName ? 'Amor' : 'Raíssa') : 'Administrador'}
                     </p>
                     {user.userType !== 'raissa' && (
                       <p className="text-sm text-gray-600">{user.email}</p>
