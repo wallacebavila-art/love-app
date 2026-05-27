@@ -868,7 +868,7 @@ const AdminModal = ({ isOpen, onClose }) => {
                             {message.sender === user?.userType ? 'Você' : (user?.userType === 'admin' ? 'Raíssa' : 'Meu Amor')}
                           </span>
                           <span className="text-xs text-gray-500">
-                            {message.timestamp instanceof Date 
+                            {message.timestamp instanceof Date
                               ? message.timestamp.toLocaleString('pt-BR')
                               : new Date(message.timestamp).toLocaleString('pt-BR')
                             }

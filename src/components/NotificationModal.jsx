@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { sendRealtimeNotification } from '../services/realtimeNotifications';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { useAuth } from '../contexts/AuthContext';
+import raissaAvatar from '../assets/raissa-avatar.png';
 
 const NotificationModal = ({ isOpen, onClose }) => {
   const { notifications } = useNotifications();
@@ -51,12 +52,25 @@ const NotificationModal = ({ isOpen, onClose }) => {
     }
   };
 
+  const formatTime = (timestamp) => {
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getAvatarColor = (sender) => {
+    return sender === 'raissa' ? 'bg-purple-500' : 'bg-green-500';
+  };
+
+  const getAvatarInitials = (sender) => {
+    return sender === 'raissa' ? 'R' : 'W';
+  };
+
   const handleSendReply = async () => {
     if (!replyText.trim()) return;
     
     setSending(true);
     try {
-      const success = await sendRealtimeNotification('Resposta', replyText, 'raissa');
+      const success = await sendRealtimeNotification('Resposta', replyText, user?.userType || 'raissa');
       if (success) {
         setReplyText('');
       } else {
@@ -94,7 +108,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
           </button>
         </div>
         
-        <div className="p-4 overflow-y-auto flex-1 custom-scrollbar">
+        <div className="p-4 overflow-y-auto flex-1 custom-scrollbar bg-gradient-to-b from-white/5 to-white/10">
           {notifications.length === 0 ? (
             <div className="text-center py-8 text-white/60">
               <span className="material-symbols-outlined text-4xl mb-2">chat_bubble_outline</span>
@@ -108,49 +122,79 @@ const NotificationModal = ({ isOpen, onClose }) => {
             }).map((notification, index) => (
               <div
                 key={index}
-                className={`mb-3 p-4 rounded-lg max-w-[80%] ${
-                  notification.sender === user?.userType
-                    ? 'bg-purple-500/30 ml-auto'
-                    : 'bg-white/10 mr-auto'
-                }`}
+                className={`flex mb-3 ${notification.sender === user?.userType ? 'justify-end' : 'justify-start'}`}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <span className={`text-xs font-semibold ${
-                    notification.sender === 'raissa' ? 'text-purple-300' : 'text-white/80'
+                {notification.sender !== user?.userType && (
+                  <div className={`w-10 h-10 rounded-full mr-3 flex-shrink-0 overflow-hidden ${
+                    notification.sender === 'raissa' ? '' : getAvatarColor(notification.sender) + ' flex items-center justify-center'
                   }`}>
-                    {notification.sender === user?.userType ? 'Você' : (user?.userType === 'admin' ? 'Raíssa' : 'Meu Amor')}
-                  </span>
-                  <span className="text-xs text-white/60">
-                    {notification.timestamp instanceof Date 
-                      ? notification.timestamp.toLocaleString('pt-BR')
-                      : new Date(notification.timestamp).toLocaleString('pt-BR')
-                    }
-                  </span>
+                    {notification.sender === 'raissa' ? (
+                      <img src={raissaAvatar} alt="Raíssa" className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                      <span className="text-white font-semibold">{getAvatarInitials(notification.sender)}</span>
+                    )}
+                  </div>
+                )}
+                <div className={`max-w-[70%] ${notification.sender === user?.userType ? 'order-2' : ''}`}>
+                  <div
+                    className={`p-3 rounded-2xl ${
+                      notification.sender === user?.userType
+                        ? 'bg-[#005c4b] text-white rounded-tr-sm'
+                        : 'bg-white text-gray-800 rounded-tl-sm'
+                    }`}
+                  >
+                    <p className={`text-sm ${notification.sender === user?.userType ? 'text-white' : 'text-gray-800'}`}>
+                      {notification.body}
+                    </p>
+                  </div>
+                  <div className={`flex items-center mt-1 ${notification.sender === user?.userType ? 'justify-end' : 'justify-start'}`}>
+                    <span className={`text-xs ${notification.sender === user?.userType ? 'text-white/60' : 'text-white/50'}`}>
+                      {formatTime(notification.timestamp)}
+                    </span>
+                    {notification.sender === user?.userType && (
+                      <span className="material-symbols-outlined text-xs text-white/60 ml-1">done_all</span>
+                    )}
+                  </div>
                 </div>
-                <p className="text-white text-sm">{notification.body}</p>
+                {notification.sender === user?.userType && (
+                  <div className={`w-10 h-10 rounded-full ml-3 flex-shrink-0 overflow-hidden ${getAvatarColor(notification.sender)} flex items-center justify-center`}>
+                    {notification.sender === 'raissa' ? (
+                      <img src={raissaAvatar} alt="Raíssa" className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                      <span className="text-white font-semibold">{getAvatarInitials(notification.sender)}</span>
+                    )}
+                  </div>
+                )}
               </div>
             ))
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-4 border-t border-white/20">
-          <div className="flex gap-2">
+        <div className="p-3 border-t border-white/20 bg-white/5">
+          <div className="flex gap-2 items-center">
+            <button className="p-2 text-white/60 hover:text-white transition">
+              <span className="material-symbols-outlined">sentiment_satisfied</span>
+            </button>
             <input
               type="text"
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendReply()}
-              placeholder="Digite sua resposta..."
-              className="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-white placeholder-white/50"
+              placeholder="Digite uma mensagem..."
+              className="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-400 text-white placeholder-white/50 text-sm"
               disabled={sending}
             />
             <button
               onClick={handleSendReply}
               disabled={sending || !replyText.trim()}
-              className="px-4 py-2 bg-purple-500/50 text-white rounded-lg hover:bg-purple-500/70 disabled:bg-white/20 disabled:cursor-not-allowed transition-colors"
+              className="p-2 bg-[#005c4b] text-white rounded-full hover:bg-[#004d3e] disabled:bg-white/20 disabled:cursor-not-allowed transition-colors"
             >
-              {sending ? 'Enviando...' : 'Enviar'}
+              {sending ? (
+                <span className="material-symbols-outlined animate-spin">hourglass_empty</span>
+              ) : (
+                <span className="material-symbols-outlined">send</span>
+              )}
             </button>
           </div>
         </div>
