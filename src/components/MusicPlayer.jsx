@@ -35,12 +35,14 @@ function waitForAPI() {
 
 export const useMusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState('');
   const [volume, setVolume] = useState(() => {
     const saved = localStorage.getItem('musicVolume');
     return saved ? parseInt(saved) : 50;
   });
   const playerRef = useRef(null);
   const playerReadyRef = useRef(false);
+  const trackIntervalRef = useRef(null);
 
   // Carregar estado salvo e tentar iniciar player automaticamente
   useEffect(() => {
@@ -49,7 +51,6 @@ export const useMusicPlayer = () => {
       const { playing } = JSON.parse(saved);
       if (playing) {
         setIsPlaying(true);
-        // Tentar iniciar o player após a API carregar
         loadYouTubeAPI();
         waitForAPI().then(() => {
           if (playerReadyRef.current) return;
@@ -74,6 +75,12 @@ export const useMusicPlayer = () => {
               events: {
                 onReady: () => {
                   playerReadyRef.current = true;
+                  updateTrackInfo();
+                },
+                onStateChange: (event) => {
+                  if (event.data === window.YT.PlayerState.PLAYING || event.data === window.YT.PlayerState.PAUSED) {
+                    updateTrackInfo();
+                  }
                 },
                 onError: () => {
                   console.log('Erro no player YouTube');
@@ -87,6 +94,36 @@ export const useMusicPlayer = () => {
       }
     }
   }, []);
+
+  // Atualizar nome da música a cada 3 segundos enquanto toca
+  useEffect(() => {
+    if (isPlaying && playerReadyRef.current) {
+      trackIntervalRef.current = setInterval(updateTrackInfo, 3000);
+    } else {
+      if (trackIntervalRef.current) {
+        clearInterval(trackIntervalRef.current);
+        trackIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (trackIntervalRef.current) {
+        clearInterval(trackIntervalRef.current);
+      }
+    };
+  }, [isPlaying]);
+
+  const updateTrackInfo = () => {
+    try {
+      if (playerRef.current && playerReadyRef.current) {
+        const data = playerRef.current.getVideoData();
+        if (data && data.title) {
+          setCurrentTrack(data.title);
+        }
+      }
+    } catch (e) {
+      // Ignorar erros de API
+    }
+  };
 
   // Salvar estado e volume
   useEffect(() => {
@@ -130,6 +167,12 @@ export const useMusicPlayer = () => {
         events: {
           onReady: () => {
             playerReadyRef.current = true;
+            updateTrackInfo();
+          },
+          onStateChange: (event) => {
+            if (event.data === window.YT.PlayerState.PLAYING || event.data === window.YT.PlayerState.PAUSED) {
+              updateTrackInfo();
+            }
           },
           onError: () => {
             console.log('Erro no player YouTube');
@@ -139,7 +182,6 @@ export const useMusicPlayer = () => {
     } else if (playerReadyRef.current) {
       playerRef.current.playVideo();
     } else {
-      // Player existe mas não está pronto ainda - aguardar o evento onReady
       const checkReady = setInterval(() => {
         if (playerReadyRef.current) {
           clearInterval(checkReady);
@@ -161,21 +203,26 @@ export const useMusicPlayer = () => {
     }
   }, [isPlaying, resumeMusic]);
 
-  const nextTrack = useCallback(() => {
+  const nextTrack_ = useCallback(() => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.nextVideo();
+      setTimeout(updateTrackInfo, 500);
     }
   }, []);
 
-  const prevTrack = useCallback(() => {
+  const prevTrack_ = useCallback(() => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.previousVideo();
+      setTimeout(updateTrackInfo, 500);
     }
   }, []);
 
   // Limpar ao desmontar
   useEffect(() => {
     return () => {
+      if (trackIntervalRef.current) {
+        clearInterval(trackIntervalRef.current);
+      }
       if (playerRef.current) {
         playerRef.current.destroy();
         playerRef.current = null;
@@ -187,5 +234,5 @@ export const useMusicPlayer = () => {
     };
   }, []);
 
-  return { isPlaying, toggleMusic, nextTrack, prevTrack, volume, setVolume };
+  return { isPlaying, toggleMusic, nextTrack: nextTrack_, prevTrack: prevTrack_, volume, setVolume, currentTrack };
 };

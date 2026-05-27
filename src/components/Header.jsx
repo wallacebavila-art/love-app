@@ -10,7 +10,7 @@ import NotificationModal from './NotificationModal';
 import { useLoginModal } from '../contexts/LoginModalContext';
 import raissaAvatar from '../assets/raissa-avatar.png';
 import wallaceAvatar from '../assets/wallace-avatar.png';
-const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, volume, onVolumeChange }) => {
+const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, volume, onVolumeChange, currentTrack }) => {
   const { period } = useTimePeriod();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -23,7 +23,9 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
   const { notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp } = useNotifications();
   const { setIsRaissaLoginModalOpen } = useLoginModal();
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [showTrackTooltip, setShowTrackTooltip] = useState(false);
   const volumeRef = useRef(null);
+  const tooltipTimeoutRef = useRef(null);
 
   // Fechar volume slider ao clicar fora
   useEffect(() => {
@@ -35,6 +37,33 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Atalho de teclado: Espaço para play/pause
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Não ativar se estiver digitando em um input
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+      if (event.code === 'Space') {
+        event.preventDefault();
+        onToggleMusic();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onToggleMusic]);
+
+  // Tooltip: mostrar nome da música ao passar o mouse
+  const handleMouseEnter = () => {
+    if (currentTrack) {
+      tooltipTimeoutRef.current = setTimeout(() => setShowTrackTooltip(true), 500);
+    }
+  };
+  const handleMouseLeave = () => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+    }
+    setShowTrackTooltip(false);
+  };
 
   useEffect(() => {
     // Carregar preferência do localStorage
@@ -139,14 +168,20 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
             <h1 className={`font-headline-lg-mobile ${getTextColor} italic transition-all duration-300 hover:scale-105 cursor-default text-[20px]`}>
               {greeting}, {useLoveName ? 'Amor' : 'Raíssa'}
             </h1>
-            <div className="flex items-center gap-0.5">
+            <div
+              className="flex items-center gap-0.5 relative"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
               <span className={`${getTextColor} p-0.5 flex items-center relative`}>
                 <span className="material-symbols-outlined text-[18px]">music_note</span>
                 {isPlaying && (
                   <span className="absolute -top-0.5 -right-0.5 flex gap-[1px]">
-                    <span className="w-[2px] h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                    <span className="w-[2px] h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></span>
-                    <span className="w-[2px] h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></span>
+                    <span className="w-[2px] h-2.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '0.6s' }}></span>
+                    <span className="w-[2px] h-1.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s', animationDuration: '0.8s' }}></span>
+                    <span className="w-[2px] h-3 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '0.5s' }}></span>
+                    <span className="w-[2px] h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s', animationDuration: '0.7s' }}></span>
+                    <span className="w-[2px] h-2.5 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s', animationDuration: '0.9s' }}></span>
                   </span>
                 )}
               </span>
@@ -160,7 +195,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleMusic(); }}
                 className={`${getTextColor} transition-all duration-300 hover:scale-110 active:scale-95 p-0.5 rounded-full`}
-                title={isPlaying ? 'Pausar música' : 'Tocar música'}
+                title={isPlaying ? 'Pausar música (espaço)' : 'Tocar música (espaço)'}
               >
                 <span className="material-symbols-outlined text-[16px]">
                   {isPlaying ? 'pause' : 'play_arrow'}
@@ -205,6 +240,15 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
                   </div>
                 )}
               </div>
+
+              {/* Tooltip com nome da música */}
+              {showTrackTooltip && currentTrack && (
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-gray-900/95 backdrop-blur-xl border border-white/20 rounded-xl px-3 py-1.5 z-20 shadow-xl whitespace-nowrap">
+                  <p className="text-white text-[11px] font-medium">
+                    🎵 {currentTrack.length > 40 ? currentTrack.substring(0, 40) + '...' : currentTrack}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           <p className={`font-label-md ${getTextColor} text-[12px] ml-8 opacity-80`}>
