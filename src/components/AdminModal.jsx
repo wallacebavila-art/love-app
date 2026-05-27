@@ -4,6 +4,7 @@ import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { db } from '../services/firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { fetchAllPhotos, savePhotoWithUpload, deletePhoto, deletePhotoFromStorage } from '../services/photoService';
+import { listenToNotifications } from '../services/realtimeNotifications';
 
 const AdminModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
@@ -41,6 +42,7 @@ const AdminModal = ({ isOpen, onClose }) => {
   const [sendingNotification, setSendingNotification] = useState(false);
   const [notificationResult, setNotificationResult] = useState(null);
   const [tokens, setTokens] = useState([]);
+  const [chatMessages, setChatMessages] = useState([]);
 
   const getCardBackground = () => {
     switch (period) {
@@ -88,6 +90,15 @@ const AdminModal = ({ isOpen, onClose }) => {
       fetchVerses();
       fetchPhotos();
       fetchTokens();
+
+      // Ouvir mensagens do chat
+      const unsubscribe = listenToNotifications((notifications) => {
+        setChatMessages(notifications);
+      });
+
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
     }
   }, [isOpen]);
 
@@ -221,8 +232,8 @@ const AdminModal = ({ isOpen, onClose }) => {
   };
 
   const sendNotification = async () => {
-    if (!notificationTitle.trim() || !notificationBody.trim()) {
-      alert('Por favor, preencha título e corpo da notificação');
+    if (!notificationBody.trim()) {
+      alert('Por favor, digite sua mensagem');
       return;
     }
 
@@ -232,11 +243,9 @@ const AdminModal = ({ isOpen, onClose }) => {
     try {
       // Enviar notificação via Firestore
       const { sendRealtimeNotification } = await import('../services/realtimeNotifications');
-      const success = await sendRealtimeNotification(notificationTitle, notificationBody);
+      const success = await sendRealtimeNotification('Mensagem', notificationBody, 'admin');
 
       if (success) {
-        alert('Mensagem enviada com sucesso!');
-        setNotificationTitle('');
         setNotificationBody('');
       } else {
         alert('Erro ao enviar mensagem');
@@ -818,53 +827,67 @@ const AdminModal = ({ isOpen, onClose }) => {
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
             <div className="space-y-6">
-              {/* Send Notification Form */}
-              <div className="rounded-lg p-6 border bg-purple-500/20 border-purple-400/30 backdrop-blur-md">
-                <h3 className={`text-lg font-semibold mb-4 ${getTextColor()}`}>Enviar Notificação Manual</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className={`block text-sm font-medium text-white/80 mb-2`}>
-                      Título da Notificação
-                    </label>
-                    <input
-                      type="text"
-                      value={notificationTitle}
-                      onChange={(e) => setNotificationTitle(e.target.value)}
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none text-white"
-                      placeholder="Te amo! 💕"
-                    />
+              {/* Chat */}
+              <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 overflow-hidden flex flex-col max-h-[500px]">
+                <div className={`px-6 py-4 border-b ${getBorderColor()} bg-white/5`}>
+                  <h3 className={`text-lg font-semibold ${getTextColor()}`}>Conversa</h3>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {chatMessages.length === 0 ? (
+                    <div className="text-center py-8 text-white/60">
+                      <span className="material-symbols-outlined text-4xl mb-2">chat_bubble_outline</span>
+                      <p>Nenhuma mensagem</p>
+                    </div>
+                  ) : (
+                    chatMessages.map((message, index) => (
+                      <div
+                        key={index}
+                        className={`p-4 rounded-lg ${
+                          message.sender === 'admin' 
+                            ? 'bg-purple-100 ml-8' 
+                            : 'bg-gray-100 mr-8'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <span className={`text-xs font-semibold ${
+                            message.sender === 'admin' ? 'text-purple-700' : 'text-gray-600'
+                          }`}>
+                            {message.sender === 'admin' ? 'Você' : 'Amor da sua Vida'}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {message.timestamp instanceof Date 
+                              ? message.timestamp.toLocaleString('pt-BR')
+                              : new Date(message.timestamp).toLocaleString('pt-BR')
+                            }
+                          </span>
+                        </div>
+                        <p className="text-gray-800 text-sm">{message.body}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="p-4 border-t border-white/20">
+                  <div className="space-y-4">
+                    <div>
+                      <label className={`block text-sm font-medium text-white/80 mb-2`}>
+                        Sua Mensagem
+                      </label>
+                      <textarea
+                        value={notificationBody}
+                        onChange={(e) => setNotificationBody(e.target.value)}
+                        rows="2"
+                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none text-white"
+                        placeholder="Digite sua mensagem..."
+                      />
+                    </div>
+                    <button
+                      onClick={sendNotification}
+                      disabled={sendingNotification || !notificationBody.trim()}
+                      className="w-full px-6 py-3 bg-purple-500/50 text-white rounded-lg hover:bg-purple-500/70 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {sendingNotification ? 'Enviando...' : '� Enviar Mensagem'}
+                    </button>
                   </div>
-                  <div>
-                    <label className={`block text-sm font-medium text-white/80 mb-2`}>
-                      Corpo da Notificação
-                    </label>
-                    <textarea
-                      value={notificationBody}
-                      onChange={(e) => setNotificationBody(e.target.value)}
-                      rows="3"
-                      className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none text-white"
-                      placeholder="Pensei em você hoje..."
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="sendToActive"
-                      checked={sendToActive}
-                      onChange={(e) => setSendToActive(e.target.checked)}
-                      className="w-4 h-4 text-purple-400 rounded focus:ring-purple-400"
-                    />
-                    <label htmlFor="sendToActive" className="text-sm text-white/80">
-                      Enviar apenas para dispositivos ativos (última atividade &lt; 5 minutos)
-                    </label>
-                  </div>
-                  <button
-                    onClick={sendNotification}
-                    disabled={sendingNotification}
-                    className="w-full px-6 py-3 bg-purple-500/50 text-white rounded-lg hover:bg-purple-500/70 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {sendingNotification ? 'Enviando...' : '🔔 Enviar Notificação'}
-                  </button>
                 </div>
               </div>
 

@@ -3,14 +3,15 @@ import { db } from './firebaseConfig';
 
 const NOTIFICATIONS_COLLECTION = 'notifications';
 
-export const sendRealtimeNotification = async (title, body) => {
+export const sendRealtimeNotification = async (title, body, sender = 'admin') => {
   try {
     const notificationsRef = collection(db, NOTIFICATIONS_COLLECTION);
     const notificationData = {
       title,
       body,
       timestamp: Date.now(),
-      read: false
+      read: false,
+      sender
     };
     
     await addDoc(notificationsRef, notificationData);
@@ -30,7 +31,8 @@ export const listenToNotifications = (callback) => {
       id: doc.id,
       title: doc.data().title,
       body: doc.data().body,
-      timestamp: new Date(doc.data().timestamp)
+      timestamp: new Date(doc.data().timestamp),
+      sender: doc.data().sender || 'admin'
     }));
     
     callback(notifications);
