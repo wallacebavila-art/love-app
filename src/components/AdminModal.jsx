@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { db } from '../services/firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { fetchAllPhotos, savePhotoWithUpload, deletePhoto, deletePhotoFromStorage } from '../services/photoService';
+import { fetchAllPhotos, uploadPhotoToStorage, savePhoto, deletePhoto, deletePhotoFromStorage } from '../services/photoService';
 import { listenToNotifications } from '../services/realtimeNotifications';
 
 const AdminModal = ({ isOpen, onClose }) => {
@@ -337,16 +337,28 @@ const AdminModal = ({ isOpen, onClose }) => {
           console.log(`📸 Processando arquivo ${i + 1}/${formData.files.length}:`, file.name, 'Tamanho:', file.size);
 
           try {
-            const photoId = await savePhotoWithUpload(file, {
-              caption: formData.caption || '',
-              order: photos.length + i
-            });
+            // Upload para Firebase Storage
+            const fileName = `${Date.now()}_${file.name}`;
+            const downloadURL = await uploadPhotoToStorage(file, fileName);
 
-            if (photoId) {
-              console.log(`✅ Foto ${i + 1} salva com sucesso, ID:`, photoId);
-              successfulUploads.push(file.name);
+            if (downloadURL) {
+              // Salvar metadados no Firestore
+              const photoId = await savePhoto({
+                url: downloadURL,
+                caption: formData.caption || '',
+                order: photos.length + i,
+                isStorage: true
+              });
+
+              if (photoId) {
+                console.log(`✅ Foto ${i + 1} salva com sucesso, ID:`, photoId);
+                successfulUploads.push(file.name);
+              } else {
+                console.log(`❌ Foto ${i + 1} falhou ao salvar metadados`);
+                failedUploads.push(file.name);
+              }
             } else {
-              console.log(`❌ Foto ${i + 1} falhou ao salvar`);
+              console.log(`❌ Foto ${i + 1} falhou no upload para Storage`);
               failedUploads.push(file.name);
             }
           } catch (error) {
@@ -649,7 +661,7 @@ const AdminModal = ({ isOpen, onClose }) => {
                   : 'border-transparent text-white/60 hover:text-white'
               }`}
             >
-              Galeria de Fotos
+              Fotos
             </button>
             <button
               onClick={() => { setActiveTab('notifications'); resetForm(); }}

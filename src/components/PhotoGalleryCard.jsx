@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { fetchAllPhotos } from '../services/photoService';
+import { useAuth } from '../contexts/AuthContext';
+import { useLoginModal } from '../contexts/LoginModalContext';
 
 const PhotoGalleryCard = () => {
   const { period } = useTimePeriod();
+  const { user } = useAuth();
+  const { setIsLoginModalOpen } = useLoginModal();
   const [photos, setPhotos] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -137,6 +141,9 @@ const PhotoGalleryCard = () => {
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >
+            {!user && (
+              <div className="absolute inset-0 backdrop-blur-lg rounded-[32px] pointer-events-none z-10"></div>
+            )}
             {/* Badge de Origem (Opcional, apenas para debug interno se necessário, mas vamos deixar discreto) */}
             {currentPhoto.isLocal && (
               <div className="absolute top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-white/10 backdrop-blur-md rounded-full z-20 pointer-events-none">
@@ -163,7 +170,13 @@ const PhotoGalleryCard = () => {
             </div>
 
             {/* Photo */}
-            <div className="w-full h-full flex items-center justify-center p-2 cursor-pointer" onClick={() => setIsExpanded(true)}>
+            <div className="w-full h-full flex items-center justify-center p-2 cursor-pointer" onClick={() => {
+              if (!user) {
+                setIsLoginModalOpen(true);
+              } else {
+                setIsExpanded(true);
+              }
+            }}>
               {currentPhoto.url ? (
                 <img
                   src={currentPhoto.url.startsWith('http') ? currentPhoto.url : currentPhoto.url}
@@ -208,7 +221,7 @@ const PhotoGalleryCard = () => {
       </div>
 
       {/* Modal de foto expandida */}
-      {isExpanded && (
+      {isExpanded && user && (
         <div className="fixed inset-0 z-10 flex items-start justify-center bg-black/90 backdrop-blur-sm pt-16" onClick={() => setIsExpanded(false)}>
           <div className="relative w-full flex items-center justify-center p-4">
             <button

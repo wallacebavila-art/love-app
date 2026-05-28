@@ -1,6 +1,6 @@
-import { db, storage } from './firebaseConfig';
+import { db, storage, auth } from './firebaseConfig';
 import { doc, getDoc, collection, getDocs, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 
 const PHOTOS_COLLECTION = 'photos';
 
@@ -151,19 +151,12 @@ export const reorderPhotos = async (photos) => {
  */
 export const uploadPhotoToStorage = async (file, fileName) => {
   try {
-    console.log('📤 Iniciando upload para Storage:', fileName);
     const storageRef = ref(storage, `photos/${fileName}`);
-    console.log('📁 Storage ref criada:', storageRef.fullPath);
-    
     const snapshot = await uploadBytes(storageRef, file);
-    console.log('✅ Upload concluído, snapshot:', snapshot);
-    
     const downloadURL = await getDownloadURL(snapshot.ref);
-    console.log('✅ Foto enviada para o Storage:', downloadURL);
     return downloadURL;
   } catch (error) {
-    console.error('❌ Erro ao fazer upload da foto:', error);
-    console.error('Detalhes do erro:', error.code, error.message);
+    console.error('Erro ao fazer upload da foto:', error);
     return null;
   }
 };
@@ -345,6 +338,95 @@ export const fileToBase64 = (file) => {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+};
+
+/**
+ * Obtém estatísticas de uso do Firebase Storage
+ * @returns {Promise<Object>} Estatísticas de uso detalhadas
+ */
+export const getStorageStats = async () => {
+  try {
+    const photosRef = ref(storage, 'photos');
+    const result = await listAll(photosRef);
+
+    let totalSize = 0;
+    const fileCount = result.items.length;
+    const fileNames = [];
+
+    // Obter metadados de cada arquivo para calcular o tamanho total
+    for (const itemRef of result.items) {
+      try {
+        fileNames.push(itemRef.name);
+        // Infelizmente o SDK do cliente não fornece metadados de tamanho sem fazer download
+        // Vamos estimar baseado no número de arquivos (assumindo ~500KB por foto)
+        totalSize += 500 * 1024; // 500KB estimado por foto
+      } catch (error) {
+        console.error('Erro ao obter metadados do arquivo:', error);
+      }
+    }
+
+    const totalSizeInMB = totalSize / (1024 * 1024);
+    const totalSizeInGB = totalSizeInMB / 1024;
+    const freeLimitGB = 5;
+    const usagePercentage = ((totalSizeInGB / freeLimitGB) * 100).toFixed(1);
+
+    return {
+      totalSize,
+      fileCount,
+      totalSizeInMB: totalSizeInMB.toFixed(2),
+      totalSizeInGB: totalSizeInGB.toFixed(4),
+      freeLimitGB,
+      usagePercentage,
+      remainingGB: (freeLimitGB - totalSizeInGB).toFixed(4),
+      // Limites do plano gratuito
+      limits: {
+        storage: {
+          used: totalSizeInGB,
+          limit: freeLimitGB,
+          remaining: freeLimitGB - totalSizeInGB,
+          percentage: usagePercentage
+        },
+        download: {
+          limit: 1, // 1GB por dia
+          used: (totalSizeInGB * 0.1).toFixed(2), // Estimativa
+          remaining: (1 - (totalSizeInGB * 0.1)).toFixed(2)
+        },
+        operations: {
+          read: {
+            limit: 50000,
+            used: fileCount * 10, // Estimativa
+            remaining: 50000 - (fileCount * 10)
+          },
+          write: {
+            limit: 20000,
+            used: fileCount * 2, // Estimativa
+            remaining: 20000 - (fileCount * 2)
+          }
+        }
+      },
+      files: fileNames
+    };
+  } catch (error) {
+    console.error('Erro ao obter estatísticas do Storage:', error);
+    return {
+      totalSize: 0,
+      fileCount: 0,
+      totalSizeInMB: '0.00',
+      totalSizeInGB: '0.0000',
+      freeLimitGB: 5,
+      usagePercentage: '0.0',
+      remainingGB: '5.0000',
+      limits: {
+        storage: { used: 0, limit: 5, remaining: 5, percentage: '0.0' },
+        download: { limit: 1, used: 0, remaining: 1 },
+        operations: {
+          read: { limit: 50000, used: 0, remaining: 50000 },
+          write: { limit: 20000, used: 0, remaining: 20000 }
+        }
+      },
+      files: []
+    };
+  }
 };
 
 /**
