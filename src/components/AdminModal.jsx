@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { db } from '../services/firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { fetchAllPhotos, uploadPhotoToStorage, savePhoto, deletePhoto, deletePhotoFromStorage } from '../services/photoService';
+import { fetchAllPhotos, uploadPhotoToStorage, savePhoto, deletePhoto, deletePhotoFromStorage, uploadAudioToStorage } from '../services/photoService';
 import { listenToNotifications } from '../services/realtimeNotifications';
 
 const AdminModal = ({ isOpen, onClose }) => {
@@ -39,6 +39,10 @@ const AdminModal = ({ isOpen, onClose }) => {
   // Estados para notificações
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationBody, setNotificationBody] = useState('');
+  const [audioFile, setAudioFile] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState(null);
   const [sendToActive, setSendToActive] = useState(false);
   const [sendingNotification, setSendingNotification] = useState(false);
   const [notificationResult, setNotificationResult] = useState(null);
@@ -241,8 +245,8 @@ const AdminModal = ({ isOpen, onClose }) => {
   };
 
   const sendNotification = async () => {
-    if (!notificationBody.trim()) {
-      alert('Por favor, digite sua mensagem');
+    if (!notificationBody.trim() && !audioFile && !recordedAudioBlob) {
+      alert('Por favor, digite sua mensagem, selecione um áudio ou grave um áudio');
       return;
     }
 
@@ -250,12 +254,39 @@ const AdminModal = ({ isOpen, onClose }) => {
     setNotificationResult(null);
 
     try {
+      let audioUrl = null;
+
+      // Se houver arquivo de áudio selecionado, fazer upload
+      if (audioFile) {
+        const fileName = `${Date.now()}_${audioFile.name}`;
+        audioUrl = await uploadAudioToStorage(audioFile, fileName);
+        if (!audioUrl) {
+          alert('Erro ao fazer upload do áudio');
+          setSendingNotification(false);
+          return;
+        }
+      }
+
+      // Se houver áudio gravado, fazer upload
+      if (recordedAudioBlob) {
+        const fileName = `${Date.now()}_recording.webm`;
+        audioUrl = await uploadAudioToStorage(recordedAudioBlob, fileName);
+        if (!audioUrl) {
+          alert('Erro ao fazer upload do áudio gravado');
+          setSendingNotification(false);
+          return;
+        }
+      }
+
       // Enviar notificação via Firestore
       const { sendRealtimeNotification } = await import('../services/realtimeNotifications');
-      const success = await sendRealtimeNotification('Mensagem', notificationBody, 'admin');
+      const success = await sendRealtimeNotification('Mensagem', notificationBody, 'admin', audioUrl);
 
       if (success) {
         setNotificationBody('');
+        setAudioFile(null);
+        setRecordedAudioBlob(null);
+        setRecordingTime(0);
       } else {
         alert('Erro ao enviar mensagem');
       }
@@ -265,6 +296,53 @@ const AdminModal = ({ isOpen, onClose }) => {
     } finally {
       setSendingNotification(false);
     }
+  };
+
+  // Lógica de gravação de áudio
+  const mediaRecorderRef = useRef(null);
+  const recordingIntervalRef = useRef(null);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      const chunks = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        setRecordedAudioBlob(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error('Erro ao acessar microfone:', error);
+      alert('Erro ao acessar microfone. Verifique as permissões.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      clearInterval(recordingIntervalRef.current);
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const deleteToken = async (tokenId) => {
@@ -887,6 +965,15 @@ const AdminModal = ({ isOpen, onClose }) => {
                           </span>
                         </div>
                         <p className="text-gray-800 text-sm">{message.body}</p>
+                        {message.audioUrl && (
+                          <div className="mt-2">
+                            <audio
+                              controls
+                              className="w-full h-8"
+                              src={message.audioUrl}
+                            />
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
@@ -906,12 +993,79 @@ const AdminModal = ({ isOpen, onClose }) => {
                         placeholder="Digite sua mensagem..."
                       />
                     </div>
+
+                    {/* Gravação de áudio */}
+                    <div>
+                      <label className={`block text-sm font-medium text-white/80 mb-2`}>
+                        Gravar Áudio
+                      </label>
+                      <div className="flex items-center gap-2">
+                        {!isRecording && !recordedAudioBlob && (
+                          <button
+                            onClick={startRecording}
+                            className="px-4 py-2 bg-red-500/50 text-white rounded-lg hover:bg-red-500/70 transition font-semibold"
+                          >
+                            🎤 Gravar
+                          </button>
+                        )}
+                        {isRecording && (
+                          <button
+                            onClick={stopRecording}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
+                          >
+                            ⏹️ Parar
+                          </button>
+                        )}
+                        {isRecording && (
+                          <span className="text-white font-mono">
+                            {formatTime(recordingTime)}
+                          </span>
+                        )}
+                        {recordedAudioBlob && (
+                          <button
+                            onClick={() => setRecordedAudioBlob(null)}
+                            className="px-4 py-2 bg-gray-500/50 text-white rounded-lg hover:bg-gray-500/70 transition font-semibold"
+                          >
+                            🗑️ Apagar
+                          </button>
+                        )}
+                      </div>
+                      {recordedAudioBlob && (
+                        <div className="mt-2">
+                          <audio
+                            controls
+                            className="w-full h-8"
+                            src={URL.createObjectURL(recordedAudioBlob)}
+                          />
+                          <p className="text-xs text-white/60 mt-1">
+                            Duração: {formatTime(recordingTime)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className={`block text-sm font-medium text-white/80 mb-2`}>
+                        Ou selecionar arquivo de áudio
+                      </label>
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => setAudioFile(e.target.files[0])}
+                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none text-white"
+                      />
+                      {audioFile && (
+                        <p className="text-xs text-white/60 mt-1">
+                          Arquivo selecionado: {audioFile.name} ({(audioFile.size / 1024).toFixed(2)} KB)
+                        </p>
+                      )}
+                    </div>
                     <button
                       onClick={sendNotification}
-                      disabled={sendingNotification || !notificationBody.trim()}
+                      disabled={sendingNotification || (!notificationBody.trim() && !audioFile && !recordedAudioBlob)}
                       className="w-full px-6 py-3 bg-purple-500/50 text-white rounded-lg hover:bg-purple-500/70 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {sendingNotification ? 'Enviando...' : '� Enviar Mensagem'}
+                      {sendingNotification ? 'Enviando...' : '📤 Enviar Mensagem'}
                     </button>
                   </div>
                 </div>

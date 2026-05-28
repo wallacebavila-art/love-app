@@ -3,7 +3,7 @@ import { db } from './firebaseConfig';
 
 const NOTIFICATIONS_COLLECTION = 'notifications';
 
-export const sendRealtimeNotification = async (title, body, sender = 'admin') => {
+export const sendRealtimeNotification = async (title, body, sender = 'admin', audioUrl = null) => {
   try {
     const notificationsRef = collection(db, NOTIFICATIONS_COLLECTION);
     const notificationData = {
@@ -11,9 +11,10 @@ export const sendRealtimeNotification = async (title, body, sender = 'admin') =>
       body,
       timestamp: Date.now(),
       read: false,
-      sender
+      sender,
+      audioUrl
     };
-    
+
     await addDoc(notificationsRef, notificationData);
     return true;
   } catch (error) {
@@ -25,21 +26,22 @@ export const sendRealtimeNotification = async (title, body, sender = 'admin') =>
 export const listenToNotifications = (callback) => {
   const notificationsRef = collection(db, NOTIFICATIONS_COLLECTION);
   const q = query(notificationsRef, orderBy('timestamp', 'desc'), limit(50));
-  
+
   const unsubscribe = onSnapshot(q, (snapshot) => {
     const notifications = snapshot.docs.map(doc => ({
       id: doc.id,
       title: doc.data().title,
       body: doc.data().body,
       timestamp: new Date(doc.data().timestamp),
-      sender: doc.data().sender || 'admin'
+      sender: doc.data().sender || 'admin',
+      audioUrl: doc.data().audioUrl || null
     }));
-    
+
     callback(notifications);
   }, (error) => {
     console.error('Erro ao ouvir notificações:', error);
   });
-  
+
   return unsubscribe;
 };
 

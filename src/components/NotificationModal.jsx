@@ -1,10 +1,12 @@
 import { useNotifications } from './NotificationToast';
 import { useState, useEffect, useRef } from 'react';
 import { sendRealtimeNotification } from '../services/realtimeNotifications';
+import { uploadAudioToStorage } from '../services/photoService';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { useAuth } from '../contexts/AuthContext';
 import raissaAvatar from '../assets/raissa-avatar.png';
 import wallaceAvatar from '../assets/wallace-avatar.png';
+import AudioPlayer from './AudioPlayer';
 
 const EMOJI_CATEGORIES = [
   {
@@ -42,8 +44,13 @@ const NotificationModal = ({ isOpen, onClose }) => {
   const [sending, setSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiCategory, setEmojiCategory] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState(null);
   const messagesEndRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordingIntervalRef = useRef(null);
 
   const getCardBackground = () => {
     switch (period) {
@@ -107,13 +114,28 @@ const NotificationModal = ({ isOpen, onClose }) => {
   };
 
   const handleSendReply = async () => {
-    if (!replyText.trim()) return;
-    
+    if (!replyText.trim() && !recordedAudioBlob) return;
+
     setSending(true);
     try {
-      const success = await sendRealtimeNotification('Resposta', replyText, user?.userType || 'raissa');
+      let audioUrl = null;
+
+      // Se houver áudio gravado, fazer upload
+      if (recordedAudioBlob) {
+        const fileName = `${Date.now()}_recording.webm`;
+        audioUrl = await uploadAudioToStorage(recordedAudioBlob, fileName);
+        if (!audioUrl) {
+          alert('Erro ao fazer upload do áudio');
+          setSending(false);
+          return;
+        }
+      }
+
+      const success = await sendRealtimeNotification('Resposta', replyText, user?.userType || 'raissa', audioUrl);
       if (success) {
         setReplyText('');
+        setRecordedAudioBlob(null);
+        setRecordingTime(0);
       } else {
         alert('Erro ao enviar resposta');
       }
@@ -123,6 +145,50 @@ const NotificationModal = ({ isOpen, onClose }) => {
     } finally {
       setSending(false);
     }
+  };
+
+  // Lógica de gravação de áudio
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      const chunks = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        setRecordedAudioBlob(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error('Erro ao acessar microfone:', error);
+      alert('Erro ao acessar microfone. Verifique as permissões.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      clearInterval(recordingIntervalRef.current);
+    }
+  };
+
+  const formatRecordingTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const scrollToBottom = () => {
@@ -193,9 +259,17 @@ const NotificationModal = ({ isOpen, onClose }) => {
                         : 'bg-white text-gray-800 rounded-tl-sm'
                     }`}
                   >
-                    <p className={`text-sm ${notification.sender === user?.userType ? 'text-white' : 'text-gray-800'}`}>
-                      {renderMessageContent(notification.body)}
-                    </p>
+                    {notification.body && (
+                      <p className={`text-sm ${notification.sender === user?.userType ? 'text-white' : 'text-gray-800'}`}>
+                        {renderMessageContent(notification.body)}
+                      </p>
+                    )}
+                    {notification.audioUrl && (
+                      <AudioPlayer
+                        audioUrl={notification.audioUrl}
+                        isSent={notification.sender === user?.userType}
+                      />
+                    )}
                   </div>
                   <div className={`flex items-center mt-1 ${notification.sender === user?.userType ? 'justify-end' : 'justify-start'}`}>
                     <span className={`text-xs ${notification.sender === user?.userType ? 'text-white/60' : 'text-white/50'}`}>
@@ -274,9 +348,43 @@ const NotificationModal = ({ isOpen, onClose }) => {
               className="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-400 text-white placeholder-white/50 text-sm"
               disabled={sending}
             />
+            <div className="flex gap-2 items-center">
+              {!isRecording && !recordedAudioBlob && (
+                <button
+                  onClick={startRecording}
+                  className="p-2 text-white/60 hover:text-red-400 transition"
+                  title="Gravar áudio"
+                >
+                  <span className="material-symbols-outlined">mic</span>
+                </button>
+              )}
+              {isRecording && (
+                <button
+                  onClick={stopRecording}
+                  className="p-2 text-red-400 hover:text-red-300 transition"
+                  title="Parar gravação"
+                >
+                  <span className="material-symbols-outlined">stop_circle</span>
+                </button>
+              )}
+              {isRecording && (
+                <span className="text-white font-mono text-xs">
+                  {formatRecordingTime(recordingTime)}
+                </span>
+              )}
+              {recordedAudioBlob && (
+                <button
+                  onClick={() => setRecordedAudioBlob(null)}
+                  className="p-2 text-white/60 hover:text-red-400 transition"
+                  title="Apagar áudio"
+                >
+                  <span className="material-symbols-outlined">delete</span>
+                </button>
+              )}
+            </div>
             <button
               onClick={handleSendReply}
-              disabled={sending || !replyText.trim()}
+              disabled={sending || (!replyText.trim() && !recordedAudioBlob)}
               className="p-2 bg-[#005c4b] text-white rounded-full hover:bg-[#004d3e] disabled:bg-white/20 disabled:cursor-not-allowed transition-colors"
             >
               {sending ? (
@@ -286,6 +394,18 @@ const NotificationModal = ({ isOpen, onClose }) => {
               )}
             </button>
           </div>
+          {recordedAudioBlob && (
+            <div className="px-3 pb-2">
+              <audio
+                controls
+                className="w-full h-8"
+                src={URL.createObjectURL(recordedAudioBlob)}
+              />
+              <p className="text-xs text-white/60 mt-1">
+                Duração: {formatRecordingTime(recordingTime)}
+              </p>
+            </div>
+          )}
         </div>
       </div>
       <style>{`

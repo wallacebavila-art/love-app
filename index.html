@@ -10,7 +10,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" as="style">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-    
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- MapLibre GL CSS -->
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#e6b89c" />
     <meta name="description" content="Mensagens diárias de amor para Raíssa" />
@@ -22,6 +28,8 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Google Maps JavaScript API -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_GOOGLE_AQUI&libraries=places"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

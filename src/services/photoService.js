@@ -158,8 +158,8 @@ export const uploadPhotoToStorage = async (file, fileName) => {
       throw new Error('Arquivos HEIC não são suportados. Por favor, converta a imagem para JPEG ou PNG antes de fazer upload.');
     }
 
-    // Comprimir imagem antes do upload
-    const compressedBlob = await compressImage(file, 1920, 1080, 0.8, 300);
+    // Comprimir imagem antes do upload (melhor qualidade: 500KB, qualidade 0.9)
+    const compressedBlob = await compressImage(file, 1920, 1080, 0.9, 500);
 
     // Criar novo nome de arquivo com extensão .webp
     const webpFileName = fileName.replace(/\.[^/.]+$/, '') + '.webp';
@@ -172,6 +172,39 @@ export const uploadPhotoToStorage = async (file, fileName) => {
     return downloadURL;
   } catch (error) {
     console.error('Erro ao fazer upload da foto:', error);
+    return null;
+  }
+};
+
+/**
+ * Faz upload de um áudio para o Firebase Storage
+ * @param {File} file - Arquivo de áudio
+ * @param {string} fileName - Nome do arquivo
+ * @returns {Promise<string>} URL do áudio ou null
+ */
+export const uploadAudioToStorage = async (file, fileName) => {
+  try {
+    console.log('🎤 Iniciando upload do áudio:', file.name, 'Tamanho:', (file.size / 1024).toFixed(2), 'KB');
+
+    // Verificar se é arquivo de áudio
+    if (!file.type.startsWith('audio/')) {
+      throw new Error('O arquivo deve ser um áudio (MP3, WAV, M4A, etc.)');
+    }
+
+    // Limitar tamanho do áudio (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      throw new Error('O áudio é muito grande. Máximo permitido: 10MB');
+    }
+
+    const storageRef = ref(storage, `audio/${fileName}`);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    console.log('✅ Upload de áudio concluído:', downloadURL);
+    return downloadURL;
+  } catch (error) {
+    console.error('Erro ao fazer upload do áudio:', error);
     return null;
   }
 };

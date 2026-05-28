@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from './NotificationToast';
 import NotificationModal from './NotificationModal';
 import { useLoginModal } from '../contexts/LoginModalContext';
+import TravelMapModal from './TravelMapModal';
 import raissaAvatar from '../assets/raissa-avatar.png';
 import wallaceAvatar from '../assets/wallace-avatar.png';
 const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, volume, onVolumeChange, currentTrack, currentArtist }) => {
@@ -20,6 +21,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
   const [useLoveName, setUseLoveName] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [showRaissaMessage, setShowRaissaMessage] = useState(false);
+  const [isTravelMapOpen, setIsTravelMapOpen] = useState(false);
   const { notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp } = useNotifications();
   const { setIsRaissaLoginModalOpen } = useLoginModal();
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
@@ -293,6 +295,14 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
             <span className="text-white text-xs font-medium">Clima</span>
           </button>
           <button
+            onClick={() => setIsTravelMapOpen(true)}
+            className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
+            title="Mapa de Viagens"
+          >
+            <span className="material-symbols-outlined text-white transition-transform duration-300">map</span>
+            <span className="text-white text-xs font-medium">Mapa</span>
+          </button>
+          <button
             onClick={() => {
               if (user) {
                 setIsNotificationModalOpen(true);
@@ -388,6 +398,11 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
       <NotificationModal
         isOpen={isNotificationModalOpen}
         onClose={() => setIsNotificationModalOpen(false)}
+      />
+
+      <TravelMapModal
+        isOpen={isTravelMapOpen}
+        onClose={() => setIsTravelMapOpen(false)}
       />
 
       {/* Raíssa Message Modal */}
