@@ -10,7 +10,7 @@ import NotificationModal from './NotificationModal';
 import { useLoginModal } from '../contexts/LoginModalContext';
 import raissaAvatar from '../assets/raissa-avatar.png';
 import wallaceAvatar from '../assets/wallace-avatar.png';
-const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, volume, onVolumeChange, currentTrack }) => {
+const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, volume, onVolumeChange, currentTrack, currentArtist }) => {
   const { period } = useTimePeriod();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -23,9 +23,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
   const { notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp } = useNotifications();
   const { setIsRaissaLoginModalOpen } = useLoginModal();
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [showTrackTooltip, setShowTrackTooltip] = useState(false);
   const volumeRef = useRef(null);
-  const tooltipTimeoutRef = useRef(null);
 
   // Fechar volume slider ao clicar fora
   useEffect(() => {
@@ -168,11 +166,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
             <h1 className={`font-headline-lg-mobile ${getTextColor} italic transition-all duration-300 hover:scale-105 cursor-default text-[20px]`}>
               {greeting}, {useLoveName ? 'Amor' : 'Raíssa'}
             </h1>
-            <div
-              className="flex items-center gap-0.5 relative"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
+            <div className="flex items-center gap-0.5 relative">
               <span className={`${getTextColor} p-0.5 flex items-center relative`}>
                 <span className="material-symbols-outlined text-[18px]">music_note</span>
                 {isPlaying && (
@@ -240,13 +234,13 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
                   </div>
                 )}
               </div>
-
-              {/* Tooltip com nome da música */}
-              {showTrackTooltip && currentTrack && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-gray-900/95 backdrop-blur-xl border border-white/20 rounded-xl px-3 py-1.5 z-20 shadow-xl whitespace-nowrap">
-                  <p className="text-white text-[11px] font-medium">
-                    🎵 {currentTrack.length > 40 ? currentTrack.substring(0, 40) + '...' : currentTrack}
-                  </p>
+              {isPlaying && currentTrack && (
+                <div className="ml-2 max-w-[150px] md:max-w-[200px] overflow-hidden">
+                  <div className="animate-marquee whitespace-nowrap">
+                    <p className={`${getTextColor} text-[10px] md:text-[11px] font-medium`}>
+                      🎵 {currentArtist ? `${currentArtist} - ` : ''}{currentTrack}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

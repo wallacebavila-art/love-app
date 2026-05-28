@@ -36,6 +36,7 @@ function waitForAPI() {
 export const useMusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState('');
+  const [currentArtist, setCurrentArtist] = useState('');
   const [volume, setVolume] = useState(() => {
     const saved = localStorage.getItem('musicVolume');
     return saved ? parseInt(saved) : 50;
@@ -118,6 +119,9 @@ export const useMusicPlayer = () => {
         const data = playerRef.current.getVideoData();
         if (data && data.title) {
           setCurrentTrack(data.title);
+        }
+        if (data && data.author) {
+          setCurrentArtist(data.author);
         }
       }
     } catch (e) {
@@ -234,5 +238,5 @@ export const useMusicPlayer = () => {
     };
   }, []);
 
-  return { isPlaying, toggleMusic, nextTrack: nextTrack_, prevTrack: prevTrack_, volume, setVolume, currentTrack };
+  return { isPlaying, toggleMusic, nextTrack: nextTrack_, prevTrack: prevTrack_, volume, setVolume, currentTrack, currentArtist };
 };

@@ -29,7 +29,7 @@ import { requestFCMToken, onForegroundMessage, showNotification } from './servic
 import { saveFCMToken } from './services/fcmTokenService';
 
 function AppContent() {
-  const { isPlaying, toggleMusic, nextTrack, prevTrack, volume, setVolume, currentTrack } = useMusicPlayer();
+  const { isPlaying, toggleMusic, nextTrack, prevTrack, volume, setVolume, currentTrack, currentArtist } = useMusicPlayer();
   const [dailyMessage, setDailyMessage] = useState(null);
   const [dailyVerse, setDailyVerse] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -281,6 +281,7 @@ function AppContent() {
             volume={volume}
             onVolumeChange={setVolume}
             currentTrack={currentTrack}
+            currentArtist={currentArtist}
           />
 
           <UpcomingEventsTicker />

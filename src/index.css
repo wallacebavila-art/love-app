@@ -227,6 +227,23 @@ html, body {
       white-space: normal;
       padding: 0;
     }
+
+    .animate-marquee {
+      animation: none;
+    }
+  }
+
+  .animate-marquee {
+    animation: marquee 10s linear infinite;
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
   }
 
   .status-bar-spacer {
