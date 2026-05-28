@@ -234,25 +234,30 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
                   </div>
                 )}
               </div>
-              {isPlaying && currentTrack && (
-                <div className="ml-2 max-w-[150px] md:max-w-[200px] overflow-hidden">
-                  <div className="animate-marquee whitespace-nowrap">
-                    <p className={`${getTextColor} text-[10px] md:text-[11px] font-medium`}>
-                      🎵 {currentArtist ? `${currentArtist} - ` : ''}{currentTrack}
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
           <p className={`font-label-md ${getTextColor} text-[12px] ml-8 opacity-80`}>
             {getFullDate()}
           </p>
-          {weather && (
-            <p className={`font-label-md ${getTextColor} text-[11px] ml-8 opacity-70`}>
-              {weather.temp}°C
-            </p>
-          )}
+          <div className="flex items-center gap-2 ml-8 mt-0.5 min-h-[16px]">
+            {weather && (
+              <p className={`font-label-md ${getTextColor} text-[11px] opacity-75`}>
+                {weather.temp}°C
+              </p>
+            )}
+            {weather && isPlaying && currentTrack && (
+              <span className={`${getTextColor} text-[10px] opacity-40 select-none`}>•</span>
+            )}
+            {isPlaying && currentTrack && (
+              <div className="max-w-[75px] sm:max-w-[110px] md:max-w-[160px] overflow-hidden flex items-center">
+                <div className="animate-marquee whitespace-nowrap">
+                  <p className={`${getTextColor} text-[10px] md:text-[11px] font-medium opacity-85`}>
+                    🎵 {currentArtist ? `${currentArtist} - ` : ''}{currentTrack}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         
         {/* Botões Desktop */}
