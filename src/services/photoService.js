@@ -151,9 +151,24 @@ export const reorderPhotos = async (photos) => {
  */
 export const uploadPhotoToStorage = async (file, fileName) => {
   try {
-    const storageRef = ref(storage, `photos/${fileName}`);
-    const snapshot = await uploadBytes(storageRef, file);
+    console.log('📸 Iniciando upload da foto:', file.name, 'Tamanho original:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+
+    // Verificar se é HEIC e alertar para converter manualmente
+    if (file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic') {
+      throw new Error('Arquivos HEIC não são suportados. Por favor, converta a imagem para JPEG ou PNG antes de fazer upload.');
+    }
+
+    // Comprimir imagem antes do upload
+    const compressedBlob = await compressImage(file, 1920, 1080, 0.8, 300);
+
+    // Criar novo nome de arquivo com extensão .webp
+    const webpFileName = fileName.replace(/\.[^/.]+$/, '') + '.webp';
+
+    const storageRef = ref(storage, `photos/${webpFileName}`);
+    const snapshot = await uploadBytes(storageRef, compressedBlob);
     const downloadURL = await getDownloadURL(snapshot.ref);
+
+    console.log('✅ Upload concluído:', downloadURL);
     return downloadURL;
   } catch (error) {
     console.error('Erro ao fazer upload da foto:', error);
@@ -277,11 +292,13 @@ export const uploadToImgur = async (file) => {
 /**
  * Comprime e redimensiona imagem usando Canvas
  * @param {File} file - Arquivo de imagem
- * @param {number} maxWidth - Largura máxima (padrão: 1024)
- * @param {number} quality - Qualidade (0-1, padrão: 0.7)
- * @returns {Promise<string>} String base64 comprimida
+ * @param {number} maxWidth - Largura máxima (padrão: 1920)
+ * @param {number} maxHeight - Altura máxima (padrão: 1080)
+ * @param {number} quality - Qualidade (0-1, padrão: 0.8)
+ * @param {number} maxSizeKB - Tamanho máximo em KB (padrão: 300)
+ * @returns {Promise<Blob>} Blob comprimido
  */
-export const compressImage = (file, maxWidth = 1024, quality = 0.7) => {
+export const compressImage = (file, maxWidth = 1920, maxHeight = 1080, quality = 0.8, maxSizeKB = 300) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -293,9 +310,10 @@ export const compressImage = (file, maxWidth = 1024, quality = 0.7) => {
           let height = img.height;
 
           // Calcular novas dimensões mantendo proporção
-          if (width > maxWidth) {
-            height = (height * maxWidth) / width;
-            width = maxWidth;
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = width * ratio;
+            height = height * ratio;
           }
 
           canvas.width = width;
@@ -304,9 +322,28 @@ export const compressImage = (file, maxWidth = 1024, quality = 0.7) => {
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
 
-          // Converter para base64 com compressão
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-          resolve(compressedDataUrl);
+          // Função recursiva para ajustar qualidade até atingir tamanho máximo
+          const compressWithQuality = (currentQuality) => {
+            canvas.toBlob((blob) => {
+              if (!blob) {
+                reject(new Error('Erro ao comprimir imagem'));
+                return;
+              }
+
+              const sizeKB = blob.size / 1024;
+
+              // Se o tamanho for aceitável ou a qualidade for muito baixa
+              if (sizeKB <= maxSizeKB || currentQuality <= 0.1) {
+                console.log(`📸 Imagem comprimida: ${(blob.size / 1024).toFixed(2)}KB (qualidade: ${currentQuality})`);
+                resolve(blob);
+              } else {
+                // Reduzir qualidade e tentar novamente
+                compressWithQuality(currentQuality - 0.1);
+              }
+            }, 'image/webp', currentQuality);
+          };
+
+          compressWithQuality(quality);
         } catch (error) {
           reject(new Error(`Erro ao processar imagem ${file.name}: ${error.message}`));
         }
