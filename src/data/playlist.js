@@ -48,6 +48,6 @@ export const playlist = [
     id: 7,
     title: "Díario de um Cafajeste \"O amor não paga as conta\" MC's Lele JP, Ryan SP, Meno k,Negão Original, Tuto",
     artist: "MC Lele JP",
-    src: "/music/Diario_de_um_Cafajeste_O_amor_nao_paga_as_conta_MC_1780081860539.mp3"
+    src: "/love-app/music/Diario_de_um_Cafajeste_O_amor_nao_paga_as_conta_MC_1780081860539.mp3"
   },
 ];
