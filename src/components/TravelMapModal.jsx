@@ -22,8 +22,6 @@ const TravelMapModal = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [placeNameSuggestions, setPlaceNameSuggestions] = useState([]);
-  const [showPlaceNameSuggestions, setShowPlaceNameSuggestions] = useState(false);
 
   // Pesquisar usando Places API (Legacy)
   const handleSearch = useCallback((term) => {
@@ -49,52 +47,6 @@ const TravelMapModal = ({ isOpen, onClose }) => {
       );
     }
   }, []);
-
-  // Autocomplete para campo de nome do lugar
-  const handlePlaceNameChange = useCallback((name) => {
-    setNewPlace({ ...newPlace, name });
-    if (!name || name.trim() === '') {
-      setPlaceNameSuggestions([]);
-      setShowPlaceNameSuggestions(false);
-      return;
-    }
-
-    if (window.google && window.google.maps && window.google.maps.places && window.google.maps.places.AutocompleteService) {
-      const service = new window.google.maps.places.AutocompleteService();
-      service.getPlacePredictions(
-        { input: name },
-        (predictions, status) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-            setPlaceNameSuggestions(predictions);
-            setShowPlaceNameSuggestions(true);
-          } else {
-            setPlaceNameSuggestions([]);
-          }
-        }
-      );
-    }
-  }, [newPlace]);
-
-  // Selecionar sugestão de nome do lugar
-  const handleSelectPlaceNameSuggestion = useCallback((place) => {
-    if (window.google && window.google.maps && window.google.maps.places && window.google.maps.places.PlacesService) {
-      const service = new window.google.maps.places.PlacesService(mapInstanceRef.current);
-      service.getDetails(
-        { placeId: place.place_id },
-        (result, status) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
-            setNewPlace({
-              ...newPlace,
-              name: result.name || place.structured_formatting.main_text,
-              description: result.formatted_address || '',
-            });
-            setShowPlaceNameSuggestions(false);
-            setPlaceNameSuggestions([]);
-          }
-        }
-      );
-    }
-  }, [newPlace, mapInstanceRef]);
 
   // Selecionar lugar da pesquisa
   const handleSelectSearchResult = useCallback((place) => {
