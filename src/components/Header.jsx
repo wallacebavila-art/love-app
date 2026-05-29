@@ -11,7 +11,7 @@ import { useLoginModal } from '../contexts/LoginModalContext';
 import TravelMapModal from './TravelMapModal';
 import raissaAvatar from '../assets/raissa-avatar.png';
 import wallaceAvatar from '../assets/wallace-avatar.png';
-const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, volume, onVolumeChange, currentTrack, currentArtist }) => {
+const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, onOpenTravelMap, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, volume, onVolumeChange, currentTrack, currentArtist }) => {
   const { period } = useTimePeriod();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -393,6 +393,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
         onOpenAdmin={onOpenAdmin}
         onOpenSettings={onOpenSettings}
         onOpenICloudCalendar={onOpenICloudCalendar}
+        onOpenTravelMap={onOpenTravelMap}
       />
       
       <NotificationModal

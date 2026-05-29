@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar }) => {
+const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, onOpenTravelMap }) => {
   const { user } = useAuth();
   const [useLoveName, setUseLoveName] = useState(false);
 
@@ -64,6 +64,17 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin,
             >
               <span className="material-symbols-outlined text-gray-600">event</span>
               <span className="font-body-md text-[16px] text-gray-700">Nosso Calendário</span>
+            </button>
+
+            <button
+              onClick={() => {
+                onOpenTravelMap();
+                onClose();
+              }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 transition-colors"
+            >
+              <span className="material-symbols-outlined text-gray-600">map</span>
+              <span className="font-body-md text-[16px] text-gray-700">Mapa de Lugares</span>
             </button>
 
             <button

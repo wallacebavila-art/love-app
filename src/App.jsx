@@ -12,6 +12,7 @@ import Login from './components/Login';
 import RaissaLogin from './components/RaissaLogin';
 import AdminModal from './components/AdminModal';
 import SettingsModal from './components/SettingsModal';
+import TravelMapModal from './components/TravelMapModal';
 import NotificationToast, { NotificationProvider } from './components/NotificationToast';
 import { useMusicPlayer } from './components/MusicPlayer';
 import ICloudCalendarWidget from './components/ICloudCalendarWidget';
@@ -38,6 +39,7 @@ function AppContent() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isICloudCalendarModalOpen, setIsICloudCalendarModalOpen] = useState(false);
+  const [isTravelMapModalOpen, setIsTravelMapModalOpen] = useState(false);
   const { isLoginModalOpen, setIsLoginModalOpen, isRaissaLoginModalOpen, setIsRaissaLoginModalOpen } = useLoginModal();
   const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -274,6 +276,7 @@ function AppContent() {
             onOpenAdmin={() => setIsAdminModalOpen(true)}
             onOpenSettings={() => setIsSettingsModalOpen(true)}
             onOpenICloudCalendar={() => setIsICloudCalendarModalOpen(true)}
+            onOpenTravelMap={() => setIsTravelMapModalOpen(true)}
             isPlaying={isPlaying}
             onToggleMusic={toggleMusic}
             onNextTrack={nextTrack}
@@ -375,6 +378,11 @@ function AppContent() {
           <SettingsModal
             isOpen={isSettingsModalOpen}
             onClose={() => setIsSettingsModalOpen(false)}
+          />
+
+          <TravelMapModal
+            isOpen={isTravelMapModalOpen}
+            onClose={() => setIsTravelMapModalOpen(false)}
           />
 
           <NotificationToast />

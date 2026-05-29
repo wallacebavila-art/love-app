@@ -13,15 +13,17 @@ const TravelMapModal = ({ isOpen, onClose }) => {
     name: '',
     description: '',
     date: '',
-    icon: 'heart', // ícone padrão
+    icon: 'star', // ícone padrão
   });
   const [tempPosition, setTempPosition] = useState(null);
   const mapInstanceRef = useRef(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [editingPlace, setEditingPlace] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [placeNameSuggestions, setPlaceNameSuggestions] = useState([]);
+  const [showPlaceNameSuggestions, setShowPlaceNameSuggestions] = useState(false);
 
   // Pesquisar usando Places API (Legacy)
   const handleSearch = useCallback((term) => {
@@ -47,6 +49,52 @@ const TravelMapModal = ({ isOpen, onClose }) => {
       );
     }
   }, []);
+
+  // Autocomplete para campo de nome do lugar
+  const handlePlaceNameChange = useCallback((name) => {
+    setNewPlace({ ...newPlace, name });
+    if (!name || name.trim() === '') {
+      setPlaceNameSuggestions([]);
+      setShowPlaceNameSuggestions(false);
+      return;
+    }
+
+    if (window.google && window.google.maps && window.google.maps.places && window.google.maps.places.AutocompleteService) {
+      const service = new window.google.maps.places.AutocompleteService();
+      service.getPlacePredictions(
+        { input: name },
+        (predictions, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+            setPlaceNameSuggestions(predictions);
+            setShowPlaceNameSuggestions(true);
+          } else {
+            setPlaceNameSuggestions([]);
+          }
+        }
+      );
+    }
+  }, [newPlace]);
+
+  // Selecionar sugestão de nome do lugar
+  const handleSelectPlaceNameSuggestion = useCallback((place) => {
+    if (window.google && window.google.maps && window.google.maps.places && window.google.maps.places.PlacesService) {
+      const service = new window.google.maps.places.PlacesService(mapInstanceRef.current);
+      service.getDetails(
+        { placeId: place.place_id },
+        (result, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && result) {
+            setNewPlace({
+              ...newPlace,
+              name: result.name || place.structured_formatting.main_text,
+              description: result.formatted_address || '',
+            });
+            setShowPlaceNameSuggestions(false);
+            setPlaceNameSuggestions([]);
+          }
+        }
+      );
+    }
+  }, [newPlace, mapInstanceRef]);
 
   // Selecionar lugar da pesquisa
   const handleSelectSearchResult = useCallback((place) => {
@@ -115,8 +163,9 @@ const TravelMapModal = ({ isOpen, onClose }) => {
       star: '⭐',
       camera: '📸',
       food: '🍽️',
+      place: '📍',
     };
-    return icons[iconId] || '❤️';
+    return icons[iconId] || '⭐';
   };
 
   const getTextColor = () => {
@@ -263,9 +312,126 @@ const TravelMapModal = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
-      <div className={`relative ${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} rounded-[32px] shadow-2xl shadow-black/10 w-full max-w-7xl h-[90vh] overflow-hidden flex`}>
+      <div className={`relative ${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} rounded-[32px] shadow-2xl shadow-black/10 w-full max-w-7xl h-[90vh] overflow-hidden flex flex-col`}>
+        {/* Map Container */}
+        <div className="flex-1 relative flex flex-col">
+          <div className="flex-1 relative overflow-hidden">
+            {loading ? (
+              <div className="absolute inset-0 flex items-center justify-center text-white/60">
+                <span className="material-symbols-outlined text-4xl mb-2 animate-pulse">map</span>
+                <p className="ml-2">Carregando mapa...</p>
+              </div>
+            ) : (
+              <div className="absolute inset-0">
+                <TravelMap
+                  places={places}
+                  onAddPlace={handleAddPlace}
+                  onPlaceClick={handlePlaceClick}
+                  isAddingMode={showAddForm}
+                  onMapReady={(map) => {
+                    mapInstanceRef.current = map;
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Add Form Overlay */}
+            {showAddForm && (
+              <div className="absolute top-4 right-4 w-64 bg-black/60 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-2xl z-10">
+                <h3 className={`text-lg font-semibold ${getTextColor()} mb-4`}>
+                  {editingPlace ? 'Editar Lugar' : 'Adicionar Novo Lugar'}
+                </h3>
+                {!tempPosition && !editingPlace && (
+                  <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/40 rounded-lg">
+                    <p className="text-sm text-yellow-200">
+                      <span className="material-symbols-outlined text-sm align-middle mr-1">warning</span>
+                      Clique no mapa para selecionar a localização
+                    </p>
+                  </div>
+                )}
+                <div className="space-y-3">
+                  <div>
+                    <label className={`block text-xs font-medium text-white/80 mb-1`}>
+                      Nome do Lugar *
+                    </label>
+                    <input
+                      type="text"
+                      value={newPlace.name}
+                      onChange={(e) => setNewPlace({ ...newPlace, name: e.target.value })}
+                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none text-white text-sm"
+                      placeholder="Ex: Restaurante em Paris"
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-medium text-white/80 mb-1`}>
+                      Descrição
+                    </label>
+                    <textarea
+                      value={newPlace.description}
+                      onChange={(e) => setNewPlace({ ...newPlace, description: e.target.value })}
+                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none text-white text-sm resize-none"
+                      rows="2"
+                      placeholder="Ex: Jantar romântico com vista para a Torre Eiffel"
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-medium text-white/80 mb-1`}>
+                      Data da Visita
+                    </label>
+                    <input
+                      type="date"
+                      value={newPlace.date}
+                      onChange={(e) => setNewPlace({ ...newPlace, date: e.target.value })}
+                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none text-white text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-medium text-white/80 mb-1`}>
+                      Ícone
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {['star', 'suitcase', 'place'].map((icon) => (
+                        <button
+                          key={icon}
+                          type="button"
+                          onClick={() => setNewPlace({ ...newPlace, icon })}
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl transition ${
+                            newPlace.icon === icon
+                              ? 'bg-blue-500/50 border-2 border-blue-400'
+                              : 'bg-white/10 border-2 border-white/20 hover:bg-white/20'
+                          }`}
+                        >
+                          {getIconEmoji(icon)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-4">
+                  <button
+                    onClick={handleSavePlace}
+                    className="flex-1 px-4 py-2 bg-blue-500/50 text-white rounded-lg hover:bg-blue-500/70 transition font-semibold text-sm"
+                  >
+                    {editingPlace ? 'Salvar' : 'Adicionar'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setNewPlace({ name: '', description: '', date: '', icon: 'heart' });
+                      setTempPosition(null);
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-500/50 text-white rounded-lg hover:bg-gray-500/70 transition font-semibold text-sm"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Sidebar - Lista de Lugares */}
-        <div className={`${isSidebarCollapsed ? 'w-16' : 'w-72'} border-r ${getBorderColor()} flex flex-col flex-shrink-0 transition-all duration-300`}>
+        <div className={`${isSidebarCollapsed ? 'h-16' : 'h-72'} border-t ${getBorderColor()} flex flex-col flex-shrink-0 transition-all duration-300`}>
           <div className={`px-5 py-4 border-b ${getBorderColor()} flex items-center justify-between bg-gradient-to-r from-white/5 to-transparent`}>
             {!isSidebarCollapsed && (
               <div className="flex items-center gap-3">
@@ -406,6 +572,7 @@ const TravelMapModal = ({ isOpen, onClose }) => {
               <button
                 onClick={() => {
                   setEditingPlace(null);
+                  setIsSidebarCollapsed(true);
                   handleOpenAddForm();
                 }}
                 className="w-full px-4 py-2 bg-blue-500/50 text-white rounded-lg hover:bg-blue-500/70 transition font-semibold text-sm"
@@ -414,141 +581,6 @@ const TravelMapModal = ({ isOpen, onClose }) => {
               </button>
             </div>
           )}
-        </div>
-
-        {/* Map Container */}
-        <div className="flex-1 relative flex flex-col">
-          {/* Header */}
-          <div className={`px-6 py-4 flex justify-between items-center border-b ${getBorderColor()} flex-shrink-0`}>
-            <h2 className={`text-2xl font-bold ${getTextColor()}`}>Mapa de Viagens</h2>
-            <button
-              onClick={onClose}
-              className={`${getTextColor()} hover:bg-white/20 rounded-full p-2 transition`}
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          </div>
-
-          <div className="flex-1 relative overflow-hidden">
-            {loading ? (
-              <div className="absolute inset-0 flex items-center justify-center text-white/60">
-                <span className="material-symbols-outlined text-4xl mb-2 animate-pulse">map</span>
-                <p className="ml-2">Carregando mapa...</p>
-              </div>
-            ) : (
-              <div className="absolute inset-0">
-                <TravelMap
-                  places={places}
-                  onAddPlace={handleAddPlace}
-                  onPlaceClick={handlePlaceClick}
-                  isAddingMode={showAddForm}
-                  onMapReady={(map) => {
-                    mapInstanceRef.current = map;
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Add Form Overlay */}
-            {showAddForm && (
-              <div className="absolute top-4 right-4 w-80 bg-black/60 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl z-10">
-                <h3 className={`text-lg font-semibold ${getTextColor()} mb-4`}>
-                  {editingPlace ? 'Editar Lugar' : 'Adicionar Novo Lugar'}
-                </h3>
-                {!tempPosition && !editingPlace && (
-                  <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/40 rounded-lg">
-                    <p className="text-sm text-yellow-200">
-                      <span className="material-symbols-outlined text-sm align-middle mr-1">warning</span>
-                      Clique no mapa para selecionar a localização
-                    </p>
-                  </div>
-                )}
-                <div className="space-y-3">
-                  <div>
-                    <label className={`block text-xs font-medium text-white/80 mb-1`}>
-                      Nome do Lugar *
-                    </label>
-                    <input
-                      type="text"
-                      value={newPlace.name}
-                      onChange={(e) => setNewPlace({ ...newPlace, name: e.target.value })}
-                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none text-white text-sm"
-                      placeholder="Ex: Restaurante em Paris"
-                    />
-                  </div>
-                  <div>
-                    <label className={`block text-xs font-medium text-white/80 mb-1`}>
-                      Ícone
-                    </label>
-                    <div className="flex gap-2">
-                      {[
-                        { id: 'heart', emoji: '❤️', label: 'Coração' },
-                        { id: 'suitcase', emoji: '🧳', label: 'Mala' },
-                        { id: 'star', emoji: '⭐', label: 'Estrela' },
-                        { id: 'camera', emoji: '📸', label: 'Câmera' },
-                        { id: 'food', emoji: '🍽️', label: 'Comida' },
-                      ].map((icon) => (
-                        <button
-                          key={icon.id}
-                          type="button"
-                          onClick={() => setNewPlace({ ...newPlace, icon: icon.id })}
-                          className={`flex-1 p-2 rounded-lg border-2 transition ${
-                            newPlace.icon === icon.id
-                              ? 'border-blue-400 bg-blue-400/20'
-                              : 'border-white/20 bg-white/10 hover:bg-white/20'
-                          }`}
-                          title={icon.label}
-                        >
-                          <span className="text-xl">{icon.emoji}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className={`block text-xs font-medium text-white/80 mb-1`}>
-                      Descrição
-                    </label>
-                    <textarea
-                      value={newPlace.description}
-                      onChange={(e) => setNewPlace({ ...newPlace, description: e.target.value })}
-                      rows="2"
-                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none text-white text-sm resize-none"
-                      placeholder="Descrição do lugar..."
-                    />
-                  </div>
-                  <div>
-                    <label className={`block text-xs font-medium text-white/80 mb-1`}>
-                      Data da Visita
-                    </label>
-                    <input
-                      type="date"
-                      value={newPlace.date}
-                      onChange={(e) => setNewPlace({ ...newPlace, date: e.target.value })}
-                      className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none text-white text-sm"
-                    />
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={handleSavePlace}
-                      className="flex-1 px-4 py-2 bg-blue-500/50 text-white rounded-lg hover:bg-blue-500/70 transition font-semibold text-sm"
-                    >
-                      Salvar
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowAddForm(false);
-                        setNewPlace({ name: '', description: '', date: '', icon: 'heart' });
-                        setTempPosition(null);
-                      }}
-                      className="flex-1 px-4 py-2 bg-gray-500/50 text-white rounded-lg hover:bg-gray-500/70 transition font-semibold text-sm"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

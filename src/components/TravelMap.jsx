@@ -6,6 +6,7 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
   const markersRef = useRef([]);
   const userLocationRef = useRef(null);
   const tempMarkerRef = useRef(null);
+  const [userMarker, setUserMarker] = useState(null);
 
   const getIconEmoji = (iconId) => {
     const icons = {
@@ -18,15 +19,68 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
     return icons[iconId] || '❤️';
   };
 
+  const handleCenterOnUser = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+          userLocationRef.current = { lat: userLat, lng: userLng };
+
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setCenter({ lat: userLat, lng: userLng });
+            mapInstanceRef.current.setZoom(15);
+
+            // Remover marcador anterior se existir
+            if (userMarker) {
+              userMarker.setMap(null);
+            }
+
+            // Adicionar marcador de localização do usuário
+            const newUserMarker = new window.google.maps.Marker({
+              position: { lat: userLat, lng: userLng },
+              map: mapInstanceRef.current,
+              title: 'Sua localização',
+              icon: {
+                path: window.google.maps.SymbolPath.CIRCLE,
+                scale: 10,
+                fillColor: '#4285F4',
+                fillOpacity: 1,
+                strokeColor: '#FFFFFF',
+                strokeWeight: 2,
+              }
+            });
+
+            setUserMarker(newUserMarker);
+          }
+        },
+        (error) => {
+          console.log('Erro ao obter localização:', error);
+          alert('Não foi possível obter sua localização');
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      alert('Geolocalização não suportada neste navegador');
+    }
+  };
+
   useEffect(() => {
     if (typeof window !== 'undefined' && window.google && window.google.maps) {
       if (!mapInstanceRef.current && mapRef.current) {
         try {
-          const center = { lat: -22.9068, lng: -43.1729 }; // Rio de Janeiro como padrão
+          // Centralizar no primeiro lugar salvo se houver
+          const center = places.length > 0
+            ? { lat: places[0].lat, lng: places[0].lng }
+            : { lat: -22.9068, lng: -43.1729 }; // Rio de Janeiro como padrão
 
           mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
             center: center,
-            zoom: 13,
+            zoom: places.length > 0 ? 16 : 13,
             mapTypeId: 'hybrid',
             styles: [
               {
@@ -42,15 +96,15 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
             onMapReady(mapInstanceRef.current);
           }
 
-          // Tentar obter localização atual do usuário
-          if (navigator.geolocation) {
+          // Se não houver lugares, tentar obter localização atual do usuário
+          if (places.length === 0 && navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
               (position) => {
                 const userLat = position.coords.latitude;
                 const userLng = position.coords.longitude;
                 userLocationRef.current = { lat: userLat, lng: userLng };
 
-                // Centralizar na localização do usuário ao abrir o mapa
+                // Centralizar na localização do usuário
                 if (mapInstanceRef.current) {
                   mapInstanceRef.current.setCenter({ lat: userLat, lng: userLng });
                   mapInstanceRef.current.setZoom(15);
@@ -225,11 +279,18 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
   }, []);
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
       <div
         ref={mapRef}
         className="w-full h-full"
       />
+      <button
+        onClick={handleCenterOnUser}
+        className="absolute bottom-4 right-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
+        title="Minha localização"
+      >
+        <span className="material-symbols-outlined text-blue-500">my_location</span>
+      </button>
     </div>
   );
 });
