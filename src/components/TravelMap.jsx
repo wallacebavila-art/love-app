@@ -1,25 +1,33 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 
-const TravelMap = ({ places, onAddPlace, onPlaceClick }) => {
-  const [isAddingMode, setIsAddingMode] = useState(false);
+const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: externalAddingMode, onMapReady }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
+  const userLocationRef = useRef(null);
+  const tempMarkerRef = useRef(null);
+
+  const getIconEmoji = (iconId) => {
+    const icons = {
+      heart: '❤️',
+      suitcase: '🧳',
+      star: '⭐',
+      camera: '📸',
+      food: '🍽️',
+    };
+    return icons[iconId] || '❤️';
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.google && window.google.maps) {
       if (!mapInstanceRef.current && mapRef.current) {
         try {
-          const center = places.length > 0
-            ? { lat: places[0].lat, lng: places[0].lng }
-            : { lat: -23.5505, lng: -46.6333 }; // São Paulo como padrão
+          const center = { lat: -22.9068, lng: -43.1729 }; // Rio de Janeiro como padrão
 
           mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
             center: center,
             zoom: 13,
             mapTypeId: 'hybrid',
-            tilt: 45,
-            heading: -17.6,
             styles: [
               {
                 featureType: 'poi',
@@ -29,12 +37,70 @@ const TravelMap = ({ places, onAddPlace, onPlaceClick }) => {
             ]
           });
 
+          // Expor a instância do mapa para o componente pai
+          if (onMapReady) {
+            onMapReady(mapInstanceRef.current);
+          }
+
+          // Tentar obter localização atual do usuário
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                userLocationRef.current = { lat: userLat, lng: userLng };
+
+                // Centralizar na localização do usuário ao abrir o mapa
+                if (mapInstanceRef.current) {
+                  mapInstanceRef.current.setCenter({ lat: userLat, lng: userLng });
+                  mapInstanceRef.current.setZoom(15);
+
+                  // Adicionar marcador de localização do usuário
+                  const userMarker = new window.google.maps.Marker({
+                    position: { lat: userLat, lng: userLng },
+                    map: mapInstanceRef.current,
+                    title: 'Sua localização',
+                    icon: {
+                      path: window.google.maps.SymbolPath.CIRCLE,
+                      scale: 10,
+                      fillColor: '#4285F4',
+                      fillOpacity: 1,
+                      strokeColor: '#FFFFFF',
+                      strokeWeight: 2,
+                    }
+                  });
+
+                  markersRef.current.push({ marker: userMarker, infoWindow: null });
+                }
+              },
+              (error) => {
+                console.log('Erro ao obter localização:', error);
+                // Continua com o centro padrão (Rio de Janeiro)
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+              }
+            );
+          }
+
           // Adicionar marcadores existentes
           places.forEach(place => {
+            const iconEmoji = getIconEmoji(place.icon);
             const marker = new window.google.maps.Marker({
               position: { lat: place.lat, lng: place.lng },
               map: mapInstanceRef.current,
-              title: place.name
+              title: place.name,
+              label: {
+                text: iconEmoji,
+                fontSize: '24px',
+                className: 'custom-marker'
+              },
+              icon: {
+                path: window.google.maps.SymbolPath.CIRCLE,
+                scale: 0,
+              }
             });
 
             const infoWindow = new window.google.maps.InfoWindow({
@@ -59,9 +125,30 @@ const TravelMap = ({ places, onAddPlace, onPlaceClick }) => {
 
           // Adicionar evento de clique no mapa
           mapInstanceRef.current.addListener('click', (e) => {
-            if (isAddingMode) {
+            if (externalAddingMode) {
               const { lat, lng } = e.latLng;
-              setIsAddingMode(false);
+
+              // Remover marcador temporário anterior se existir
+              if (tempMarkerRef.current) {
+                tempMarkerRef.current.setMap(null);
+              }
+
+              // Adicionar marcador temporário
+              tempMarkerRef.current = new window.google.maps.Marker({
+                position: { lat: lat(), lng: lng() },
+                map: mapInstanceRef.current,
+                title: 'Localização selecionada',
+                label: {
+                  text: '📍',
+                  fontSize: '24px',
+                },
+                icon: {
+                  path: window.google.maps.SymbolPath.CIRCLE,
+                  scale: 0,
+                },
+                animation: window.google.maps.Animation.DROP
+              });
+
               if (onAddPlace) {
                 onAddPlace(lat(), lng());
               }
@@ -77,28 +164,42 @@ const TravelMap = ({ places, onAddPlace, onPlaceClick }) => {
       if (mapInstanceRef.current) {
         markersRef.current.forEach(({ marker, infoWindow }) => {
           marker.setMap(null);
-          infoWindow.close();
+          if (infoWindow) {
+            infoWindow.close();
+          }
         });
         mapInstanceRef.current = null;
       }
     };
-  }, [places, isAddingMode, onAddPlace]);
+  }, [externalAddingMode, onAddPlace]);
 
   useEffect(() => {
     if (mapInstanceRef.current) {
       // Limpar marcadores antigos
       markersRef.current.forEach(({ marker, infoWindow }) => {
         marker.setMap(null);
-        infoWindow.close();
+        if (infoWindow) {
+          infoWindow.close();
+        }
       });
       markersRef.current = [];
 
       // Adicionar novos marcadores
       places.forEach(place => {
+        const iconEmoji = getIconEmoji(place.icon);
         const marker = new window.google.maps.Marker({
           position: { lat: place.lat, lng: place.lng },
           map: mapInstanceRef.current,
-          title: place.name
+          title: place.name,
+          label: {
+            text: iconEmoji,
+            fontSize: '24px',
+            className: 'custom-marker'
+          },
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 0,
+          }
         });
 
         const infoWindow = new window.google.maps.InfoWindow({
@@ -120,80 +221,17 @@ const TravelMap = ({ places, onAddPlace, onPlaceClick }) => {
 
         markersRef.current.push({ marker, infoWindow });
       });
-
-      // Centralizar no primeiro lugar se houver
-      if (places.length > 0) {
-        mapInstanceRef.current.panTo({ lat: places[0].lat, lng: places[0].lng });
-      }
     }
-  }, [places]);
-
-  const rotateMap = (heading) => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.setHeading(heading);
-    }
-  };
+  }, []);
 
   return (
     <div className="w-full h-full">
-      <div className="mb-4 flex gap-2">
-        <button
-          onClick={() => setIsAddingMode(!isAddingMode)}
-          className={`px-4 py-2 rounded-lg font-semibold transition ${
-            isAddingMode
-              ? 'bg-red-500 text-white hover:bg-red-600'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
-          }`}
-        >
-          {isAddingMode ? '❌ Cancelar' : '➕ Adicionar Lugar'}
-        </button>
-        {isAddingMode && (
-          <p className="text-sm text-gray-600">Clique no mapa para adicionar um lugar</p>
-        )}
-      </div>
-
-      <div className="relative">
-        <div
-          ref={mapRef}
-          style={{ height: '500px', width: '100%', borderRadius: '12px' }}
-        />
-        
-        {/* Controles de rotação customizados */}
-        <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-          <button
-            onClick={() => rotateMap(0)}
-            className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center hover:bg-white transition"
-            title="Norte"
-          >
-            <span className="material-symbols-outlined text-gray-700">north</span>
-          </button>
-          <div className="flex gap-2">
-            <button
-              onClick={() => rotateMap(-90)}
-              className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center hover:bg-white transition"
-              title="Oeste"
-            >
-              <span className="material-symbols-outlined text-gray-700">west</span>
-            </button>
-            <button
-              onClick={() => rotateMap(90)}
-              className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center hover:bg-white transition"
-              title="Leste"
-            >
-              <span className="material-symbols-outlined text-gray-700">east</span>
-            </button>
-          </div>
-          <button
-            onClick={() => rotateMap(180)}
-            className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg flex items-center justify-center hover:bg-white transition"
-            title="Sul"
-          >
-            <span className="material-symbols-outlined text-gray-700">south</span>
-          </button>
-        </div>
-      </div>
+      <div
+        ref={mapRef}
+        className="w-full h-full"
+      />
     </div>
   );
-};
+});
 
 export default TravelMap;
