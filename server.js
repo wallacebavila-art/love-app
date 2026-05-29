@@ -337,33 +337,20 @@ app.post('/api/youtube-download', async (req, res) => {
       .replace(/^_|_$/g, '')
       .substring(0, 50);
 
-    const fileName = `${cleanTitle}_${Date.now()}.mp3`;
+    const fileName = `${cleanTitle}_${Date.now()}.m4a`;
     const outputPath = join(MUSIC_DIR, fileName);
     const publicPath = `/love-app/music/${fileName}`;
 
     console.log(`⏳ Baixando: ${customTitle || videoTitle}...`);
 
-    // Caminho do ffmpeg (vem do pacote ffmpeg-static)
-    const ffmpegPath = ffmpegStatic;
-    if (ffmpegPath) {
-      console.log(`🔧 Usando ffmpeg: ${ffmpegPath}`);
-    }
-
-    // Baixar usando yt-dlp e converter para MP3
+    // Baixar usando yt-dlp direto em formato .m4a (AAC nativo do YouTube, super leve e sem precisar de ffmpeg)
     const ytdlpArgs = [
-      '--extract-audio',
-      '--audio-format', 'mp3',
-      '--audio-quality', '128K',
+      '-f', 'ba[ext=m4a]',
       '--output', outputPath,
       '--no-playlist',
       '--no-warnings',
       url.trim()
     ];
-
-    // Adicionar caminho do ffmpeg se disponível
-    if (ffmpegPath) {
-      ytdlpArgs.splice(0, 0, '--ffmpeg-location', ffmpegPath);
-    }
 
     await execFileAsync(YTDLP_PATH, ytdlpArgs, { 
       timeout: 300000,
