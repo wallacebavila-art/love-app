@@ -1,9 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import admin from 'firebase-admin';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import ffmpegStatic from 'ffmpeg-static';
+
+const execFileAsync = promisify(execFile);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -265,6 +270,151 @@ app.delete('/api/tokens', async (req, res) => {
   } catch (error) {
     console.error('❌ Erro ao deletar todos os tokens:', error);
     res.status(500).json({ error: 'Erro ao deletar todos os tokens' });
+  }
+});
+
+// ============================================================
+// ENDPOINT: BAIXAR MÚSICA DO YOUTUBE
+// ============================================================
+
+// Garantir que a pasta music existe
+const MUSIC_DIR = join(__dirname, 'public', 'music');
+const PLAYLIST_PATH = join(__dirname, 'src', 'data', 'playlist.js');
+
+if (!existsSync(MUSIC_DIR)) {
+  mkdirSync(MUSIC_DIR, { recursive: true });
+}
+
+const YTDLP_PATH = join(__dirname, 'public', 'yt-dlp.exe');
+
+app.post('/api/youtube-download', async (req, res) => {
+  try {
+    const { url, title: customTitle, artist: customArtist } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ error: 'URL do YouTube é obrigatória' });
+    }
+
+    // Validar URL do YouTube
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
+    if (!youtubeRegex.test(url.trim())) {
+      return res.status(400).json({ error: 'URL do YouTube inválida' });
+    }
+
+    // Verificar se yt-dlp existe
+    if (!existsSync(YTDLP_PATH)) {
+      return res.status(500).json({ error: 'yt-dlp não encontrado. Execute: curl -L -o public/yt-dlp.exe https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe' });
+    }
+
+    // Primeiro, obter o título do vídeo
+    console.log(`⏳ Obtendo informações do vídeo...`);
+    let videoTitle = 'Música';
+    let videoAuthor = 'Desconhecido';
+
+    try {
+      const { stdout: jsonOutput } = await execFileAsync(YTDLP_PATH, [
+        '--dump-json',
+        '--no-playlist',
+        url.trim()
+      ], { timeout: 30000 });
+
+      const videoData = JSON.parse(jsonOutput);
+      videoTitle = videoData.title || 'Música';
+      videoAuthor = videoData.artist || videoData.uploader || 'Desconhecido';
+      console.log(`ℹ️  Vídeo: "${videoTitle}" - ${videoAuthor}`);
+    } catch (infoError) {
+      console.log(`⚠️ Não foi possível obter info, usando dados padrão`);
+    }
+
+    // Remover acentos
+    const removeAccents = (str) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    
+    // Limpar nome do arquivo (sem acentos, sem caracteres especiais)
+    const cleanTitle = removeAccents(customTitle || videoTitle)
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '')
+      .substring(0, 50);
+
+    const fileName = `${cleanTitle}_${Date.now()}.mp3`;
+    const outputPath = join(MUSIC_DIR, fileName);
+    const publicPath = `/love-app/music/${fileName}`;
+
+    console.log(`⏳ Baixando: ${customTitle || videoTitle}...`);
+
+    // Caminho do ffmpeg (vem do pacote ffmpeg-static)
+    const ffmpegPath = ffmpegStatic;
+    if (ffmpegPath) {
+      console.log(`🔧 Usando ffmpeg: ${ffmpegPath}`);
+    }
+
+    // Baixar usando yt-dlp e converter para MP3
+    const ytdlpArgs = [
+      '--extract-audio',
+      '--audio-format', 'mp3',
+      '--audio-quality', '128K',
+      '--output', outputPath,
+      '--no-playlist',
+      '--no-warnings',
+      url.trim()
+    ];
+
+    // Adicionar caminho do ffmpeg se disponível
+    if (ffmpegPath) {
+      ytdlpArgs.splice(0, 0, '--ffmpeg-location', ffmpegPath);
+    }
+
+    await execFileAsync(YTDLP_PATH, ytdlpArgs, { 
+      timeout: 300000,
+      maxBuffer: 50 * 1024 * 1024
+    });
+
+    console.log(`✅ Download concluído: ${fileName}`);
+
+    // Atualizar playlist.js
+    const trackTitle = customTitle || videoTitle;
+    const trackArtist = customArtist || videoAuthor;
+
+    let playlistContent = '';
+    try {
+      playlistContent = readFileSync(PLAYLIST_PATH, 'utf-8');
+    } catch (e) {
+      playlistContent = `export const playlist = [\n];\n`;
+    }
+
+    const lastIdMatch = playlistContent.match(/id:\s*(\d+)/g);
+    let newId = 1;
+    if (lastIdMatch && lastIdMatch.length > 0) {
+      const lastId = parseInt(lastIdMatch[lastIdMatch.length - 1].replace('id:', '').trim());
+      newId = lastId + 1;
+    }
+
+    const newEntry = `  {\n    id: ${newId},\n    title: "${trackTitle.replace(/"/g, '\\"')}",\n    artist: "${trackArtist.replace(/"/g, '\\"')}",\n    src: "${publicPath}"\n  },\n`;
+
+    if (playlistContent.includes('];')) {
+      playlistContent = playlistContent.replace('];', `${newEntry}];`);
+    } else {
+      playlistContent = `export const playlist = [\n${newEntry}];\n`;
+    }
+
+    writeFileSync(PLAYLIST_PATH, playlistContent, 'utf-8');
+    console.log(`✅ Playlist atualizada: ${trackTitle}`);
+
+    res.json({
+      success: true,
+      title: trackTitle,
+      artist: trackArtist,
+      fileName: fileName,
+      path: publicPath,
+      message: `"${trackTitle}" baixada e adicionada à playlist!`
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao baixar música:', error);
+    res.status(500).json({ 
+      error: `Erro ao baixar música: ${error.message}` 
+    });
   }
 });
 
