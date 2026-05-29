@@ -11,7 +11,7 @@ import { useLoginModal } from '../contexts/LoginModalContext';
 import TravelMapModal from './TravelMapModal';
 import raissaAvatar from '../assets/raissa-avatar.png';
 import wallaceAvatar from '../assets/wallace-avatar.png';
-const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, onOpenTravelMap, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, volume, onVolumeChange, currentTrack, currentArtist }) => {
+const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, onOpenTravelMap, onOpenMusicPlayer, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, onVolumeChange, currentTrack, currentArtist }) => {
   const { period } = useTimePeriod();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -203,6 +203,33 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
                 title="Próxima música"
               >
                 <span className="material-symbols-outlined text-[16px]">skip_next</span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleShuffle && toggleShuffle(); }}
+                className={`transition-all duration-300 hover:scale-110 active:scale-95 p-0.5 rounded-full ${
+                  isShuffled ? 'text-green-400' : getTextColor
+                }`}
+                title={isShuffled ? 'Modo aleatório ativado' : 'Ativar modo aleatório'}
+              >
+                <span className="material-symbols-outlined text-[16px]">shuffle</span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleMusicMode && toggleMusicMode(); }}
+                className={`transition-all duration-300 hover:scale-110 active:scale-95 p-0.5 rounded-full ${
+                  musicMode === 'youtube' ? 'text-red-400' : 'text-blue-400'
+                }`}
+                title={musicMode === 'youtube' ? 'Modo YouTube - Clique para Local' : 'Modo Local - Clique para YouTube'}
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  {musicMode === 'youtube' ? 'smart_display' : 'sd_card'}
+                </span>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onOpenMusicPlayer && onOpenMusicPlayer(); }}
+                className={`${getTextColor} transition-all duration-300 hover:scale-110 active:scale-95 p-0.5 rounded-full`}
+                title="Abrir player completo"
+              >
+                <span className="material-symbols-outlined text-[16px]">equalizer</span>
               </button>
               <div className="relative" ref={volumeRef}>
                 <button

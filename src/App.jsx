@@ -13,6 +13,7 @@ import RaissaLogin from './components/RaissaLogin';
 import AdminModal from './components/AdminModal';
 import SettingsModal from './components/SettingsModal';
 import TravelMapModal from './components/TravelMapModal';
+import MusicPlayerModal from './components/MusicPlayerModal';
 import NotificationToast, { NotificationProvider } from './components/NotificationToast';
 import { useMusicPlayer } from './components/MusicPlayer';
 import ICloudCalendarWidget from './components/ICloudCalendarWidget';
@@ -30,7 +31,7 @@ import { requestFCMToken, onForegroundMessage, showNotification } from './servic
 import { saveFCMToken } from './services/fcmTokenService';
 
 function AppContent() {
-  const { isPlaying, toggleMusic, nextTrack, prevTrack, volume, setVolume, currentTrack, currentArtist } = useMusicPlayer();
+  const { isPlaying, toggleMusic, nextTrack, prevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, setVolume, currentTrack, currentArtist } = useMusicPlayer();
   const [dailyMessage, setDailyMessage] = useState(null);
   const [dailyVerse, setDailyVerse] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -40,6 +41,7 @@ function AppContent() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isICloudCalendarModalOpen, setIsICloudCalendarModalOpen] = useState(false);
   const [isTravelMapModalOpen, setIsTravelMapModalOpen] = useState(false);
+  const [isMusicPlayerModalOpen, setIsMusicPlayerModalOpen] = useState(false);
   const { isLoginModalOpen, setIsLoginModalOpen, isRaissaLoginModalOpen, setIsRaissaLoginModalOpen } = useLoginModal();
   const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -277,10 +279,15 @@ function AppContent() {
             onOpenSettings={() => setIsSettingsModalOpen(true)}
             onOpenICloudCalendar={() => setIsICloudCalendarModalOpen(true)}
             onOpenTravelMap={() => setIsTravelMapModalOpen(true)}
+            onOpenMusicPlayer={() => setIsMusicPlayerModalOpen(true)}
             isPlaying={isPlaying}
             onToggleMusic={toggleMusic}
             onNextTrack={nextTrack}
             onPrevTrack={prevTrack}
+            toggleShuffle={toggleShuffle}
+            isShuffled={isShuffled}
+            musicMode={musicMode}
+            toggleMusicMode={toggleMusicMode}
             volume={volume}
             onVolumeChange={setVolume}
             currentTrack={currentTrack}
@@ -416,6 +423,23 @@ function AppContent() {
               </div>
             </div>
           )}
+
+          <MusicPlayerModal
+            isOpen={isMusicPlayerModalOpen}
+            onClose={() => setIsMusicPlayerModalOpen(false)}
+            isPlaying={isPlaying}
+            onToggleMusic={toggleMusic}
+            onNextTrack={nextTrack}
+            onPrevTrack={prevTrack}
+            toggleShuffle={toggleShuffle}
+            isShuffled={isShuffled}
+            musicMode={musicMode}
+            toggleMusicMode={toggleMusicMode}
+            volume={volume}
+            onVolumeChange={setVolume}
+            currentTrack={currentTrack}
+            currentArtist={currentArtist}
+          />
 
           {isRaissaLoginModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setIsRaissaLoginModalOpen(false)}>

@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { playlist } from '../data/playlist';
 
+// ============================================================
+// YOUTUBE API
+// ============================================================
 const PLAYLIST_ID = 'PL7Z2KjbeQrjT0TQw0_3JZAFJF9hhwdVOQ';
 
-// Carregar a API do YouTube
 let youtubeApiLoaded = false;
 const apiReadyCallbacks = [];
 
@@ -33,6 +36,21 @@ function waitForAPI() {
   });
 }
 
+// ============================================================
+// LOCAL AUDIO HELPERS
+// ============================================================
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+// ============================================================
+// HOOK PRINCIPAL
+// ============================================================
 export const useMusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState('');
@@ -41,12 +59,49 @@ export const useMusicPlayer = () => {
     const saved = localStorage.getItem('musicVolume');
     return saved ? parseInt(saved) : 50;
   });
+  const [isShuffled, setIsShuffled] = useState(false);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [musicMode, setMusicMode] = useState(() => {
+    // Carregar modo salvo, padrão 'local'
+    return localStorage.getItem('musicMode') || 'local';
+  });
+  
+  // YouTube refs
   const playerRef = useRef(null);
   const playerReadyRef = useRef(false);
   const trackIntervalRef = useRef(null);
+  
+  // Local audio refs
+  const audioRef = useRef(null);
+  const shuffleOrderRef = useRef(null);
 
-  // Inicializa o player do YouTube de forma assíncrona o quanto antes
+  // ============================================================
+  // INICIALIZAÇÃO
+  // ============================================================
   useEffect(() => {
+    // Carregar modo salvo
+    const savedMode = localStorage.getItem('musicMode') || 'local';
+    setMusicMode(savedMode);
+
+    if (savedMode === 'youtube') {
+      initYouTube();
+    } else {
+      initLocalAudio();
+    }
+
+    // Carregar estado do player
+    loadSavedState();
+
+    return () => {
+      cleanupYouTube();
+      cleanupLocalAudio();
+    };
+  }, []);
+
+  // ============================================================
+  // YOUTUBE INIT
+  // ============================================================
+  const initYouTube = () => {
     loadYouTubeAPI();
 
     let isMounted = true;
@@ -54,7 +109,6 @@ export const useMusicPlayer = () => {
       if (!isMounted) return;
       if (playerRef.current) return;
 
-      // Cria ou recupera o elemento div para o player
       let playerDiv = document.getElementById('youtube-player');
       if (!playerDiv) {
         playerDiv = document.createElement('div');
@@ -62,7 +116,6 @@ export const useMusicPlayer = () => {
         document.body.appendChild(playerDiv);
       }
 
-      // Estilização off-screen para iOS não bloquear iframe oculto (display: none/width: 0 bloqueiam reprodução)
       playerDiv.style.position = 'fixed';
       playerDiv.style.top = '-100px';
       playerDiv.style.left = '-100px';
@@ -71,9 +124,8 @@ export const useMusicPlayer = () => {
       playerDiv.style.opacity = '0.01';
       playerDiv.style.pointerEvents = 'none';
 
-      // Recuperar se deve tocar automaticamente com base no estado salvo
       const saved = localStorage.getItem('musicPlayer');
-      const shouldAutoPlay = saved ? JSON.parse(saved).playing : false;
+      const shouldAutoPlay = saved && musicMode === 'youtube' ? JSON.parse(saved).playing : false;
 
       playerRef.current = new window.YT.Player('youtube-player', {
         height: '1',
@@ -86,19 +138,14 @@ export const useMusicPlayer = () => {
           controls: 1,
           showinfo: 0,
           modestbranding: 1,
-          playsinline: 1, // Essencial para rodar no background/inline no iOS
+          playsinline: 1,
         },
         events: {
           onReady: () => {
             if (!isMounted) return;
             playerReadyRef.current = true;
-            
-            // Definir volume inicial
-            const savedVol = localStorage.getItem('musicVolume');
-            const initialVolume = savedVol ? parseInt(savedVol) : 50;
-            playerRef.current.setVolume(initialVolume);
-
-            updateTrackInfo();
+            playerRef.current.setVolume(volume);
+            updateTrackInfoYT();
             if (shouldAutoPlay) {
               setIsPlaying(true);
             }
@@ -107,7 +154,7 @@ export const useMusicPlayer = () => {
             if (!isMounted) return;
             if (event.data === window.YT.PlayerState.PLAYING) {
               setIsPlaying(true);
-              updateTrackInfo();
+              updateTrackInfoYT();
             } else if (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED) {
               setIsPlaying(false);
             }
@@ -119,15 +166,164 @@ export const useMusicPlayer = () => {
       });
     });
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    return () => { isMounted = false; };
+  };
 
-  // Atualizar nome da música a cada 3 segundos enquanto toca
-  useEffect(() => {
+  // ============================================================
+  // LOCAL AUDIO INIT
+  // ============================================================
+  const initLocalAudio = () => {
+    const audio = new Audio();
+    audio.preload = 'metadata';
+    audioRef.current = audio;
+
+    shuffleOrderRef.current = playlist.map((_, i) => i);
+
+    const onEnded = () => {
+      nextTrackLocal();
+    };
+
+    const onError = (e) => {
+      console.error('Erro ao carregar áudio:', e);
+      setIsPlaying(false);
+    };
+
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('error', onError);
+  };
+
+  // ============================================================
+  // LIMPEZA
+  // ============================================================
+  const cleanupYouTube = () => {
+    if (trackIntervalRef.current) {
+      clearInterval(trackIntervalRef.current);
+      trackIntervalRef.current = null;
+    }
+    if (playerRef.current) {
+      try {
+        playerRef.current.destroy();
+      } catch (e) {}
+      playerRef.current = null;
+    }
+    const playerDiv = document.getElementById('youtube-player');
+    if (playerDiv) {
+      try {
+        document.body.removeChild(playerDiv);
+      } catch (e) {}
+    }
+    playerReadyRef.current = false;
+  };
+
+  const cleanupLocalAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+  };
+
+  // ============================================================
+  // CARREGAR ESTADO SALVO
+  // ============================================================
+  const loadSavedState = () => {
+    const saved = localStorage.getItem('musicPlayer');
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed.currentIndex !== undefined && parsed.currentIndex < playlist.length) {
+        setCurrentTrackIndex(parsed.currentIndex);
+      }
+      if (parsed.isShuffled) {
+        setIsShuffled(true);
+        if (parsed.shuffleOrder) {
+          shuffleOrderRef.current = parsed.shuffleOrder;
+        }
+      }
+    } catch (e) {}
+  };
+
+  // ============================================================
+  // ALTERNAR MODO
+  // ============================================================
+  const toggleMusicMode = useCallback(() => {
+    const wasPlaying = isPlaying;
+    
+    // Parar tudo
     if (isPlaying) {
-      trackIntervalRef.current = setInterval(updateTrackInfo, 3000);
+      if (musicMode === 'youtube' && playerRef.current && playerReadyRef.current) {
+        playerRef.current.pauseVideo();
+      } else if (musicMode === 'local' && audioRef.current) {
+        audioRef.current.pause();
+      }
+    }
+
+    // Limpar player atual
+    if (musicMode === 'youtube') {
+      cleanupYouTube();
+    } else {
+      cleanupLocalAudio();
+    }
+
+    // Alternar modo
+    const newMode = musicMode === 'youtube' ? 'local' : 'youtube';
+    setMusicMode(newMode);
+    localStorage.setItem('musicMode', newMode);
+    setIsPlaying(false);
+    setCurrentTrack('');
+    setCurrentArtist('');
+
+    // Inicializar novo modo
+    if (newMode === 'youtube') {
+      initYouTube();
+      // Dar um tempo para o YouTube inicializar e tocar
+      setTimeout(() => {
+        if (wasPlaying && playerRef.current && playerReadyRef.current) {
+          playerRef.current.playVideo();
+          setIsPlaying(true);
+        }
+      }, 1500);
+    } else {
+      initLocalAudio();
+      // Carregar a música atual no áudio local
+      setTimeout(() => {
+        if (playlist[currentTrackIndex]) {
+          const track = playlist[currentTrackIndex];
+          setCurrentTrack(track.title);
+          setCurrentArtist(track.artist);
+          if (audioRef.current) {
+            audioRef.current.src = track.src;
+            audioRef.current.load();
+            audioRef.current.volume = volume / 100;
+            updateMediaSession(track);
+            if (wasPlaying) {
+              audioRef.current.play().catch(() => {});
+              setIsPlaying(true);
+            }
+          }
+        }
+      }, 100);
+    }
+  }, [musicMode, isPlaying, currentTrackIndex, volume]);
+
+  // ============================================================
+  // YOUTUBE FUNCTIONS
+  // ============================================================
+  const updateTrackInfoYT = () => {
+    try {
+      if (playerRef.current && playerReadyRef.current) {
+        const data = playerRef.current.getVideoData();
+        if (data && data.title) setCurrentTrack(data.title);
+        if (data && data.author) setCurrentArtist(data.author);
+      }
+    } catch (e) {}
+  };
+
+  // Polling para atualizar nome da música no YouTube
+  useEffect(() => {
+    if (musicMode !== 'youtube') return;
+    if (isPlaying) {
+      trackIntervalRef.current = setInterval(updateTrackInfoYT, 3000);
     } else {
       if (trackIntervalRef.current) {
         clearInterval(trackIntervalRef.current);
@@ -139,45 +335,19 @@ export const useMusicPlayer = () => {
         clearInterval(trackIntervalRef.current);
       }
     };
-  }, [isPlaying]);
+  }, [isPlaying, musicMode]);
 
-  const updateTrackInfo = () => {
-    try {
-      if (playerRef.current && playerReadyRef.current) {
-        const data = playerRef.current.getVideoData();
-        if (data && data.title) {
-          setCurrentTrack(data.title);
-        }
-        if (data && data.author) {
-          setCurrentArtist(data.author);
-        }
-      }
-    } catch (e) {
-      // Ignorar erros de API
-    }
-  };
-
-  // Salvar estado e volume
+  // Volume YouTube
   useEffect(() => {
-    localStorage.setItem('musicPlayer', JSON.stringify({ playing: isPlaying }));
-  }, [isPlaying]);
-
-  useEffect(() => {
-    localStorage.setItem('musicVolume', volume.toString());
+    if (musicMode !== 'youtube') return;
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.setVolume(volume);
     }
-  }, [volume]);
+  }, [volume, musicMode]);
 
-  // Função síncrona para iniciar reprodução a partir de evento de clique (Crucial para iOS Safari/Chrome!)
-  const toggleMusic = useCallback(() => {
-    if (!playerRef.current || !playerReadyRef.current) {
-      console.warn("Player do YouTube ainda não está pronto.");
-      return;
-    }
-
+  const toggleMusicYT = useCallback(() => {
+    if (!playerRef.current || !playerReadyRef.current) return;
     if (!isPlaying) {
-      // Chamada síncrona direta dentro do manipulador de evento de toque do usuário
       playerRef.current.playVideo();
       setIsPlaying(true);
     } else {
@@ -186,44 +356,242 @@ export const useMusicPlayer = () => {
     }
   }, [isPlaying]);
 
-  const nextTrack_ = useCallback(() => {
+  const nextTrackYT = useCallback(() => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.nextVideo();
-      setTimeout(updateTrackInfo, 500);
+      setTimeout(updateTrackInfoYT, 500);
     }
   }, []);
 
-  const prevTrack_ = useCallback(() => {
+  const prevTrackYT = useCallback(() => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.previousVideo();
-      setTimeout(updateTrackInfo, 500);
+      setTimeout(updateTrackInfoYT, 500);
     }
   }, []);
 
-  // Limpar ao desmontar
+  // ============================================================
+  // LOCAL AUDIO FUNCTIONS
+  // ============================================================
   useEffect(() => {
-    return () => {
-      if (trackIntervalRef.current) {
-        clearInterval(trackIntervalRef.current);
-      }
-      if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch (e) {
-          // Ignorar erro na destruição
-        }
-        playerRef.current = null;
-      }
-      const playerDiv = document.getElementById('youtube-player');
-      if (playerDiv) {
-        try {
-          document.body.removeChild(playerDiv);
-        } catch (e) {
-          // Ignorar
-        }
-      }
-    };
-  }, []);
+    if (musicMode !== 'local') return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
-  return { isPlaying, toggleMusic, nextTrack: nextTrack_, prevTrack: prevTrack_, volume, setVolume, currentTrack, currentArtist };
+    if (playlist.length === 0) return;
+    const track = playlist[currentTrackIndex];
+    if (!track) return;
+
+    setCurrentTrack(track.title);
+    setCurrentArtist(track.artist);
+    audio.src = track.src;
+    audio.load();
+    audio.volume = volume / 100;
+
+    updateMediaSession(track);
+
+    if (isPlaying) {
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.warn('Autoplay bloqueado:', error);
+          setIsPlaying(false);
+        });
+      }
+    }
+  }, [currentTrackIndex, musicMode]);
+
+  useEffect(() => {
+    if (musicMode !== 'local') return;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.warn('Erro ao tocar:', error);
+          setIsPlaying(false);
+        });
+      }
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying, musicMode]);
+
+  useEffect(() => {
+    if (musicMode !== 'local') return;
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = volume / 100;
+  }, [volume, musicMode]);
+
+  // Media Session API
+  const updateMediaSession = (track) => {
+    if (!('mediaSession' in navigator)) return;
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title || 'Tocando',
+      artist: track.artist || 'Nossa Playlist',
+      album: 'Nossa Playlist',
+      artwork: track.cover
+        ? [
+            { src: track.cover, sizes: '96x96', type: 'image/jpeg' },
+            { src: track.cover, sizes: '128x128', type: 'image/jpeg' },
+            { src: track.cover, sizes: '256x256', type: 'image/jpeg' },
+            { src: track.cover, sizes: '512x512', type: 'image/jpeg' },
+          ]
+        : [
+            { src: '/favicon2.png', sizes: '96x96', type: 'image/png' },
+            { src: '/favicon2.png', sizes: '128x128', type: 'image/png' },
+            { src: '/favicon2.png', sizes: '256x256', type: 'image/png' },
+            { src: '/favicon2.png', sizes: '512x512', type: 'image/png' },
+          ]
+    });
+
+    navigator.mediaSession.setActionHandler('play', () => toggleMusic());
+    navigator.mediaSession.setActionHandler('pause', () => toggleMusic());
+    navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
+    navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack());
+  };
+
+  // Local helpers
+  const getActualIndex = useCallback((shuffledIndex) => {
+    if (isShuffled && shuffleOrderRef.current) {
+      return shuffleOrderRef.current[shuffledIndex];
+    }
+    return shuffledIndex;
+  }, [isShuffled]);
+
+  const getShuffledIndex = useCallback((actualIndex) => {
+    if (isShuffled && shuffleOrderRef.current) {
+      return shuffleOrderRef.current.indexOf(actualIndex);
+    }
+    return actualIndex;
+  }, [isShuffled]);
+
+  const toggleShuffleLocal = useCallback(() => {
+    if (!isShuffled) {
+      const currentActualIndex = currentTrackIndex;
+      const newOrder = shuffleArray(playlist.map((_, i) => i));
+      const currentPos = newOrder.indexOf(currentActualIndex);
+      if (currentPos !== -1) {
+        newOrder[currentPos] = currentActualIndex;
+        newOrder[0] = currentActualIndex;
+        const rest = newOrder.slice(1);
+        shuffleArray(rest);
+        for (let i = 1; i < newOrder.length; i++) {
+          newOrder[i] = rest[i - 1];
+        }
+      }
+      shuffleOrderRef.current = newOrder;
+      setIsShuffled(true);
+    } else {
+      setIsShuffled(false);
+      shuffleOrderRef.current = playlist.map((_, i) => i);
+    }
+    saveState();
+  }, [isShuffled, currentTrackIndex]);
+
+  const nextTrackLocal = useCallback(() => {
+    const total = playlist.length;
+    if (total === 0) return;
+    const currentShuffledIndex = getShuffledIndex(currentTrackIndex);
+    const nextShuffledIndex = (currentShuffledIndex + 1) % total;
+    const nextActualIndex = getActualIndex(nextShuffledIndex);
+    setCurrentTrackIndex(nextActualIndex);
+  }, [currentTrackIndex, getShuffledIndex, getActualIndex]);
+
+  const prevTrackLocal = useCallback(() => {
+    const total = playlist.length;
+    if (total === 0) return;
+    const currentShuffledIndex = getShuffledIndex(currentTrackIndex);
+    const prevShuffledIndex = (currentShuffledIndex - 1 + total) % total;
+    const prevActualIndex = getActualIndex(prevShuffledIndex);
+    setCurrentTrackIndex(prevActualIndex);
+  }, [currentTrackIndex, getShuffledIndex, getActualIndex]);
+
+  // ============================================================
+  // FUNÇÕES GLOBAIS (delegam para o modo ativo)
+  // ============================================================
+  const toggleMusic = useCallback(() => {
+    if (musicMode === 'youtube') {
+      toggleMusicYT();
+    } else {
+      const audio = audioRef.current;
+      if (!audio) {
+        console.warn("Player de áudio ainda não está pronto.");
+        return;
+      }
+      if (!isPlaying) {
+        audio.play().catch(error => console.warn('Erro ao tocar:', error));
+        setIsPlaying(true);
+      } else {
+        audio.pause();
+        setIsPlaying(false);
+      }
+    }
+  }, [musicMode, isPlaying, toggleMusicYT]);
+
+  const nextTrack = useCallback(() => {
+    if (musicMode === 'youtube') {
+      nextTrackYT();
+    } else {
+      nextTrackLocal();
+    }
+  }, [musicMode, nextTrackYT, nextTrackLocal]);
+
+  const prevTrack = useCallback(() => {
+    if (musicMode === 'youtube') {
+      prevTrackYT();
+    } else {
+      prevTrackLocal();
+    }
+  }, [musicMode, prevTrackYT, prevTrackLocal]);
+
+  const toggleShuffle = useCallback(() => {
+    if (musicMode === 'local') {
+      toggleShuffleLocal();
+    }
+  }, [musicMode, toggleShuffleLocal]);
+
+  // Salvar estado
+  const saveState = () => {
+    const state = {
+      playing: isPlaying,
+      currentIndex: currentTrackIndex,
+      isShuffled: isShuffled,
+      shuffleOrder: shuffleOrderRef.current,
+    };
+    localStorage.setItem('musicPlayer', JSON.stringify(state));
+  };
+
+  useEffect(() => {
+    saveState();
+  }, [isPlaying, currentTrackIndex, isShuffled]);
+
+  // Salvar volume
+  useEffect(() => {
+    localStorage.setItem('musicVolume', volume.toString());
+  }, [volume]);
+
+  // ============================================================
+  // RETURN
+  // ============================================================
+  return { 
+    isPlaying, 
+    toggleMusic, 
+    nextTrack, 
+    prevTrack, 
+    toggleShuffle,
+    isShuffled,
+    musicMode,
+    toggleMusicMode,
+    volume, 
+    setVolume, 
+    currentTrack, 
+    currentArtist,
+    currentTrackIndex,
+    totalTracks: playlist.length
+  };
 };

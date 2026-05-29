@@ -2,10 +2,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useLoginModal } from '../contexts/LoginModalContext';
+import YoutubeDownloader from './YoutubeDownloader';
 import naocliqueImage from '/naoclique.png';
 import raissaAvatar from '/favicon.png';
 
 const SettingsModal = ({ isOpen, onClose }) => {
+  const [showDownloader, setShowDownloader] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { setIsLoginModalOpen } = useLoginModal();
@@ -159,6 +161,25 @@ const SettingsModal = ({ isOpen, onClose }) => {
               ~para Raíssa. Com amor, Wallace. 💕
             </p>
           </div>
+
+          {/* Baixar Música do YouTube - Visível apenas para admin */}
+          {user?.userType === 'admin' && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowDownloader(!showDownloader)}
+                className="w-full bg-gradient-to-r from-red-500 to-purple-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-red-600 hover:to-purple-700 transition-all active:scale-[0.98] shadow-md shadow-red-500/20"
+              >
+                <span className="material-symbols-outlined">download</span>
+                {showDownloader ? 'Fechar Downloader' : 'Baixar Música do YouTube'}
+              </button>
+            </div>
+          )}
+
+          {showDownloader && (
+            <div className="mt-4">
+              <YoutubeDownloader onClose={() => setShowDownloader(false)} />
+            </div>
+          )}
 
           {/* Secret Box */}
           <div className="mt-4">
