@@ -168,7 +168,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
             <h1 className={`font-headline-lg-mobile ${getTextColor} italic transition-all duration-300 hover:scale-105 cursor-default text-[20px]`}>
               {greeting}, {useLoveName ? 'Amor' : 'Raíssa'}
             </h1>
-            <div className="flex items-center gap-0.5 relative">
+            <div className="flex items-center gap-0.5 relative hidden md:flex">
               <span className={`${getTextColor} p-0.5 flex items-center relative`}>
                 <span className="material-symbols-outlined text-[18px]">music_note</span>
                 {isPlaying && (

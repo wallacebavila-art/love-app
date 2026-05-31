@@ -14,6 +14,7 @@ import AdminModal from './components/AdminModal';
 import SettingsModal from './components/SettingsModal';
 import TravelMapModal from './components/TravelMapModal';
 import MusicPlayerModal from './components/MusicPlayerModal';
+import BottomPlayerBar from './components/BottomPlayerBar';
 import NotificationToast, { NotificationProvider } from './components/NotificationToast';
 import { useMusicPlayer } from './components/MusicPlayer';
 import ICloudCalendarWidget from './components/ICloudCalendarWidget';
@@ -441,6 +442,23 @@ function AppContent() {
             currentArtist={currentArtist}
             currentTrackIndex={currentTrackIndex}
             onSelectTrack={selectTrack}
+          />
+
+          {/* Bottom Player Bar - Apenas no modo mobile */}
+          <BottomPlayerBar
+            isPlaying={isPlaying}
+            onToggleMusic={toggleMusic}
+            onNextTrack={nextTrack}
+            onPrevTrack={prevTrack}
+            toggleShuffle={toggleShuffle}
+            isShuffled={isShuffled}
+            musicMode={musicMode}
+            toggleMusicMode={toggleMusicMode}
+            volume={volume}
+            onVolumeChange={setVolume}
+            currentTrack={currentTrack}
+            currentArtist={currentArtist}
+            onOpenMusicPlayer={() => setIsMusicPlayerModalOpen(true)}
           />
 
           {isRaissaLoginModalOpen && (
