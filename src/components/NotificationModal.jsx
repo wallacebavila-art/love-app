@@ -4,6 +4,7 @@ import { sendRealtimeNotification } from '../services/realtimeNotifications';
 import { uploadAudioToStorage } from '../services/photoService';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotificationModal } from '../contexts/NotificationModalContext';
 import raissaAvatar from '../assets/raissa-avatar.png';
 import wallaceAvatar from '../assets/wallace-avatar.png';
 import AudioPlayer from './AudioPlayer';
@@ -40,6 +41,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
   const { notifications } = useNotifications();
   const { period } = useTimePeriod();
   const { user } = useAuth();
+  const { setIsNotificationModalOpen } = useNotificationModal();
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -198,6 +200,11 @@ const NotificationModal = ({ isOpen, onClose }) => {
   useEffect(() => {
     scrollToBottom();
   }, [notifications, isOpen]);
+
+  // Atualizar estado do modal no contexto
+  useEffect(() => {
+    setIsNotificationModalOpen(isOpen);
+  }, [isOpen, setIsNotificationModalOpen]);
 
   // Fechar emoji picker ao clicar fora
   useEffect(() => {

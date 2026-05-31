@@ -18,6 +18,7 @@ import BottomPlayerBar from './components/BottomPlayerBar';
 import NotificationToast, { NotificationProvider } from './components/NotificationToast';
 import { useMusicPlayer } from './components/MusicPlayer';
 import ICloudCalendarWidget from './components/ICloudCalendarWidget';
+import { NotificationModalProvider } from './contexts/NotificationModalContext';
 import UpcomingEventsTicker from './components/UpcomingEventsTicker';
 import ProtectedRoute from './components/ProtectedRoute';
 import { TimePeriodProvider, useTimePeriod } from './contexts/TimePeriodContext';
@@ -513,7 +514,9 @@ function App() {
                 <TimePeriodProvider>
                   <CalendarEventsProvider>
                     <NotificationProvider>
-                      <AppContent />
+                      <NotificationModalProvider>
+                        <AppContent />
+                      </NotificationModalProvider>
                     </NotificationProvider>
                   </CalendarEventsProvider>
                 </TimePeriodProvider>

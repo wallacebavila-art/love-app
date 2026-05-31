@@ -277,6 +277,7 @@ html, body {
 /* Afternoon Theme - Bright yellow and orange with high sun */
 .afternoon-theme {
   background: url('/tarde.jpg') center center / cover no-repeat !important;
+  background-color: #f59e0b !important;
   position: relative;
 }
 

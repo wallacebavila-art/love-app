@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNotificationModal } from '../contexts/NotificationModalContext';
 
 const BottomPlayerBar = ({ isPlaying, onToggleMusic, onNextTrack, onPrevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, onVolumeChange, currentTrack, currentArtist, onOpenMusicPlayer }) => {
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   const volumeRef = useRef(null);
+  const { isNotificationModalOpen } = useNotificationModal();
 
   // Fechar volume slider ao clicar fora
   useEffect(() => {
@@ -29,7 +31,7 @@ const BottomPlayerBar = ({ isPlaying, onToggleMusic, onNextTrack, onPrevTrack, t
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-gradient-to-t from-black/80 to-black/60 backdrop-blur-xl border-t border-white/20 px-3 py-2">
+    <div className={`fixed bottom-0 left-0 right-0 z-50 md:hidden bg-gradient-to-t from-black/80 to-black/60 backdrop-blur-xl border-t border-white/20 px-3 py-2 ${isNotificationModalOpen ? 'hidden' : ''}`}>
       <div className="flex items-center justify-between gap-2">
         {/* Informações da música */}
         <div className="flex-1 min-w-0">
