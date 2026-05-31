@@ -31,7 +31,7 @@ import { requestFCMToken, onForegroundMessage, showNotification } from './servic
 import { saveFCMToken } from './services/fcmTokenService';
 
 function AppContent() {
-  const { isPlaying, toggleMusic, nextTrack, prevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, setVolume, currentTrack, currentArtist } = useMusicPlayer();
+  const { isPlaying, toggleMusic, nextTrack, prevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, setVolume, currentTrack, currentArtist, currentTrackIndex, selectTrack } = useMusicPlayer();
   const [dailyMessage, setDailyMessage] = useState(null);
   const [dailyVerse, setDailyVerse] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -439,6 +439,8 @@ function AppContent() {
             onVolumeChange={setVolume}
             currentTrack={currentTrack}
             currentArtist={currentArtist}
+            currentTrackIndex={currentTrackIndex}
+            onSelectTrack={selectTrack}
           />
 
           {isRaissaLoginModalOpen && (

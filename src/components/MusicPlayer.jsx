@@ -543,6 +543,11 @@ export const useMusicPlayer = () => {
     setCurrentTrackIndex(prevActualIndex);
   }, [currentTrackIndex, getShuffledIndex, getActualIndex]);
 
+  const selectTrackLocal = useCallback((index) => {
+    if (index < 0 || index >= playlist.length) return;
+    setCurrentTrackIndex(index);
+  }, []);
+
   // ============================================================
   // FUNÇÕES GLOBAIS (delegam para o modo ativo)
   // ============================================================
@@ -587,6 +592,12 @@ export const useMusicPlayer = () => {
     }
   }, [musicMode, toggleShuffleLocal]);
 
+  const selectTrack = useCallback((index) => {
+    if (musicMode === 'local') {
+      selectTrackLocal(index);
+    }
+  }, [musicMode, selectTrackLocal]);
+
   // Salvar estado
   const saveState = () => {
     const state = {
@@ -609,20 +620,22 @@ export const useMusicPlayer = () => {
   // ============================================================
   // RETURN
   // ============================================================
-  return { 
-    isPlaying, 
-    toggleMusic, 
-    nextTrack, 
-    prevTrack, 
+  return {
+    isPlaying,
+    toggleMusic,
+    nextTrack,
+    prevTrack,
     toggleShuffle,
     isShuffled,
     musicMode,
     toggleMusicMode,
-    volume, 
-    setVolume, 
-    currentTrack, 
+    volume,
+    setVolume,
+    currentTrack,
     currentArtist,
     currentTrackIndex,
-    totalTracks: playlist.length
+    totalTracks: playlist.length,
+    playlist,
+    selectTrack
   };
 };

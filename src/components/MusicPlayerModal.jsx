@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { playlist } from '../data/playlist';
 
-const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, onVolumeChange, currentTrack, currentArtist }) => {
+const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, onVolumeChange, currentTrack, currentArtist, currentTrackIndex, onSelectTrack }) => {
   if (!isOpen) return null;
 
   return (
@@ -121,6 +122,46 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
                 [&::-webkit-slider-thumb]:shadow-pink-500/30"
             />
             <span className="text-white/50 text-xs font-medium w-8 text-right">{volume}%</span>
+          </div>
+        </div>
+
+        {/* Lista de Músicas */}
+        <div className="mt-4">
+          <h3 className="text-white/60 text-xs font-medium mb-2 px-1">Playlist ({playlist.length})</h3>
+          <div className="bg-white/5 rounded-xl max-h-48 overflow-y-auto">
+            {playlist.map((track, index) => (
+              <button
+                key={track.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onSelectTrack) onSelectTrack(index);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all
+                  ${index === currentTrackIndex
+                    ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-l-2 border-pink-500'
+                    : 'hover:bg-white/5 border-l-2 border-transparent'
+                  }`}
+              >
+                <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                  {index === currentTrackIndex && isPlaying ? (
+                    <span className="material-symbols-outlined text-pink-400 text-[16px] animate-pulse">equalizer</span>
+                  ) : (
+                    <span className={`text-xs font-medium ${index === currentTrackIndex ? 'text-pink-400' : 'text-white/40'}`}>
+                      {index + 1}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium truncate ${index === currentTrackIndex ? 'text-white' : 'text-white/70'}`}>
+                    {track.title}
+                  </p>
+                  <p className="text-xs truncate text-white/40">{track.artist}</p>
+                </div>
+                {index === currentTrackIndex && (
+                  <span className="material-symbols-outlined text-pink-400 text-[18px]">music_note</span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
