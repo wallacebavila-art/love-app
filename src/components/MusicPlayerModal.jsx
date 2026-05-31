@@ -1,7 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { playlist } from '../data/playlist';
+import { fetchYouTubePlaylist } from '../services/youtubeService';
 
 const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, onVolumeChange, currentTrack, currentArtist, currentTrackIndex, onSelectTrack }) => {
+  const [youtubePlaylist, setYoutubePlaylist] = useState([]);
+  const [isLoadingYoutube, setIsLoadingYoutube] = useState(false);
+
+  // Carregar playlist do YouTube quando o modo for YouTube
+  useEffect(() => {
+    if (musicMode === 'youtube') {
+      setIsLoadingYoutube(true);
+      fetchYouTubePlaylist()
+        .then(data => {
+          setYoutubePlaylist(data);
+          setIsLoadingYoutube(false);
+        })
+        .catch(error => {
+          console.error('Erro ao carregar playlist do YouTube:', error);
+          setYoutubePlaylist([]);
+          setIsLoadingYoutube(false);
+        });
+    } else {
+      setYoutubePlaylist([]);
+    }
+  }, [musicMode]);
   if (!isOpen) return null;
 
   return (
@@ -127,41 +149,88 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
 
         {/* Lista de Músicas */}
         <div className="mt-4">
-          <h3 className="text-white/60 text-xs font-medium mb-2 px-1">Playlist ({playlist.length})</h3>
+          <h3 className="text-white/60 text-xs font-medium mb-2 px-1">
+            Playlist ({musicMode === 'youtube' ? youtubePlaylist.length : playlist.length})
+          </h3>
           <div className="bg-white/5 rounded-xl max-h-48 overflow-y-auto">
-            {playlist.map((track, index) => (
-              <button
-                key={track.id}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onSelectTrack) onSelectTrack(index);
-                }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all
-                  ${index === currentTrackIndex
-                    ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-l-2 border-pink-500'
-                    : 'hover:bg-white/5 border-l-2 border-transparent'
-                  }`}
-              >
-                <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                  {index === currentTrackIndex && isPlaying ? (
-                    <span className="material-symbols-outlined text-pink-400 text-[16px] animate-pulse">equalizer</span>
-                  ) : (
-                    <span className={`text-xs font-medium ${index === currentTrackIndex ? 'text-pink-400' : 'text-white/40'}`}>
-                      {index + 1}
-                    </span>
+            {isLoadingYoutube ? (
+              <div className="px-3 py-4 text-center">
+                <p className="text-white/40 text-sm">Carregando playlist...</p>
+              </div>
+            ) : musicMode === 'youtube' && youtubePlaylist.length > 0 ? (
+              youtubePlaylist.map((track, index) => (
+                <button
+                  key={track.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onSelectTrack) onSelectTrack(index);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all
+                    ${index === currentTrackIndex
+                      ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-l-2 border-pink-500'
+                      : 'hover:bg-white/5 border-l-2 border-transparent'
+                    }`}
+                >
+                  <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                    {index === currentTrackIndex && isPlaying ? (
+                      <span className="material-symbols-outlined text-pink-400 text-[16px] animate-pulse">equalizer</span>
+                    ) : (
+                      <span className={`text-xs font-medium ${index === currentTrackIndex ? 'text-pink-400' : 'text-white/40'}`}>
+                        {index + 1}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium truncate ${index === currentTrackIndex ? 'text-white' : 'text-white/70'}`}>
+                      {track.title}
+                    </p>
+                    <p className="text-xs truncate text-white/40">{track.artist}</p>
+                  </div>
+                  {index === currentTrackIndex && (
+                    <span className="material-symbols-outlined text-pink-400 text-[18px]">music_note</span>
                   )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${index === currentTrackIndex ? 'text-white' : 'text-white/70'}`}>
-                    {track.title}
-                  </p>
-                  <p className="text-xs truncate text-white/40">{track.artist}</p>
-                </div>
-                {index === currentTrackIndex && (
-                  <span className="material-symbols-outlined text-pink-400 text-[18px]">music_note</span>
-                )}
-              </button>
-            ))}
+                </button>
+              ))
+            ) : musicMode === 'youtube' ? (
+              <div className="px-3 py-4 text-center">
+                <p className="text-white/40 text-sm">Não foi possível carregar a playlist</p>
+                <p className="text-white/30 text-xs mt-1">Verifique sua API key do YouTube</p>
+              </div>
+            ) : (
+              playlist.map((track, index) => (
+                <button
+                  key={track.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onSelectTrack) onSelectTrack(index);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all
+                    ${index === currentTrackIndex
+                      ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-l-2 border-pink-500'
+                      : 'hover:bg-white/5 border-l-2 border-transparent'
+                    }`}
+                >
+                  <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                    {index === currentTrackIndex && isPlaying ? (
+                      <span className="material-symbols-outlined text-pink-400 text-[16px] animate-pulse">equalizer</span>
+                    ) : (
+                      <span className={`text-xs font-medium ${index === currentTrackIndex ? 'text-pink-400' : 'text-white/40'}`}>
+                        {index + 1}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium truncate ${index === currentTrackIndex ? 'text-white' : 'text-white/70'}`}>
+                      {track.title}
+                    </p>
+                    <p className="text-xs truncate text-white/40">{track.artist}</p>
+                  </div>
+                  {index === currentTrackIndex && (
+                    <span className="material-symbols-outlined text-pink-400 text-[18px]">music_note</span>
+                  )}
+                </button>
+              ))
+            )}
           </div>
         </div>
 

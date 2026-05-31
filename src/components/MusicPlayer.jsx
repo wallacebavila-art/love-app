@@ -595,6 +595,11 @@ export const useMusicPlayer = () => {
   const selectTrack = useCallback((index) => {
     if (musicMode === 'local') {
       selectTrackLocal(index);
+    } else if (musicMode === 'youtube') {
+      if (playerRef.current && playerReadyRef.current) {
+        playerRef.current.playVideoAt(index);
+        setTimeout(updateTrackInfoYT, 500);
+      }
     }
   }, [musicMode, selectTrackLocal]);
 

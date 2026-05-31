@@ -259,7 +259,7 @@ html, body {
 
 /* Morning Theme - Sunrise with soft yellow and pink */
 .morning-theme {
-  background: url('/screen (2).png') center center / cover no-repeat !important;
+  background: url('/manha.jpg') center center / cover no-repeat !important;
   position: relative;
 }
 
@@ -276,7 +276,7 @@ html, body {
 
 /* Afternoon Theme - Bright yellow and orange with high sun */
 .afternoon-theme {
-  background: url('/screen.png') center center / cover no-repeat !important;
+  background: url('/tarde.jpg') center center / cover no-repeat !important;
   position: relative;
 }
 
@@ -293,7 +293,7 @@ html, body {
 
 /* Night Theme - Dark blue sky with stars and moon */
 .night-theme {
-  background: url('/screen (3).png') center center / cover no-repeat !important;
+  background: url('/noite.jpg') center center / cover no-repeat !important;
   position: relative;
 }
 
