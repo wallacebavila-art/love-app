@@ -62,7 +62,6 @@ export const useMusicPlayer = () => {
   const [isShuffled, setIsShuffled] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [musicMode, setMusicMode] = useState(() => {
-    // Carregar modo salvo, padrão 'local'
     return localStorage.getItem('musicMode') || 'local';
   });
   
@@ -74,12 +73,13 @@ export const useMusicPlayer = () => {
   // Local audio refs
   const audioRef = useRef(null);
   const shuffleOrderRef = useRef(null);
+  // Flag para evitar loop entre loadAndPlayTrack e o useEffect de isPlaying
+  const isChangingTrackRef = useRef(false);
 
   // ============================================================
   // INICIALIZAÇÃO
   // ============================================================
   useEffect(() => {
-    // Carregar modo salvo
     const savedMode = localStorage.getItem('musicMode') || 'local';
     setMusicMode(savedMode);
 
@@ -89,7 +89,6 @@ export const useMusicPlayer = () => {
       initLocalAudio();
     }
 
-    // Carregar estado do player
     loadSavedState();
 
     return () => {
@@ -249,7 +248,6 @@ export const useMusicPlayer = () => {
   const toggleMusicMode = useCallback(() => {
     const wasPlaying = isPlaying;
     
-    // Parar tudo
     if (isPlaying) {
       if (musicMode === 'youtube' && playerRef.current && playerReadyRef.current) {
         playerRef.current.pauseVideo();
@@ -258,14 +256,12 @@ export const useMusicPlayer = () => {
       }
     }
 
-    // Limpar player atual
     if (musicMode === 'youtube') {
       cleanupYouTube();
     } else {
       cleanupLocalAudio();
     }
 
-    // Alternar modo
     const newMode = musicMode === 'youtube' ? 'local' : 'youtube';
     setMusicMode(newMode);
     localStorage.setItem('musicMode', newMode);
@@ -273,10 +269,8 @@ export const useMusicPlayer = () => {
     setCurrentTrack('');
     setCurrentArtist('');
 
-    // Inicializar novo modo
     if (newMode === 'youtube') {
       initYouTube();
-      // Dar um tempo para o YouTube inicializar e tocar
       setTimeout(() => {
         if (wasPlaying && playerRef.current && playerReadyRef.current) {
           playerRef.current.playVideo();
@@ -285,7 +279,6 @@ export const useMusicPlayer = () => {
       }, 1500);
     } else {
       initLocalAudio();
-      // Carregar a música atual no áudio local
       setTimeout(() => {
         if (playlist[currentTrackIndex]) {
           const track = playlist[currentTrackIndex];
@@ -297,6 +290,7 @@ export const useMusicPlayer = () => {
             audioRef.current.volume = volume / 100;
             updateMediaSession(track);
             if (wasPlaying) {
+              isChangingTrackRef.current = true;
               audioRef.current.play().catch(() => {});
               setIsPlaying(true);
             }
@@ -319,7 +313,6 @@ export const useMusicPlayer = () => {
     } catch (e) {}
   };
 
-  // Polling para atualizar nome da música no YouTube
   useEffect(() => {
     if (musicMode !== 'youtube') return;
     if (isPlaying) {
@@ -337,7 +330,6 @@ export const useMusicPlayer = () => {
     };
   }, [isPlaying, musicMode]);
 
-  // Volume YouTube
   useEffect(() => {
     if (musicMode !== 'youtube') return;
     if (playerRef.current && playerReadyRef.current) {
@@ -373,47 +365,86 @@ export const useMusicPlayer = () => {
   // ============================================================
   // LOCAL AUDIO FUNCTIONS
   // ============================================================
-  useEffect(() => {
+  // Carrega e toca a faixa atual
+  const loadAndPlayTrack = useCallback((shouldPlay) => {
     if (musicMode !== 'local') return;
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (playlist.length === 0) return;
+    if (playlist.length === 0) {
+      setCurrentTrack('');
+      setCurrentArtist('');
+      setIsPlaying(false);
+      return;
+    }
+
     const track = playlist[currentTrackIndex];
-    if (!track) return;
+    if (!track) {
+      setCurrentTrack('');
+      setCurrentArtist('');
+      setIsPlaying(false);
+      return;
+    }
 
     setCurrentTrack(track.title);
     setCurrentArtist(track.artist);
+    
+    isChangingTrackRef.current = true;
+    
     audio.src = track.src;
     audio.load();
     audio.volume = volume / 100;
 
     updateMediaSession(track);
 
-    if (isPlaying) {
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.warn('Autoplay bloqueado:', error);
+    if (shouldPlay) {
+      // Aguarda o áudio carregar antes de tentar tocar
+      const onCanPlay = () => {
+        audio.removeEventListener('canplay', onCanPlay);
+        audio.play().catch(error => {
+          console.warn('Erro ao tocar:', error);
           setIsPlaying(false);
+        }).finally(() => {
+          isChangingTrackRef.current = false;
         });
-      }
+      };
+      audio.addEventListener('canplay', onCanPlay);
+      // Fallback: tenta tocar mesmo se não disparar canplay
+      setTimeout(() => {
+        if (isChangingTrackRef.current) {
+          isChangingTrackRef.current = false;
+          audio.play().catch(error => {
+            console.warn('Erro ao tocar (fallback):', error);
+            setIsPlaying(false);
+          });
+        }
+      }, 1000);
+      setIsPlaying(true);
+    } else {
+      isChangingTrackRef.current = false;
+    }
+  }, [currentTrackIndex, musicMode, volume]);
+
+  // Quando a faixa ou modo muda
+  useEffect(() => {
+    if (musicMode === 'local') {
+      loadAndPlayTrack(isPlaying);
     }
   }, [currentTrackIndex, musicMode]);
 
+  // Quando isPlaying muda (play/pause toggle)
   useEffect(() => {
     if (musicMode !== 'local') return;
     const audio = audioRef.current;
     if (!audio) return;
 
+    if (isChangingTrackRef.current) return;
+
     if (isPlaying) {
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.warn('Erro ao tocar:', error);
-          setIsPlaying(false);
-        });
-      }
+      audio.play().catch(error => {
+        console.warn('Erro ao resumir play:', error);
+        setIsPlaying(false);
+      });
     } else {
       audio.pause();
     }
@@ -427,6 +458,7 @@ export const useMusicPlayer = () => {
   }, [volume, musicMode]);
 
   // Media Session API
+  const BASE_PATH = import.meta.env.BASE_URL || '/';
   const updateMediaSession = (track) => {
     if (!('mediaSession' in navigator)) return;
 
@@ -442,10 +474,10 @@ export const useMusicPlayer = () => {
             { src: track.cover, sizes: '512x512', type: 'image/jpeg' },
           ]
         : [
-            { src: '/favicon2.png', sizes: '96x96', type: 'image/png' },
-            { src: '/favicon2.png', sizes: '128x128', type: 'image/png' },
-            { src: '/favicon2.png', sizes: '256x256', type: 'image/png' },
-            { src: '/favicon2.png', sizes: '512x512', type: 'image/png' },
+            { src: `${BASE_PATH}favicon2.png`, sizes: '96x96', type: 'image/png' },
+            { src: `${BASE_PATH}favicon2.png`, sizes: '128x128', type: 'image/png' },
+            { src: `${BASE_PATH}favicon2.png`, sizes: '256x256', type: 'image/png' },
+            { src: `${BASE_PATH}favicon2.png`, sizes: '512x512', type: 'image/png' },
           ]
     });
 
@@ -570,7 +602,6 @@ export const useMusicPlayer = () => {
     saveState();
   }, [isPlaying, currentTrackIndex, isShuffled]);
 
-  // Salvar volume
   useEffect(() => {
     localStorage.setItem('musicVolume', volume.toString());
   }, [volume]);

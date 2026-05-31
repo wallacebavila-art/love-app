@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import ffmpegStatic from 'ffmpeg-static';
 
 const execFileAsync = promisify(execFile);
 
