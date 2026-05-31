@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import admin from 'firebase-admin';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { execFile } from 'child_process';
@@ -222,6 +222,14 @@ app.post('/api/youtube-download', async (req, res) => {
       expires: '2030-01-01'
     });
     console.log('Upload concluido:', firebaseUrl);
+
+    // Deletar arquivo local após upload bem-sucedido
+    try {
+      unlinkSync(outputPath);
+      console.log('Arquivo local deletado:', fileName);
+    } catch (error) {
+      console.warn('Aviso: nao foi possivel deletar arquivo local:', error.message);
+    }
 
     const db = admin.firestore();
     await db.collection('music_playlist').add({
