@@ -1,53 +1,14 @@
-import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useThemeStyles } from '../hooks/useThemeStyles';
 import { useState, useEffect } from 'react';
 
 const DailyVerseCard = ({ verse }) => {
-  const { period } = useTimePeriod();
+  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
   const [isRevealed, setIsRevealed] = useState(false);
 
   // Resetar o blur quando o versículo mudar
   useEffect(() => {
     setIsRevealed(false);
   }, [verse]);
-
-  const getCardBackground = () => {
-    switch (period) {
-      case 'morning':
-        return 'bg-black/40';
-      case 'afternoon':
-        return 'bg-black/40';
-      case 'night':
-        return 'bg-black/50';
-      default:
-        return 'bg-black/40';
-    }
-  };
-
-  const getBorderColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'border-white/35';
-      case 'afternoon':
-        return 'border-white/35';
-      case 'night':
-        return 'border-white/25';
-      default:
-        return 'border-white/35';
-    }
-  };
-
-  const getTextColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'text-white';
-      case 'afternoon':
-        return 'text-white';
-      case 'night':
-        return 'text-white';
-      default:
-        return 'text-white';
-    }
-  };
 
   // Se não há versículo, mostra blur com título
   if (!verse) {

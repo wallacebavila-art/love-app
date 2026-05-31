@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useState, useEffect, useRef } from 'react';
+import { useThemeStyles } from '../hooks/useThemeStyles';
 import { fetchAllPhotos } from '../services/photoService';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoginModal } from '../contexts/LoginModalContext';
 
 const PhotoGalleryCard = () => {
-  const { period } = useTimePeriod();
+  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
   const { user } = useAuth();
   const { setIsLoginModalOpen } = useLoginModal();
   const [photos, setPhotos] = useState([]);
@@ -13,6 +13,11 @@ const PhotoGalleryCard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Refs para requestAnimationFrame
+  const animationFrameRef = useRef(null);
+  const lastUpdateTimeRef = useRef(0);
+  const SLIDE_INTERVAL = 3000; // 3 segundos
 
   // Carregar fotos do Firebase
   useEffect(() => {
@@ -29,15 +34,33 @@ const PhotoGalleryCard = () => {
     loadPhotos();
   }, []);
 
-  // Slide automático
+  // Slide automático com requestAnimationFrame
   useEffect(() => {
     if (photos.length <= 1 || isPaused || isExpanded) return;
 
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % photos.length);
-    }, 3000); // Troca a cada 3 segundos
+    const animate = (timestamp) => {
+      if (!lastUpdateTimeRef.current) {
+        lastUpdateTimeRef.current = timestamp;
+      }
 
-    return () => clearInterval(interval);
+      const elapsed = timestamp - lastUpdateTimeRef.current;
+
+      if (elapsed >= SLIDE_INTERVAL) {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % photos.length);
+        lastUpdateTimeRef.current = timestamp;
+      }
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      lastUpdateTimeRef.current = 0;
+    };
   }, [photos.length, isPaused, isExpanded]);
 
   const goToPrevious = () => {
@@ -54,43 +77,6 @@ const PhotoGalleryCard = () => {
 
   const goToSlide = (index) => {
     setCurrentIndex(index);
-  };
-
-  const getCardBackground = () => {
-    switch (period) {
-      case 'morning':
-        return 'bg-black/40';
-      case 'afternoon':
-        return 'bg-black/40';
-      case 'night':
-        return 'bg-black/50';
-      default:
-        return 'bg-black/40';
-    }
-  };
-
-  const getBorderColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'border-white/35';
-      case 'afternoon':
-        return 'border-white/35';
-      case 'night':
-        return 'border-white/25';
-      default:
-        return 'border-white/35';
-    }
-  };
-
-  const getTextColor = () => {
-    switch (period) {
-      case 'morning':
-      case 'afternoon':
-      case 'night':
-        return 'text-white';
-      default:
-        return 'text-white';
-    }
   };
 
   if (isLoading) {
@@ -117,10 +103,10 @@ const PhotoGalleryCard = () => {
           <div className="w-full max-w-2xl">
             <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} w-full h-[150px] rounded-[28px] shadow-2xl shadow-black/10 flex flex-col items-center justify-center text-center p-4`}>
               <span className="material-symbols-outlined text-white/60 text-[36px] mb-2">photo_library</span>
-              <p className={`font-body-md text-[12px] ${getTextColor()}/70`}>
+              <p className={`font-body-md text-[12px] ${getTextColor}/70`}>
                 Nenhuma foto ainda
               </p>
-              <p className={`font-body-md text-[10px] ${getTextColor()}/50 mt-1`}>
+              <p className={`font-body-md text-[10px] ${getTextColor}/50 mt-1`}>
                 Adicione fotos no painel administrativo
               </p>
             </div>
@@ -196,7 +182,7 @@ const PhotoGalleryCard = () => {
             {/* Caption */}
             {currentPhoto.caption && (
               <div className="absolute bottom-4 left-0 right-0 p-2">
-                <p className={`font-body-md text-[10px] ${getTextColor()} text-center drop-shadow-lg`}>
+                <p className={`font-body-md text-[10px] ${getTextColor} text-center drop-shadow-lg`}>
                   {currentPhoto.caption}
                 </p>
               </div>

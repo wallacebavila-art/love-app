@@ -18,6 +18,7 @@ import BottomPlayerBar from './components/BottomPlayerBar';
 import NotificationToast, { NotificationProvider } from './components/NotificationToast';
 import { useMusicPlayer } from './components/MusicPlayer';
 import ICloudCalendarWidget from './components/ICloudCalendarWidget';
+import YoutubeDownloader from './components/YoutubeDownloader';
 import { NotificationModalProvider } from './contexts/NotificationModalContext';
 import UpcomingEventsTicker from './components/UpcomingEventsTicker';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -25,6 +26,7 @@ import { TimePeriodProvider, useTimePeriod } from './contexts/TimePeriodContext'
 import { CalendarEventsProvider } from './contexts/CalendarEventsContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { LoginModalProvider, useLoginModal } from './contexts/LoginModalContext';
+import { DarkModeProvider } from './contexts/DarkModeContext';
 import { fetchDailyMessage } from './services/messageService';
 import { fetchDailyVerse } from './services/verseService';
 import { fetchWeather } from './services/weatherService';
@@ -44,6 +46,7 @@ function AppContent() {
   const [isICloudCalendarModalOpen, setIsICloudCalendarModalOpen] = useState(false);
   const [isTravelMapModalOpen, setIsTravelMapModalOpen] = useState(false);
   const [isMusicPlayerModalOpen, setIsMusicPlayerModalOpen] = useState(false);
+  const [isYoutubeDownloaderOpen, setIsYoutubeDownloaderOpen] = useState(false);
   const { isLoginModalOpen, setIsLoginModalOpen, isRaissaLoginModalOpen, setIsRaissaLoginModalOpen } = useLoginModal();
   const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -387,6 +390,7 @@ function AppContent() {
           <SettingsModal
             isOpen={isSettingsModalOpen}
             onClose={() => setIsSettingsModalOpen(false)}
+            onOpenYoutubeDownloader={() => setIsYoutubeDownloaderOpen(true)}
           />
 
           <TravelMapModal
@@ -399,12 +403,12 @@ function AppContent() {
           {isICloudCalendarModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setIsICloudCalendarModalOpen(false)}>
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-              <div className="relative bg-white/90 backdrop-blur-xl border border-white/30 rounded-2xl p-5 shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+              <div className="relative bg-transparent backdrop-blur-xl border-0 rounded-3xl p-4 shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={() => setIsICloudCalendarModalOpen(false)}
-                  className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors z-10"
+                  className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-all hover:scale-110 z-10"
                 >
-                  <span className="material-symbols-outlined text-gray-600">close</span>
+                  <span className="material-symbols-outlined text-white">close</span>
                 </button>
                 <ICloudCalendarWidget isModal={true} />
               </div>
@@ -444,6 +448,21 @@ function AppContent() {
             currentTrackIndex={currentTrackIndex}
             onSelectTrack={selectTrack}
           />
+
+          {isYoutubeDownloaderOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setIsYoutubeDownloaderOpen(false)}>
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+              <div className="relative bg-transparent backdrop-blur-xl border-0 rounded-3xl p-4 shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => setIsYoutubeDownloaderOpen(false)}
+                  className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-all hover:scale-110 z-10"
+                >
+                  <span className="material-symbols-outlined text-white">close</span>
+                </button>
+                <YoutubeDownloader onClose={() => setIsYoutubeDownloaderOpen(false)} />
+              </div>
+            </div>
+          )}
 
           {/* Bottom Player Bar - Apenas no modo mobile */}
           <BottomPlayerBar
@@ -491,38 +510,40 @@ function App() {
     <Router>
       <AuthProvider>
         <LoginModalProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/raissa-login" element={<RaissaLogin />} />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
+          <DarkModeProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/raissa-login" element={<RaissaLogin />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <TimePeriodProvider>
+                      <CalendarEventsProvider>
+                        <NotificationProvider>
+                          <AppContent />
+                        </NotificationProvider>
+                      </CalendarEventsProvider>
+                    </TimePeriodProvider>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="*"
+                element={
                   <TimePeriodProvider>
                     <CalendarEventsProvider>
                       <NotificationProvider>
-                        <AppContent />
-                      </NotificationProvider>
-                    </CalendarEventsProvider>
-                  </TimePeriodProvider>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="*"
-              element={
-                <TimePeriodProvider>
-                  <CalendarEventsProvider>
-                    <NotificationProvider>
-                      <NotificationModalProvider>
-                        <AppContent />
-                      </NotificationModalProvider>
+                        <NotificationModalProvider>
+                          <AppContent />
+                        </NotificationModalProvider>
                     </NotificationProvider>
                   </CalendarEventsProvider>
                 </TimePeriodProvider>
-              }
-            />
-          </Routes>
+                }
+              />
+            </Routes>
+          </DarkModeProvider>
         </LoginModalProvider>
       </AuthProvider>
     </Router>

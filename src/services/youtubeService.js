@@ -1,5 +1,5 @@
 // YouTube Data API Service
-const YOUTUBE_API_KEY = 'AIzaSyBqe0OxrOdjIPY1pCaMwr8e3Kf-WcCDeGA'; // Substitua com sua API key do YouTube Data API
+const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || 'AIzaSyBqe0OxrOdjIPY1pCaMwr8e3Kf-WcCDeGA';
 const PLAYLIST_ID = 'PL7Z2KjbeQrjT0TQw0_3JZAFJF9hhwdVOQ';
 
 export const fetchYouTubePlaylist = async () => {

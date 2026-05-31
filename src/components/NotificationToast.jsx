@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useThemeStyles } from '../hooks/useThemeStyles';
 import { useAuth } from '../contexts/AuthContext';
 import { onForegroundMessage } from '../services/fcmService';
 import { getAllNotifications, clearNotifications, deleteOldNotifications } from '../utils/indexedDB';
@@ -114,49 +114,10 @@ export const useNotifications = () => {
 };
 
 const NotificationToast = () => {
-  const { period } = useTimePeriod();
+  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
   const { user } = useAuth();
   const { notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp } = useNotifications();
   const [visible, setVisible] = useState(false);
-
-  const getCardBackground = () => {
-    switch (period) {
-      case 'morning':
-        return 'bg-black/40';
-      case 'afternoon':
-        return 'bg-black/40';
-      case 'night':
-        return 'bg-black/50';
-      default:
-        return 'bg-black/40';
-    }
-  };
-
-  const getBorderColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'border-white/35';
-      case 'afternoon':
-        return 'border-white/35';
-      case 'night':
-        return 'border-white/25';
-      default:
-        return 'border-white/35';
-    }
-  };
-
-  const getTextColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'text-white';
-      case 'afternoon':
-        return 'text-white';
-      case 'night':
-        return 'text-white';
-      default:
-        return 'text-white';
-    }
-  };
 
   // Filtrar apenas notificações não visualizadas e que não foram enviadas por mim
   const unreadNotifications = notifications.filter(n => {

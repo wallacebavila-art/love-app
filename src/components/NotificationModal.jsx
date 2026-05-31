@@ -2,7 +2,7 @@ import { useNotifications } from './NotificationToast';
 import { useState, useEffect, useRef } from 'react';
 import { sendRealtimeNotification } from '../services/realtimeNotifications';
 import { uploadAudioToStorage } from '../services/photoService';
-import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useThemeStyles } from '../hooks/useThemeStyles';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotificationModal } from '../contexts/NotificationModalContext';
 import raissaAvatar from '../assets/raissa-avatar.png';
@@ -39,7 +39,7 @@ const EMOJI_CATEGORIES = [
 
 const NotificationModal = ({ isOpen, onClose }) => {
   const { notifications } = useNotifications();
-  const { period } = useTimePeriod();
+  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
   const { user } = useAuth();
   const { setIsNotificationModalOpen } = useNotificationModal();
   const [replyText, setReplyText] = useState('');
@@ -53,45 +53,6 @@ const NotificationModal = ({ isOpen, onClose }) => {
   const emojiPickerRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordingIntervalRef = useRef(null);
-
-  const getCardBackground = () => {
-    switch (period) {
-      case 'morning':
-        return 'bg-black/40';
-      case 'afternoon':
-        return 'bg-black/40';
-      case 'night':
-        return 'bg-black/50';
-      default:
-        return 'bg-black/40';
-    }
-  };
-
-  const getBorderColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'border-white/35';
-      case 'afternoon':
-        return 'border-white/35';
-      case 'night':
-        return 'border-white/25';
-      default:
-        return 'border-white/35';
-    }
-  };
-
-  const getTextColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'text-white';
-      case 'afternoon':
-        return 'text-white';
-      case 'night':
-        return 'text-white';
-      default:
-        return 'text-white';
-    }
-  };
 
   const formatTime = (timestamp) => {
     const date = timestamp instanceof Date ? timestamp : new Date(timestamp);

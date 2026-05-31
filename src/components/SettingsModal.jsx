@@ -2,15 +2,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useLoginModal } from '../contexts/LoginModalContext';
-import YoutubeDownloader from './YoutubeDownloader';
+import { useDarkMode } from '../contexts/DarkModeContext';
+import { useThemeStyles } from '../hooks/useThemeStyles';
 import naocliqueImage from '/naoclique.png';
 import raissaAvatar from '/favicon.png';
 
-const SettingsModal = ({ isOpen, onClose }) => {
-  const [showDownloader, setShowDownloader] = useState(false);
+const SettingsModal = ({ isOpen, onClose, onOpenYoutubeDownloader }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { setIsLoginModalOpen } = useLoginModal();
+  const { isDarkMode, isExplicitMode, toggleDarkMode, enableExplicitMode, disableExplicitMode } = useDarkMode();
+  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
   const [showSecretImage, setShowSecretImage] = useState(false);
   const [secretStep, setSecretStep] = useState(0);
   const [useLoveName, setUseLoveName] = useState(false);
@@ -76,28 +78,28 @@ const SettingsModal = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
       
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className={`relative ${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border-2 ${getBorderColor()} rounded-3xl w-full max-w-sm max-h-[80vh] overflow-hidden flex flex-col shadow-2xl shadow-black/10`}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-white">Configurações</h2>
+        <div className="bg-white/10 backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border-b border-white/20 px-4 py-3 flex justify-between items-center">
+          <h2 className={`text-lg font-bold ${getTextColor()}`}>Configurações</h2>
           <button
             onClick={onClose}
-            className="text-white hover:bg-white/20 rounded-full p-2 transition"
+            className={`${getTextColor()} hover:bg-white/20 rounded-full p-1 transition`}
           >
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined text-xl">close</span>
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 overflow-y-auto flex-1 custom-scrollbar">
           {/* User Section */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Conta</h3>
+          <div className="mb-4">
+            <h3 className={`text-sm font-semibold ${getTextColor()} mb-2`}>Conta</h3>
             {user ? (
-              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <div className="flex items-center gap-3 mb-3">
+              <div className={`p-3 bg-white/10 rounded-lg border ${getBorderColor()}`}>
+                <div className="flex items-center gap-2 mb-2">
                   {user.userType === 'raissa' ? (
-                    <div className="w-12 h-12 rounded-full overflow-hidden">
+                    <div className="w-10 h-10 rounded-full overflow-hidden">
                       <img
                         src={raissaAvatar}
                         alt={useLoveName ? 'Amor' : 'Raíssa'}
@@ -105,35 +107,35 @@ const SettingsModal = ({ isOpen, onClose }) => {
                       />
                     </div>
                   ) : (
-                    <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                       <span className="material-symbols-outlined text-white">person</span>
                     </div>
                   )}
                   <div>
-                    <p className="font-semibold text-gray-800">
+                    <p className={`font-semibold ${getTextColor()} text-sm`}>
                       {user.userType === 'raissa' ? (useLoveName ? 'Amor' : 'Raíssa') : 'Administrador'}
                     </p>
                     {user.userType !== 'raissa' && (
-                      <p className="text-sm text-gray-600">{user.email}</p>
+                      <p className="text-xs text-white/60">{user.email}</p>
                     )}
                   </div>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition font-semibold flex items-center justify-center gap-2"
+                  className="w-full bg-red-500/80 text-white py-1.5 rounded-lg hover:bg-red-500 transition font-semibold flex items-center justify-center gap-2 text-sm"
                 >
-                  <span className="material-symbols-outlined">logout</span>
+                  <span className="material-symbols-outlined text-sm">logout</span>
                   Sair
                 </button>
               </div>
             ) : (
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-gray-600 text-center mb-3">Faça login para acessar funcionalidades administrativas</p>
+              <div className={`p-3 bg-white/10 rounded-lg border ${getBorderColor()}`}>
+                <p className="text-white/60 text-center mb-2 text-xs">Faça login para acessar funcionalidades administrativas</p>
                 <button
                   onClick={handleLogin}
-                  className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition font-semibold flex items-center justify-center gap-2"
+                  className="w-full bg-white/20 text-white py-1.5 rounded-lg hover:bg-white/30 transition font-semibold flex items-center justify-center gap-2 text-sm"
                 >
-                  <span className="material-symbols-outlined">login</span>
+                  <span className="material-symbols-outlined text-sm">login</span>
                   Fazer Login
                 </button>
               </div>
@@ -141,43 +143,64 @@ const SettingsModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* App Info Section */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Sobre</h3>
+          <div className="mb-4">
+            <h3 className={`text-sm font-semibold ${getTextColor()} mb-2`}>Aparência</h3>
             <div className="space-y-2">
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-600">Versão</span>
-                <span className="text-gray-800 font-medium">1.0.0</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-600">Desenvolvido para</span>
-                <span className="text-gray-800 font-medium">Raíssa 💕</span>
+              <div className={`flex justify-between items-center p-2 bg-white/10 rounded-lg border ${getBorderColor()}`}>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-white/60 text-sm">dark_mode</span>
+                  <span className="text-white/80 text-sm">Modo Escuro</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={isExplicitMode ? disableExplicitMode : enableExplicitMode}
+                    className="text-xs text-white/60 hover:text-white/80 font-medium"
+                  >
+                    {isExplicitMode ? 'Auto' : 'Manual'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!isExplicitMode) enableExplicitMode();
+                      toggleDarkMode();
+                    }}
+                    className={`w-14 h-7 rounded-full transition-colors border-2 ${
+                      isDarkMode ? 'bg-white/40 border-white/50' : 'bg-white/30 border-white/40'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                      isDarkMode ? 'translate-x-7' : 'translate-x-0.5'
+                    }`} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Info */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-500 text-center">
-              ~para Raíssa. Com amor, Wallace. 💕
-            </p>
+          {/* App Info Section */}
+          <div className="mb-4">
+            <h3 className={`text-sm font-semibold ${getTextColor()} mb-2`}>Sobre</h3>
+            <div className="space-y-1">
+              <div className={`flex justify-between items-center p-2 bg-white/10 rounded-lg border ${getBorderColor()}`}>
+                <span className="text-white/60 text-xs">Versão</span>
+                <span className="text-white font-medium text-xs">1.0.0</span>
+              </div>
+              <div className={`flex justify-between items-center p-2 bg-white/10 rounded-lg border ${getBorderColor()}`}>
+                <span className="text-white/60 text-xs">Desenvolvido para</span>
+                <span className="text-white font-medium text-xs">Raíssa 💕</span>
+              </div>
+            </div>
           </div>
 
           {/* Baixar Música do YouTube - Visível apenas para admin */}
           {user?.userType === 'admin' && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className={`mt-4 pt-4 border-t ${getBorderColor()}`}>
               <button
-                onClick={() => setShowDownloader(!showDownloader)}
-                className="w-full bg-gradient-to-r from-red-500 to-purple-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-red-600 hover:to-purple-700 transition-all active:scale-[0.98] shadow-md shadow-red-500/20"
+                onClick={onOpenYoutubeDownloader}
+                className="w-full bg-white/20 text-white py-2 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-white/30 transition-all active:scale-[0.98] shadow-md text-sm"
               >
-                <span className="material-symbols-outlined">download</span>
-                {showDownloader ? 'Fechar Downloader' : 'Baixar Música do YouTube'}
+                <span className="material-symbols-outlined text-sm">download</span>
+                Baixar Música
               </button>
-            </div>
-          )}
-
-          {showDownloader && (
-            <div className="mt-4">
-              <YoutubeDownloader onClose={() => setShowDownloader(false)} />
             </div>
           )}
 
@@ -185,7 +208,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
           <div className="mt-4">
             <button
               onClick={handleSecretClick}
-              className="w-full p-3 bg-gray-100 rounded-lg border border-gray-200 hover:bg-gray-200 transition text-gray-400 text-sm font-medium cursor-pointer"
+              className={`w-full p-2 bg-white/10 rounded-lg border ${getBorderColor()} hover:bg-white/20 transition text-white/40 text-xs font-medium cursor-pointer`}
             >
               {getSecretText()}
             </button>

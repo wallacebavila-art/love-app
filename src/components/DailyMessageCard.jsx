@@ -1,66 +1,14 @@
-import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useThemeStyles } from '../hooks/useThemeStyles';
 import { useState, useEffect } from 'react';
 
 const DailyMessageCard = ({ message }) => {
-  const { period } = useTimePeriod();
+  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
   const [isRevealed, setIsRevealed] = useState(false);
 
   // Resetar o blur quando a mensagem mudar
   useEffect(() => {
     setIsRevealed(false);
   }, [message]);
-
-  const getCardBackground = () => {
-    switch (period) {
-      case 'morning':
-        return 'bg-black/40';
-      case 'afternoon':
-        return 'bg-black/40';
-      case 'night':
-        return 'bg-black/50';
-      default:
-        return 'bg-black/40';
-    }
-  };
-
-  const getBorderColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'border-white/35';
-      case 'afternoon':
-        return 'border-white/35';
-      case 'night':
-        return 'border-white/25';
-      default:
-        return 'border-white/35';
-    }
-  };
-
-  const getTextColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'text-white';
-      case 'afternoon':
-        return 'text-white';
-      case 'night':
-        return 'text-white';
-      default:
-        return 'text-white';
-    }
-  };
-
-  const getAccentColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'text-white';
-      case 'afternoon':
-        return 'text-white';
-      case 'night':
-        return 'text-white';
-      default:
-        return 'text-white';
-    }
-  };
 
   return (
     <section className="w-full flex justify-center">

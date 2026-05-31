@@ -1,5 +1,5 @@
 import { db, storage, auth } from './firebaseConfig';
-import { doc, getDoc, collection, getDocs, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, limit, startAfter } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 
 const PHOTOS_COLLECTION = 'photos';
@@ -13,12 +13,19 @@ const LOCAL_PHOTOS = [
 
 /**
  * Busca todas as fotos do Firestore com fallback para fotos locais
+ * @param {number} maxPhotos - Número máximo de fotos para carregar (padrão: todas)
  * @returns {Promise<Array>} Array de fotos
  */
-export const fetchAllPhotos = async () => {
+export const fetchAllPhotos = async (maxPhotos = null) => {
   try {
     const photosRef = collection(db, PHOTOS_COLLECTION);
-    const snapshot = await getDocs(photosRef);
+    let q = query(photosRef, orderBy('order'));
+    
+    if (maxPhotos) {
+      q = query(q, limit(maxPhotos));
+    }
+    
+    const snapshot = await getDocs(q);
     
     const firebasePhotos = [];
     snapshot.forEach((doc) => {
@@ -39,6 +46,46 @@ export const fetchAllPhotos = async () => {
   } catch (error) {
     console.error('Erro ao buscar fotos do Firebase, tentando locais:', error);
     return LOCAL_PHOTOS;
+  }
+};
+
+/**
+ * Busca fotos com paginação
+ * @param {number} pageSize - Número de fotos por página (padrão: 10)
+ * @param {Object} lastVisible - Último documento visível para continuar a paginação
+ * @returns {Promise<Object>} { photos, lastVisible, hasMore }
+ */
+export const fetchPhotosPaginated = async (pageSize = 10, lastVisible = null) => {
+  try {
+    const photosRef = collection(db, PHOTOS_COLLECTION);
+    let q = query(photosRef, orderBy('order'), limit(pageSize));
+    
+    if (lastVisible) {
+      q = query(q, startAfter(lastVisible));
+    }
+    
+    const snapshot = await getDocs(q);
+    
+    const firebasePhotos = [];
+    snapshot.forEach((doc) => {
+      firebasePhotos.push({ id: doc.id, ...doc.data(), isLocal: false });
+    });
+    
+    const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+    const hasMore = !snapshot.empty && firebasePhotos.length === pageSize;
+    
+    return {
+      photos: firebasePhotos,
+      lastVisible: lastDoc,
+      hasMore
+    };
+  } catch (error) {
+    console.error('Erro ao buscar fotos com paginação:', error);
+    return {
+      photos: LOCAL_PHOTOS,
+      lastVisible: null,
+      hasMore: false
+    };
   }
 };
 
@@ -260,7 +307,7 @@ export const uploadToGoogleDrive = async (file, photoData) => {
     const base64Data = await base64Promise;
     
     // Substitua pela URL do seu Google Apps Script deployado
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHtX__KBc7VaMrmNtetLKzc-FVnsUJJ7khXJ3ar59II6rW3lHPfmgy-V6c2bqx2yeWRQ/exec';
+    const SCRIPT_URL = import.meta.env.VITE_GOOGLE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbxHtX__KBc7VaMrmNtetLKzc-FVnsUJJ7khXJ3ar59II6rW3lHPfmgy-V6c2bqx2yeWRQ/exec';
     
     const response = await fetch(SCRIPT_URL, {
       method: 'POST',
@@ -303,7 +350,7 @@ export const uploadToImgur = async (file) => {
     const response = await fetch('https://api.imgur.com/3/image', {
       method: 'POST',
       headers: {
-        'Authorization': 'Client-ID 4d8e5b5e5f5f5f5'
+        'Authorization': `Client-ID ${import.meta.env.VITE_IMGUR_CLIENT_ID || '4d8e5b5e5f5f5f5'}`
       },
       body: formData
     });

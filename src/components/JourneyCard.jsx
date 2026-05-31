@@ -1,12 +1,12 @@
 ﻿import { calculateDaysTogether } from '../utils/dateUtils';
-import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useThemeStyles } from '../hooks/useThemeStyles';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { fetchTimelineData, saveMilestones, saveCustomDays } from '../services/timelineService';
 
 const JourneyCard = () => {
   const daysTogether = calculateDaysTogether();
-  const { period } = useTimePeriod();
+  const { getCardBackground, getBorderColor, getTextColor, getAccentColor } = useThemeStyles();
   const { user } = useAuth();
   const [showTimeline, setShowTimeline] = useState(false);
   const [showLoginAlert, setShowLoginAlert] = useState(false);
@@ -174,59 +174,6 @@ const JourneyCard = () => {
       const updated = milestones.filter((_, i) => i !== index);
       setMilestones(updated);
       saveMilestones(updated);
-    }
-  };
-
-
-  const getCardBackground = () => {
-    switch (period) {
-      case 'morning':
-        return 'bg-black/40';
-      case 'afternoon':
-        return 'bg-black/40';
-      case 'night':
-        return 'bg-black/50';
-      default:
-        return 'bg-black/40';
-    }
-  };
-
-  const getBorderColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'border-white/35';
-      case 'afternoon':
-        return 'border-white/35';
-      case 'night':
-        return 'border-white/25';
-      default:
-        return 'border-white/35';
-    }
-  };
-
-  const getTextColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'text-white';
-      case 'afternoon':
-        return 'text-white';
-      case 'night':
-        return 'text-white';
-      default:
-        return 'text-white';
-    }
-  };
-
-  const getAccentColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'text-white';
-      case 'afternoon':
-        return 'text-white';
-      case 'night':
-        return 'text-white';
-      default:
-        return 'text-white';
     }
   };
 

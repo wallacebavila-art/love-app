@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { db } from '../services/firebaseConfig';
 import { collection, getDocs, addDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import TravelMap from './TravelMap';
-import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useThemeStyles } from '../hooks/useThemeStyles';
+import { loadGoogleMaps } from '../utils/googleMapsLoader';
 
 const TravelMapModal = ({ isOpen, onClose }) => {
-  const { period } = useTimePeriod();
+  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [mapsLoading, setMapsLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newPlace, setNewPlace] = useState({
     name: '',
@@ -82,32 +84,6 @@ const TravelMapModal = ({ isOpen, onClose }) => {
     }
   }, [mapInstanceRef]);
 
-  const getCardBackground = () => {
-    switch (period) {
-      case 'morning':
-        return 'bg-black/40';
-      case 'afternoon':
-        return 'bg-black/40';
-      case 'night':
-        return 'bg-black/50';
-      default:
-        return 'bg-black/40';
-    }
-  };
-
-  const getBorderColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'border-white/35';
-      case 'afternoon':
-        return 'border-white/35';
-      case 'night':
-        return 'border-white/25';
-      default:
-        return 'border-white/35';
-    }
-  };
-
   const getIconEmoji = (iconId) => {
     const icons = {
       heart: '❤️',
@@ -120,22 +96,20 @@ const TravelMapModal = ({ isOpen, onClose }) => {
     return icons[iconId] || '⭐';
   };
 
-  const getTextColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'text-white';
-      case 'afternoon':
-        return 'text-white';
-      case 'night':
-        return 'text-white';
-      default:
-        return 'text-white';
-    }
-  };
-
   useEffect(() => {
     if (isOpen) {
-      fetchPlaces();
+      // Carregar Google Maps lazy loading
+      setMapsLoading(true);
+      loadGoogleMaps()
+        .then(() => {
+          setMapsLoading(false);
+          fetchPlaces();
+        })
+        .catch((error) => {
+          console.error('Erro ao carregar Google Maps:', error);
+          setMapsLoading(false);
+          setLoading(false);
+        });
     }
   }, [isOpen]);
 

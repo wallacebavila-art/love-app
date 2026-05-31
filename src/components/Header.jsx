@@ -1,5 +1,5 @@
 import { getGreeting } from '../utils/dateUtils';
-import { useTimePeriod } from '../contexts/TimePeriodContext';
+import { useThemeStyles } from '../hooks/useThemeStyles';
 import { fetchWeather } from '../services/weatherService';
 import { useState, useEffect, useRef } from 'react';
 import SideMenu from './SideMenu';
@@ -12,7 +12,7 @@ import TravelMapModal from './TravelMapModal';
 import raissaAvatar from '../assets/raissa-avatar.png';
 import wallaceAvatar from '../assets/wallace-avatar.png';
 const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, onOpenTravelMap, onOpenMusicPlayer, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, onVolumeChange, currentTrack, currentArtist }) => {
-  const { period } = useTimePeriod();
+  const { getIconColor, getTextColor } = useThemeStyles();
   const { user } = useAuth();
   const navigate = useNavigate();
   const greeting = getGreeting();
@@ -109,6 +109,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
   };
 
   const getIcon = () => {
+    const { period } = useThemeStyles();
     switch (period) {
       case 'morning':
         return 'light_mode';
@@ -118,32 +119,6 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
         return 'nightlight_round';
       default:
         return 'light_mode';
-    }
-  };
-
-  const getIconColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'text-white';
-      case 'afternoon':
-        return 'text-white';
-      case 'night':
-        return 'text-white';
-      default:
-        return 'text-white';
-    }
-  };
-
-  const getTextColor = () => {
-    switch (period) {
-      case 'morning':
-        return 'text-white';
-      case 'afternoon':
-        return 'text-white';
-      case 'night':
-        return 'text-white';
-      default:
-        return 'text-white';
     }
   };
 

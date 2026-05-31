@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useThemeStyles } from '../hooks/useThemeStyles';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const YoutubeDownloader = ({ onClose, onMusicDownloaded }) => {
+  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
@@ -83,15 +85,15 @@ const YoutubeDownloader = ({ onClose, onMusicDownloaded }) => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-100 to-gray-50 rounded-2xl p-5 border border-gray-200 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-        <span className="material-symbols-outlined text-red-500">download</span>
+    <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border-2 ${getBorderColor()} rounded-3xl p-5 shadow-2xl shadow-black/10`}>
+      <h3 className={`text-lg font-semibold ${getTextColor()} mb-4 flex items-center gap-2`}>
+        <span className="material-symbols-outlined text-white/60">download</span>
         Baixar Música do YouTube
       </h3>
 
       {/* Link do YouTube */}
       <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-600 mb-1">
+        <label className={`block text-sm font-medium ${getTextColor()}/80 mb-1`}>
           📎 Link do YouTube
         </label>
         <input
@@ -100,37 +102,37 @@ const YoutubeDownloader = ({ onClose, onMusicDownloaded }) => {
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="https://youtube.com/watch?v=..."
-          className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent transition-all"
+          className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
           disabled={status === 'downloading'}
         />
       </div>
 
       {/* Título (opcional) */}
       <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-600 mb-1">
-          🎵 Título <span className="text-gray-400 text-xs">(opcional - se vazio, usa o do YouTube)</span>
+        <label className={`block text-sm font-medium ${getTextColor()}/80 mb-1`}>
+          🎵 Título <span className="text-white/40 text-xs">(opcional - se vazio, usa o do YouTube)</span>
         </label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Nome da música"
-          className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent transition-all"
+          className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
           disabled={status === 'downloading'}
         />
       </div>
 
       {/* Artista (opcional) */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-600 mb-1">
-          👤 Artista <span className="text-gray-400 text-xs">(opcional)</span>
+        <label className={`block text-sm font-medium ${getTextColor()}/80 mb-1`}>
+          👤 Artista <span className="text-white/40 text-xs">(opcional)</span>
         </label>
         <input
           type="text"
           value={artist}
           onChange={(e) => setArtist(e.target.value)}
           placeholder="Nome do artista"
-          className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent transition-all"
+          className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
           disabled={status === 'downloading'}
         />
       </div>
@@ -138,18 +140,18 @@ const YoutubeDownloader = ({ onClose, onMusicDownloaded }) => {
       {/* Barra de Progresso */}
       {status !== 'idle' && (
         <div className="mb-3">
-          <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+          <div className="w-full bg-white/20 rounded-full h-2.5 overflow-hidden">
             <div
               className={`h-2.5 rounded-full transition-all duration-500 ease-out ${
                 status === 'error' ? 'bg-red-500' : 
-                status === 'success' ? 'bg-green-500' : 'bg-gradient-to-r from-red-500 to-purple-600'
+                status === 'success' ? 'bg-green-500' : 'bg-white/40'
               }`}
               style={{ width: `${progress}%` }}
             ></div>
           </div>
           <p className={`text-xs mt-1 font-medium ${
-            status === 'error' ? 'text-red-600' : 
-            status === 'success' ? 'text-green-600' : 'text-gray-500'
+            status === 'error' ? 'text-red-400' : 
+            status === 'success' ? 'text-green-400' : `${getTextColor()}/60`
           }`}>
             {message}
           </p>
@@ -162,8 +164,8 @@ const YoutubeDownloader = ({ onClose, onMusicDownloaded }) => {
         disabled={status === 'downloading'}
         className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
           status === 'downloading'
-            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            : 'bg-gradient-to-r from-red-500 to-purple-600 text-white hover:from-red-600 hover:to-purple-700 active:scale-[0.98] shadow-md shadow-red-500/20'
+            ? 'bg-white/20 text-white/50 cursor-not-allowed'
+            : 'bg-white/20 text-white hover:bg-white/30 active:scale-[0.98]'
         }`}
       >
         {status === 'downloading' ? (
@@ -180,7 +182,7 @@ const YoutubeDownloader = ({ onClose, onMusicDownloaded }) => {
       </button>
 
       {/* Info */}
-      <p className="text-[10px] text-gray-400 mt-3 text-center">
+      <p className={`text-[10px] ${getTextColor()}/40 mt-3 text-center`}>
         🔒 Uso pessoal apenas. Respeite os direitos autorais.
       </p>
     </div>

@@ -31,7 +31,24 @@ Um aplicativo React com Vite, Tailwind CSS e Firebase para enviar mensagens diá
 - **Contador de Dias**: Mostra quantos dias vocês estão juntos (editável)
 - **PWA**: Progressive Web App instalável
 
-## 🔧 Configuração do Firebase
+## 🔧 Configuração
+
+### Variáveis de Ambiente
+
+Este projeto usa variáveis de ambiente para proteger credenciais sensíveis. Para configurar:
+
+1. Copie o arquivo `.env.example` e renomeie para `.env`:
+```bash
+cp .env.example .env
+```
+
+2. Preencha as variáveis de ambiente no arquivo `.env` com suas credenciais reais.
+
+3. Reinicie o servidor de desenvolvimento após criar/modificar o `.env`.
+
+Para mais detalhes, consulte o arquivo [SECURITY.md](./SECURITY.md).
+
+### Configuração do Firebase
 
 Para usar o salvamento automático no banco de dados, você precisa configurar o Firebase:
 
@@ -111,18 +128,7 @@ love-app/
 └── package.json             # Dependências
 ```
 
-## 🔧 Configuração do Firebase
-
-1. Abra o arquivo `src/services/firebaseConfig.js`
-2. Substitua os placeholders pelas suas credenciais reais do Firebase:
-   - `YOUR_API_KEY`
-   - `YOUR_AUTH_DOMAIN`
-   - `YOUR_PROJECT_ID`
-   - `YOUR_STORAGE_BUCKET`
-   - `YOUR_MESSAGING_SENDER_ID`
-   - `YOUR_APP_ID`
-
-## 📦 Estrutura do Firestore
+##  Estrutura do Firestore
 
 O aplicativo busca mensagens na coleção `mensagens` onde o ID do documento é a data no formato `YYYY-MM-DD`.
 

@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
+import { useThemeStyles } from '../hooks/useThemeStyles';
 
 const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
   const { user } = useAuth();
+  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const isAdmin = user && user.isAdmin;
@@ -88,10 +90,10 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
           disabled={isDisabled}
           className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 ${
             isDisabled
-              ? 'bg-gray-50 text-gray-300 cursor-not-allowed'
+              ? 'bg-white/10 text-white/30 cursor-not-allowed'
               : isToday 
                 ? 'bg-pink-500 text-white hover:scale-110' 
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 hover:scale-110'
+                : 'bg-white/10 hover:bg-white/20 text-white/80 hover:scale-110'
           }`}
         >
           {day}
@@ -107,17 +109,17 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="relative bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+      <div className={`relative ${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border-2 ${getBorderColor()} rounded-3xl p-6 max-w-md w-full shadow-2xl shadow-black/10`}>
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+          className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-all hover:scale-110"
         >
-          <span className="material-symbols-outlined text-gray-600 text-[20px]">close</span>
+          <span className="material-symbols-outlined text-white text-[20px]">close</span>
         </button>
 
-        <h2 className="font-headline-lg text-[28px] text-gray-800 mb-4 text-center">Histórico de Mensagens</h2>
+        <h2 className={`font-headline-lg text-[28px] ${getTextColor()} mb-4 text-center`}>Histórico de Mensagens</h2>
 
-        <p className="font-body-md text-[13px] text-gray-600 text-center mb-4">
+        <p className={`font-body-md text-[13px] text-white/70 text-center mb-4`}>
           Clique nos dias anteriores para ver o histórico de mensagens
         </p>
 
@@ -125,25 +127,25 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={previousMonth}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-full hover:bg-white/20 transition-colors"
           >
-            <span className="material-symbols-outlined text-gray-600">chevron_left</span>
+            <span className="material-symbols-outlined text-white/80">chevron_left</span>
           </button>
-          <h3 className="font-body-md text-[16px] text-gray-700 font-medium">
+          <h3 className={`font-body-md text-[16px] ${getTextColor()} font-medium`}>
             {currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
           </h3>
           <button
             onClick={nextMonth}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-full hover:bg-white/20 transition-colors"
           >
-            <span className="material-symbols-outlined text-gray-600">chevron_right</span>
+            <span className="material-symbols-outlined text-white/80">chevron_right</span>
           </button>
         </div>
 
         {/* Dias da semana */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, index) => (
-            <div key={index} className="text-center text-xs font-medium text-gray-500 uppercase">
+            <div key={index} className="text-center text-xs font-medium text-white/60 uppercase">
               {day}
             </div>
           ))}

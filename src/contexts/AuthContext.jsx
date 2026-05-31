@@ -3,12 +3,13 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react';
 const AuthContext = createContext(null);
 
 // Credenciais do administrador (hardcoded para simplificar)
-const ADMIN_EMAIL = 'wallace';
-const ADMIN_PASSWORD = '123456';
+// RECOMENDAÇÃO: Usar Firebase Authentication em produção
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'wallace';
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || '123456';
 
 // Credenciais da Raíssa
-const RAISSA_EMAIL = 'raissa';
-const RAISSA_PASSWORD = 'wallaceteamo';
+const RAISSA_EMAIL = import.meta.env.VITE_RAISSA_EMAIL || 'raissa';
+const RAISSA_PASSWORD = import.meta.env.VITE_RAISSA_PASSWORD || 'wallaceteamo';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

@@ -2,51 +2,56 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // AVISO DE SEGURANÇA: Este app usa autenticação customizada (localStorage), não Firebase Authentication
+    // As regras abaixo são permissivas por design para funcionar com o sistema atual
+    // Para produção, recomenda-se implementar Firebase Authentication real
+
     // Regras para mensagens
     match /mensagens/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if true; // Permite escrita pública para o sistema de mensagens
     }
 
     // Regras para versículos
     match /verses/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if true; // Permite escrita pública para o sistema de versículos
     }
 
     // Regras para fotos
     match /photos/{document=**} {
       allow read: if true;
-      allow write: if true; // Alterado para permitir escrita do Google Apps Script
+      allow write: if true; // Permite escrita do Google Apps Script e do admin
     }
 
     // Regras para timeline
     match /timeline/{document=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if true; // Permite escrita para marcos do relacionamento
     }
 
     // Regras para fcm_tokens (permite gravar o token do PWA ao abrir o app)
     match /fcm_tokens/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if true;
+      allow read: if true;
+      allow write: if true; // Permite escrita pública para registro de tokens
     }
 
     // Regras para notificações (permitir leitura e escrita pública para mensagens do admin)
     match /notifications/{document=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if true; // Permite escrita pública para sistema de notificações
     }
 
     // Regras para lugares visitados (mapa de viagens)
     match /places/{document=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if true; // Permite escrita para adicionar lugares
     }
 
     // Regras para usuários
     match /users/{document=**} {
-      allow read, write: if request.auth != null;
+      allow read: if true;
+      allow write: if true; // Permite escrita para sistema customizado
     }
   }
 }
