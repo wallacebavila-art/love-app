@@ -192,7 +192,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   };
 
   useEffect(() => {
@@ -215,9 +215,9 @@ const NotificationModal = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
-      <div className={`relative ${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} rounded-[32px] shadow-2xl shadow-black/10 w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col`}>
-        <div className={`px-6 py-4 flex justify-between items-center border-b ${getBorderColor()}`}>
-          <h2 className={`text-2xl font-bold ${getTextColor()}`}>Conversa</h2>
+      <div className={`relative ${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} rounded-[32px] shadow-2xl shadow-black/10 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col`}>
+        <div className={`px-6 py-2 flex justify-between items-center border-b ${getBorderColor()}`}>
+          <h2 className={`text-xl font-bold ${getTextColor()}`}>Fofocas</h2>
           <button
             onClick={onClose}
             className={`${getTextColor()} hover:bg-white/20 rounded-full p-2 transition`}

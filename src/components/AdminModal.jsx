@@ -3,14 +3,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { db } from '../services/firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { fetchAllPhotos, uploadPhotoToStorage, savePhoto, deletePhoto, deletePhotoFromStorage, uploadAudioToStorage } from '../services/photoService';
-import { listenToNotifications } from '../services/realtimeNotifications';
+import { fetchAllPhotos, uploadPhotoToStorage, savePhoto, deletePhoto, deletePhotoFromStorage } from '../services/photoService';
 
 const AdminModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const { period } = useTimePeriod();
   const messagesEndRef = useRef(null);
-  const [activeTab, setActiveTab] = useState('messages'); // 'messages', 'verses', 'photos', or 'notifications'
+  const [activeTab, setActiveTab] = useState('messages'); // 'messages', 'verses', or 'photos'
   
   // Dados das mensagens
   const [messages, setMessages] = useState([]);
@@ -35,19 +34,6 @@ const AdminModal = ({ isOpen, onClose }) => {
     files: []
   });
   const [selectedFilePreviews, setSelectedFilePreviews] = useState([]);
-
-  // Estados para notificações
-  const [notificationTitle, setNotificationTitle] = useState('');
-  const [notificationBody, setNotificationBody] = useState('');
-  const [audioFile, setAudioFile] = useState(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [recordedAudioBlob, setRecordedAudioBlob] = useState(null);
-  const [sendToActive, setSendToActive] = useState(false);
-  const [sendingNotification, setSendingNotification] = useState(false);
-  const [notificationResult, setNotificationResult] = useState(null);
-  const [tokens, setTokens] = useState([]);
-  const [chatMessages, setChatMessages] = useState([]);
 
   const getCardBackground = () => {
     switch (period) {
@@ -94,16 +80,6 @@ const AdminModal = ({ isOpen, onClose }) => {
       fetchMessages();
       fetchVerses();
       fetchPhotos();
-      fetchTokens();
-
-      // Ouvir mensagens do chat
-      const unsubscribe = listenToNotifications((notifications) => {
-        setChatMessages(notifications);
-      });
-
-      return () => {
-        if (unsubscribe) unsubscribe();
-      };
     }
   }, [isOpen]);
 
@@ -112,14 +88,6 @@ const AdminModal = ({ isOpen, onClose }) => {
       detectDuplicates();
     }
   }, [messages, verses]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [chatMessages, isOpen]);
 
   const findDuplicates = (items, getText, getDate) => {
     const duplicates = [];
@@ -231,165 +199,6 @@ const AdminModal = ({ isOpen, onClose }) => {
       console.error('Erro ao buscar fotos:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchTokens = async () => {
-    try {
-      const response = await fetch('http://localhost:3001/api/tokens');
-      const data = await response.json();
-      setTokens(data.tokens || []);
-    } catch (error) {
-      console.error('Erro ao buscar tokens:', error);
-    }
-  };
-
-  const sendNotification = async () => {
-    if (!notificationBody.trim() && !audioFile && !recordedAudioBlob) {
-      alert('Por favor, digite sua mensagem, selecione um áudio ou grave um áudio');
-      return;
-    }
-
-    setSendingNotification(true);
-    setNotificationResult(null);
-
-    try {
-      let audioUrl = null;
-
-      // Se houver arquivo de áudio selecionado, fazer upload
-      if (audioFile) {
-        const fileName = `${Date.now()}_${audioFile.name}`;
-        audioUrl = await uploadAudioToStorage(audioFile, fileName);
-        if (!audioUrl) {
-          alert('Erro ao fazer upload do áudio');
-          setSendingNotification(false);
-          return;
-        }
-      }
-
-      // Se houver áudio gravado, fazer upload
-      if (recordedAudioBlob) {
-        const fileName = `${Date.now()}_recording.webm`;
-        audioUrl = await uploadAudioToStorage(recordedAudioBlob, fileName);
-        if (!audioUrl) {
-          alert('Erro ao fazer upload do áudio gravado');
-          setSendingNotification(false);
-          return;
-        }
-      }
-
-      // Enviar notificação via Firestore
-      const { sendRealtimeNotification } = await import('../services/realtimeNotifications');
-      const success = await sendRealtimeNotification('Mensagem', notificationBody, 'admin', audioUrl);
-
-      if (success) {
-        setNotificationBody('');
-        setAudioFile(null);
-        setRecordedAudioBlob(null);
-        setRecordingTime(0);
-      } else {
-        alert('Erro ao enviar mensagem');
-      }
-    } catch (error) {
-      console.error('Erro ao enviar notificação:', error);
-      alert('Erro ao enviar notificação: ' + error.message);
-    } finally {
-      setSendingNotification(false);
-    }
-  };
-
-  // Lógica de gravação de áudio
-  const mediaRecorderRef = useRef(null);
-  const recordingIntervalRef = useRef(null);
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      const chunks = [];
-
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        chunks.push(event.data);
-      };
-
-      mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        setRecordedAudioBlob(blob);
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-      setRecordingTime(0);
-
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-    } catch (error) {
-      console.error('Erro ao acessar microfone:', error);
-      alert('Erro ao acessar microfone. Verifique as permissões.');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      clearInterval(recordingIntervalRef.current);
-    }
-  };
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const deleteToken = async (tokenId) => {
-    if (!window.confirm('Tem certeza que deseja deletar este token?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`http://localhost:3001/api/tokens/${tokenId}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        alert('Token deletado com sucesso');
-        fetchTokens();
-      } else {
-        alert('Erro ao deletar token: ' + (data.error || 'Erro desconhecido'));
-      }
-    } catch (error) {
-      console.error('Erro ao deletar token:', error);
-      alert('Erro ao deletar token: ' + error.message);
-    }
-  };
-
-  const deleteAllTokens = async () => {
-    if (!window.confirm('Tem certeza que deseja deletar TODOS os tokens? Esta ação não pode ser desfeita.')) {
-      return;
-    }
-
-    try {
-      const response = await fetch('http://localhost:3001/api/tokens', {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        alert(`Todos os tokens foram deletados com sucesso (${data.deletedCount} tokens)`);
-        fetchTokens();
-      } else {
-        alert('Erro ao deletar tokens: ' + (data.error || 'Erro desconhecido'));
-      }
-    } catch (error) {
-      console.error('Erro ao deletar tokens:', error);
-      alert('Erro ao deletar tokens: ' + error.message);
     }
   };
 
@@ -741,21 +550,11 @@ const AdminModal = ({ isOpen, onClose }) => {
             >
               Fotos
             </button>
-            <button
-              onClick={() => { setActiveTab('notifications'); resetForm(); }}
-              className={`px-6 py-3 font-semibold transition-all border-b-2 ${
-                activeTab === 'notifications'
-                  ? 'border-purple-400 text-purple-400'
-                  : 'border-transparent text-white/60 hover:text-white'
-              }`}
-            >
-              Notificações
-            </button>
           </div>
 
           {/* Add Button */}
           <div className="mb-6">
-            {activeTab !== 'photos' && activeTab !== 'notifications' && (
+            {activeTab !== 'photos' && (
               <button
                 onClick={() => {
                   if (showAddForm) resetForm();
@@ -920,199 +719,6 @@ const AdminModal = ({ isOpen, onClose }) => {
                   Upload Foto
                 </button>
               </form>
-            </div>
-          )}
-
-          {/* Notifications Tab */}
-          {activeTab === 'notifications' && (
-            <div className="space-y-6">
-              {/* Chat */}
-              <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 overflow-hidden flex flex-col max-h-[500px]">
-                <div className={`px-6 py-4 border-b ${getBorderColor()} bg-white/5`}>
-                  <h3 className={`text-lg font-semibold ${getTextColor()}`}>Conversa</h3>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {chatMessages.length === 0 ? (
-                    <div className="text-center py-8 text-white/60">
-                      <span className="material-symbols-outlined text-4xl mb-2">chat_bubble_outline</span>
-                      <p>Nenhuma mensagem</p>
-                    </div>
-                  ) : (
-                    [...chatMessages].sort((a, b) => {
-                      const dateA = a.timestamp instanceof Date ? a.timestamp : new Date(a.timestamp);
-                      const dateB = b.timestamp instanceof Date ? b.timestamp : new Date(b.timestamp);
-                      return dateA - dateB;
-                    }).map((message, index) => (
-                      <div
-                        key={index}
-                        className={`p-4 rounded-lg max-w-[80%] ${
-                          message.sender === user?.userType
-                            ? 'bg-purple-100 ml-auto'
-                            : 'bg-gray-100 mr-auto'
-                        }`}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <span className={`text-xs font-semibold ${
-                            message.sender === 'admin' ? 'text-purple-700' : 'text-gray-600'
-                          }`}>
-                            {message.sender === user?.userType ? 'Você' : (user?.userType === 'admin' ? 'Raíssa' : 'Meu Amor')}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {message.timestamp instanceof Date
-                              ? message.timestamp.toLocaleString('pt-BR')
-                              : new Date(message.timestamp).toLocaleString('pt-BR')
-                            }
-                          </span>
-                        </div>
-                        <p className="text-gray-800 text-sm">{message.body}</p>
-                        {message.audioUrl && (
-                          <div className="mt-2">
-                            <audio
-                              controls
-                              className="w-full h-8"
-                              src={message.audioUrl}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-                <div className="p-4 border-t border-white/20">
-                  <div className="space-y-4">
-                    <div>
-                      <label className={`block text-sm font-medium text-white/80 mb-2`}>
-                        Sua Mensagem
-                      </label>
-                      <textarea
-                        value={notificationBody}
-                        onChange={(e) => setNotificationBody(e.target.value)}
-                        rows="2"
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none text-white"
-                        placeholder="Digite sua mensagem..."
-                      />
-                    </div>
-
-                    {/* Gravação de áudio */}
-                    <div>
-                      <label className={`block text-sm font-medium text-white/80 mb-2`}>
-                        Gravar Áudio
-                      </label>
-                      <div className="flex items-center gap-2">
-                        {!isRecording && !recordedAudioBlob && (
-                          <button
-                            onClick={startRecording}
-                            className="px-4 py-2 bg-red-500/50 text-white rounded-lg hover:bg-red-500/70 transition font-semibold"
-                          >
-                            🎤 Gravar
-                          </button>
-                        )}
-                        {isRecording && (
-                          <button
-                            onClick={stopRecording}
-                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold"
-                          >
-                            ⏹️ Parar
-                          </button>
-                        )}
-                        {isRecording && (
-                          <span className="text-white font-mono">
-                            {formatTime(recordingTime)}
-                          </span>
-                        )}
-                        {recordedAudioBlob && (
-                          <button
-                            onClick={() => setRecordedAudioBlob(null)}
-                            className="px-4 py-2 bg-gray-500/50 text-white rounded-lg hover:bg-gray-500/70 transition font-semibold"
-                          >
-                            🗑️ Apagar
-                          </button>
-                        )}
-                      </div>
-                      {recordedAudioBlob && (
-                        <div className="mt-2">
-                          <audio
-                            controls
-                            className="w-full h-8"
-                            src={URL.createObjectURL(recordedAudioBlob)}
-                          />
-                          <p className="text-xs text-white/60 mt-1">
-                            Duração: {formatTime(recordingTime)}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className={`block text-sm font-medium text-white/80 mb-2`}>
-                        Ou selecionar arquivo de áudio
-                      </label>
-                      <input
-                        type="file"
-                        accept="audio/*"
-                        onChange={(e) => setAudioFile(e.target.files[0])}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none text-white"
-                      />
-                      {audioFile && (
-                        <p className="text-xs text-white/60 mt-1">
-                          Arquivo selecionado: {audioFile.name} ({(audioFile.size / 1024).toFixed(2)} KB)
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      onClick={sendNotification}
-                      disabled={sendingNotification || (!notificationBody.trim() && !audioFile && !recordedAudioBlob)}
-                      className="w-full px-6 py-3 bg-purple-500/50 text-white rounded-lg hover:bg-purple-500/70 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {sendingNotification ? 'Enviando...' : '📤 Enviar Mensagem'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tokens List */}
-              <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 overflow-hidden">
-                <div className={`px-6 py-4 border-b ${getBorderColor()} bg-white/5 flex justify-between items-center`}>
-                  <h3 className={`text-lg font-semibold ${getTextColor()}`}>
-                    Tokens Registrados ({tokens.length})
-                  </h3>
-                  {tokens.length > 0 && (
-                    <button
-                      onClick={deleteAllTokens}
-                      className="px-3 py-1 bg-red-500/50 text-white rounded hover:bg-red-500/70 transition text-sm"
-                    >
-                      Deletar Todos
-                    </button>
-                  )}
-                </div>
-                <div className={`divide-y ${getBorderColor()} max-h-64 overflow-y-auto`}>
-                  {tokens.length === 0 ? (
-                    <div className="px-6 py-8 text-center text-white/60">
-                      Nenhum token encontrado
-                    </div>
-                  ) : (
-                    tokens.map((token, index) => (
-                      <div key={index} className="px-6 py-4 hover:bg-white/10 transition">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <p className="text-sm text-white/60 font-mono mb-1">{token.token}</p>
-                            <p className="text-xs text-white/40">
-                              Último uso: {token.lastUsed ? new Date(token.lastUsed).toLocaleString('pt-BR') : 'Nunca'}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => deleteToken(token.id)}
-                            className="px-3 py-1 bg-red-500/50 text-white rounded hover:bg-red-500/70 transition text-sm"
-                          >
-                            Deletar
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
             </div>
           )}
 

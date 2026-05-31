@@ -2,7 +2,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useLoginModal } from '../contexts/LoginModalContext';
-import { useTimePeriod } from '../contexts/TimePeriodContext';
 import YoutubeDownloader from './YoutubeDownloader';
 import naocliqueImage from '/naoclique.png';
 import raissaAvatar from '/favicon.png';
@@ -12,7 +11,6 @@ const SettingsModal = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { setIsLoginModalOpen } = useLoginModal();
-  const { period, setManualPeriod, resetToAuto, isManualMode } = useTimePeriod();
   const [showSecretImage, setShowSecretImage] = useState(false);
   const [secretStep, setSecretStep] = useState(0);
   const [useLoveName, setUseLoveName] = useState(false);
@@ -154,63 +152,6 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 <span className="text-gray-600">Desenvolvido para</span>
                 <span className="text-gray-800 font-medium">Raíssa 💕</span>
               </div>
-            </div>
-          </div>
-
-          {/* Time Period Test Section */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Testar Período do Dia</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-600">Período atual</span>
-                <span className="text-gray-800 font-medium capitalize">{period}</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-600">Modo</span>
-                <span className={`text-sm font-medium ${isManualMode ? 'text-orange-600' : 'text-green-600'}`}>
-                  {isManualMode ? 'Manual' : 'Automático'}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2 mt-3">
-                <button
-                  onClick={() => setManualPeriod('morning')}
-                  className={`p-2 rounded-lg text-sm font-medium transition ${
-                    period === 'morning' && isManualMode
-                      ? 'bg-yellow-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  🌅 Manhã
-                </button>
-                <button
-                  onClick={() => setManualPeriod('afternoon')}
-                  className={`p-2 rounded-lg text-sm font-medium transition ${
-                    period === 'afternoon' && isManualMode
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  ☀️ Tarde
-                </button>
-                <button
-                  onClick={() => setManualPeriod('night')}
-                  className={`p-2 rounded-lg text-sm font-medium transition ${
-                    period === 'night' && isManualMode
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  🌙 Noite
-                </button>
-              </div>
-              {isManualMode && (
-                <button
-                  onClick={resetToAuto}
-                  className="w-full mt-2 p-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition"
-                >
-                  ↩️ Voltar para Automático
-                </button>
-              )}
             </div>
           </div>
 
