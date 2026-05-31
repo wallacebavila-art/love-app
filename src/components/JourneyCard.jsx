@@ -147,6 +147,11 @@ const JourneyCard = () => {
       alert('Por favor, preencha o título do marco');
       return;
     }
+    if (!user) {
+      alert('Você precisa estar logado para salvar marcos na timeline');
+      setShowLoginAlert(true);
+      return;
+    }
     const updated = [...milestones, { ...newMilestone }];
     setMilestones(updated);
     saveMilestones(updated);
@@ -160,6 +165,11 @@ const JourneyCard = () => {
   };
 
   const handleDeleteMilestone = (index) => {
+    if (!user) {
+      alert('Você precisa estar logado para excluir marcos da timeline');
+      setShowLoginAlert(true);
+      return;
+    }
     if (window.confirm('Tem certeza que deseja excluir este marco?')) {
       const updated = milestones.filter((_, i) => i !== index);
       setMilestones(updated);

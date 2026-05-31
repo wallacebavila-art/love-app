@@ -133,7 +133,7 @@ const PhotoGalleryCard = () => {
   const currentPhoto = photos[currentIndex];
 
   return (
-    <section className="w-full">
+    <section className="w-full mb-16 md:mb-0">
       <div className="w-full flex justify-center">
         <div className="w-full max-w-2xl">
           <div
