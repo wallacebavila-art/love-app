@@ -49,6 +49,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedAudioBlob, setRecordedAudioBlob] = useState(null);
+  const [recordedAudioMimeType, setRecordedAudioMimeType] = useState('audio/webm');
   const messagesEndRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -85,7 +86,9 @@ const NotificationModal = ({ isOpen, onClose }) => {
 
       // Se houver áudio gravado, fazer upload
       if (recordedAudioBlob) {
-        const fileName = `${Date.now()}_recording.webm`;
+        const extension = recordedAudioMimeType.includes('mp4') ? 'mp4' : 
+                         recordedAudioMimeType.includes('aac') ? 'aac' : 'webm';
+        const fileName = `${Date.now()}_recording.${extension}`;
         audioUrl = await uploadAudioToStorage(recordedAudioBlob, fileName);
         if (!audioUrl) {
           alert('Erro ao fazer upload do áudio');
@@ -114,7 +117,31 @@ const NotificationModal = ({ isOpen, onClose }) => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      
+      // Detectar formato suportado pelo navegador
+      let mimeType = 'audio/webm';
+      let fileExtension = 'webm';
+      
+      // iOS Safari e Chrome no iOS não suportam webm, usam mp4/aac
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      
+      if (isIOS || !MediaRecorder.isTypeSupported('audio/webm')) {
+        // Tenta usar mp4/aac para iOS
+        if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+          fileExtension = 'mp4';
+        } else if (MediaRecorder.isTypeSupported('audio/aac')) {
+          mimeType = 'audio/aac';
+          fileExtension = 'aac';
+        } else {
+          // Fallback para webm se suportado
+          mimeType = 'audio/webm';
+          fileExtension = 'webm';
+        }
+      }
+
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
       const chunks = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -122,8 +149,9 @@ const NotificationModal = ({ isOpen, onClose }) => {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const blob = new Blob(chunks, { type: mimeType });
         setRecordedAudioBlob(blob);
+        setRecordedAudioMimeType(mimeType);
         stream.getTracks().forEach(track => track.stop());
       };
 
