@@ -1,4 +1,4 @@
-import { collection, addDoc, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
 const NOTIFICATIONS_COLLECTION = 'notifications';

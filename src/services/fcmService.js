@@ -23,17 +23,27 @@ export const requestFCMToken = async () => {
     }
 
     // Obter token FCM com caminho correto do service worker
-    const registration = await navigator.serviceWorker.register('/love-app/firebase-messaging-sw.js', {
-      updateViaCache: 'none'
-    });
-    await registration.update();
-    console.log('Service worker registrado e atualizado:', registration);
+    // Em desenvolvimento local, o service worker pode não funcionar corretamente
+    // Em produção, o VitePWA gera o service worker automaticamente
+    let registration;
+    try {
+      registration = await navigator.serviceWorker.register('/love-app/firebase-messaging-sw.js', {
+        scope: '/love-app/',
+        updateViaCache: 'none'
+      });
+      await registration.update();
+      console.log('Service worker registrado e atualizado:', registration);
+    } catch (swError) {
+      console.warn('Não foi possível registrar o service worker do Firebase:', swError.message);
+      console.warn('FCM pode não funcionar em desenvolvimento local. Em produção, o VitePWA gerará o service worker automaticamente.');
+      // Continuar sem service worker - FCM não funcionará em foreground
+    }
 
     const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: registration
     });
-    
+
     if (token) {
       console.log('Token FCM gerado:', token);
       // Aqui você pode enviar o token para o seu servidor
@@ -44,6 +54,10 @@ export const requestFCMToken = async () => {
     }
   } catch (error) {
     console.error('Erro ao obter token FCM:', error);
+    if (error.code === 'messaging/token-subscribe-failed') {
+      console.warn('Erro de autenticação FCM: VAPID Key pode estar incorreta ou não configurada no Firebase Console');
+      console.warn('Para configurar: Firebase Console > Project Settings > Cloud Messaging > Web Push Certificates');
+    }
     return null;
   }
 };
@@ -68,8 +82,8 @@ export const showNotification = (payload) => {
   const notificationTitle = payload.notification?.title || 'Nova Mensagem';
   const notificationOptions = {
     body: payload.notification?.body || '',
-    icon: payload.notification?.icon || '/love-app/icon-192.svg',
-    badge: payload.notification?.badge || '/love-app/icon-192.svg',
+    icon: payload.notification?.icon || '/icon-192.svg',
+    badge: payload.notification?.badge || '/icon-192.svg',
     data: payload.data,
   };
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useYouTubePlayer } from '../hooks/useYouTubePlayer';
-import { useLocalAudioPlayer } from '../hooks/useLocalAudioPlayer';
+import { useYouTubePlayer } from './useYouTubePlayer';
+import { useLocalAudioPlayer } from './useLocalAudioPlayer';
 
 /**
  * Hook principal que coordena os players de música (YouTube e Local)

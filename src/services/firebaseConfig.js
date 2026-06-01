@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import { getMessaging } from 'firebase/messaging';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
@@ -19,8 +19,12 @@ const firebaseConfig = {
 // Inicializar o Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializar o Firestore
-const db = getFirestore(app);
+// Inicializar o Firestore com cache offline habilitado
+const db = initializeFirestore(app, {
+  cacheSizeBytes: 10 * 1024 * 1024, // 10MB
+  experimentalForceLongPolling: false,
+});
+
 const messaging = getMessaging(app);
 const auth = getAuth(app);
 const storage = getStorage(app);

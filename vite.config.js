@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192.svg', 'icon-512.svg'],
+      includeAssets: ['favicon.png', 'icon-192.svg', 'icon-512.svg', 'firebase-messaging-sw.js'],
       manifest: {
         name: 'Bom Dia Raíssa',
         short_name: 'Bom Dia',

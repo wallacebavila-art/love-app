@@ -1,13 +1,37 @@
+/**
+ * Serviço para integração com calendário iCloud
+ * 
+ * Este serviço permite buscar eventos de um calendário iCloud público,
+ * parsear o formato ICS e fornecer funções utilitárias para manipulação de eventos.
+ * 
+ * @module icloudCalendarService
+ */
+
 const ICAL_URL = 'webcal://p53-caldav.icloud.com/published/2/MjEzNzMzMjM4NDIyMTM3M5EAdSTRxD1rffBLU84wLQGIjX5WKiOvBlRSnSfjgWZ-sN4vXdQ_gCoeoR_j7_xzsVmRLXKS25VrtuiAeMv7NeE';
 const CORS_PROXY = 'https://corsproxy.io/?';
 
-// Converter webcal para https
+/**
+ * Converte URL webcal para HTTPS com proxy CORS
+ * 
+ * URLs webcal:// não funcionam diretamente no navegador, então usamos um proxy CORS
+ * para contornar essa limitação.
+ * 
+ * @returns {string} URL HTTPS com proxy CORS
+ */
 const getCalendarUrl = () => {
   const httpsUrl = ICAL_URL.replace('webcal://', 'https://');
   return CORS_PROXY + encodeURIComponent(httpsUrl);
 };
 
-// Parser ICS manual (sem bibliotecas externas)
+/**
+ * Parser ICS manual (sem bibliotecas externas)
+ * 
+ * Parseia arquivos no formato iCalendar (.ics) e extrai eventos.
+ * Suporta eventos com ou sem hora, localização e descrição.
+ * 
+ * @param {string} icsText - Conteúdo do arquivo ICS
+ * @returns {Array} Lista de eventos parseados
+ */
 const parseICS = (icsText) => {
   const events = [];
   const lines = icsText.split(/\r?\n/);
@@ -88,7 +112,16 @@ const parseICS = (icsText) => {
   return events;
 };
 
-// Parsear data do formato ICS (YYYYMMDD ou YYYYMMDDTHHMMSS)
+/**
+ * Parsear data do formato ICS para objeto Date
+ * 
+ * Formatos suportados:
+ * - YYYYMMDD (dia todo)
+ * - YYYYMMDDTHHMMSS (com hora)
+ * 
+ * @param {string} dateStr - Data no formato ICS
+ * @returns {Date} Objeto Date JavaScript
+ */
 const parseICalDate = (dateStr) => {
   // Remover parâmetros
   const cleanStr = dateStr.replace(/^.*?:/, '');
@@ -114,6 +147,15 @@ const parseICalDate = (dateStr) => {
   return new Date(year, month, day, hours, minutes, seconds);
 };
 
+/**
+ * Filtra eventos para os próximos dias
+ * 
+ * @param {Array} events - Lista de eventos
+ * @param {Object} options - Opções de filtro
+ * @param {number} options.daysAhead - Número de dias à frente (padrão: 14)
+ * @param {number} options.limit - Limite de eventos a retornar (padrão: 10)
+ * @returns {Array} Lista de eventos filtrados
+ */
 export const getUpcomingEvents = (events, { daysAhead = 14, limit = 10 } = {}) => {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
@@ -127,6 +169,12 @@ export const getUpcomingEvents = (events, { daysAhead = 14, limit = 10 } = {}) =
     .slice(0, limit);
 };
 
+/**
+ * Formata evento para exibição no ticker
+ * 
+ * @param {Object} event - Evento do calendário
+ * @returns {string} String formatada para exibição (ex: "31/05 14:00 — Título")
+ */
 export const formatEventForTicker = (event) => {
   const dateStr = event.startDate.toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -141,11 +189,24 @@ export const formatEventForTicker = (event) => {
   return `${dateStr} ${timeStr} — ${event.title}`;
 };
 
-export const CALENDAR_CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 horas
+/**
+ * Tempo de vida do cache em milissegundos (2 horas)
+ */
+export const CALENDAR_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 
+/**
+ * Chaves para armazenamento em cache
+ */
 const CALENDAR_EVENTS_CACHE_KEY = 'love-app-calendar-events';
 const CALENDAR_UPDATED_CACHE_KEY = 'love-app-calendar-updated-at';
 
+/**
+ * Serializa eventos para armazenamento em cache
+ * Converte objetos Date para strings ISO
+ * 
+ * @param {Array} events - Lista de eventos
+ * @returns {Array} Eventos serializados
+ */
 const serializeEventsForCache = (events) =>
   events.map((event) => ({
     ...event,
@@ -153,6 +214,13 @@ const serializeEventsForCache = (events) =>
     endDate: event.endDate.toISOString(),
   }));
 
+/**
+ * Deserializa eventos do cache
+ * Converte strings ISO de volta para objetos Date
+ * 
+ * @param {Array} events - Lista de eventos serializados
+ * @returns {Array} Eventos deserializados
+ */
 const deserializeEventsFromCache = (events) =>
   events.map((event) => ({
     ...event,
@@ -160,6 +228,11 @@ const deserializeEventsFromCache = (events) =>
     endDate: new Date(event.endDate),
   }));
 
+/**
+ * Lê eventos do cache do sessionStorage
+ * 
+ * @returns {Object|null} Objeto com eventos e data de atualização, ou null se cache inválido/expirado
+ */
 export const readCalendarCache = () => {
   try {
     const updatedAtStr = sessionStorage.getItem(CALENDAR_UPDATED_CACHE_KEY);
@@ -186,6 +259,12 @@ export const readCalendarCache = () => {
   }
 };
 
+/**
+ * Escreve eventos no cache do sessionStorage
+ * 
+ * @param {Array} events - Lista de eventos para armazenar
+ * @returns {Date} Data de atualização
+ */
 export const writeCalendarCache = (events) => {
   const lastUpdated = new Date();
   sessionStorage.setItem(
@@ -196,6 +275,15 @@ export const writeCalendarCache = (events) => {
   return lastUpdated;
 };
 
+/**
+ * Busca eventos do calendário iCloud
+ * 
+ * Faz uma requisição ao calendário iCloud público, parseia o formato ICS
+ * e retorna a lista de eventos ordenados por data.
+ * 
+ * @returns {Promise<Array>} Lista de eventos ordenados por data
+ * @throws {Error} Se houver erro na requisição
+ */
 export const fetchICloudCalendar = async () => {
   try {
     const response = await fetch(getCalendarUrl());
