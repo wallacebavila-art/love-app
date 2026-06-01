@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, onOpenTravelMap }) => {
+const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, onOpenTravelMap, onToggleInterfaceHidden }) => {
   const { user } = useAuth();
   const [useLoveName, setUseLoveName] = useState(false);
 
@@ -124,6 +124,17 @@ const SideMenu = ({ isOpen, onClose, onOpenCalendar, onOpenWeather, onOpenAdmin,
                 <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform ${useLoveName ? 'translate-x-6' : 'translate-x-0.5'}`} />
               </button>
             </div>
+
+            <button
+              onClick={() => {
+                onToggleInterfaceHidden();
+                onClose();
+              }}
+              className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              <span className="material-symbols-outlined text-gray-600">visibility_off</span>
+              <span className="font-body-md text-[16px] text-gray-700">Créditos</span>
+            </button>
 
           </div>
           

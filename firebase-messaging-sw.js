@@ -2,12 +2,13 @@ importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js');
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBpKxQ7X8kL9mN3oP4qR5sT6uV7wX8yZ9a0",
-  authDomain: "love-app-12345.firebaseapp.com",
-  projectId: "love-app-12345",
-  storageBucket: "love-app-12345.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef123456"
+  apiKey: "AIzaSyBPpMEAe3yMYl8Y49btaV4lUiZLN_ZQEBo",
+  authDomain: "para-raissa.firebaseapp.com",
+  projectId: "para-raissa",
+  storageBucket: "para-raissa.firebasestorage.app",
+  messagingSenderId: "372214287601",
+  appId: "1:372214287601:web:75eb749127035cb7d9ad50",
+  databaseURL: "https://para-raissa-default-rtdb.firebaseio.com"
 };
 
 firebase.initializeApp(firebaseConfig);

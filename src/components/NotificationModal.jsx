@@ -77,8 +77,19 @@ const NotificationModal = ({ isOpen, onClose }) => {
     setShowEmojiPicker(false);
   };
 
+  // Sanitizar input para prevenir XSS
+  const sanitizeInput = (text) => {
+    // Remover tags HTML perigosas
+    const tempDiv = document.createElement('div');
+    tempDiv.textContent = text;
+    return tempDiv.textContent;
+  };
+
   const handleSendReply = async () => {
     if (!replyText.trim() && !recordedAudioBlob) return;
+
+    // Sanitizar o input
+    const sanitizedReplyText = sanitizeInput(replyText);
 
     setSending(true);
     try {
@@ -89,6 +100,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
         const extension = recordedAudioMimeType.includes('mp4') ? 'mp4' : 
                          recordedAudioMimeType.includes('aac') ? 'aac' : 'webm';
         const fileName = `${Date.now()}_recording.${extension}`;
+        console.log('🎤 Tentando fazer upload do áudio:', fileName, 'Tipo:', recordedAudioMimeType);
         audioUrl = await uploadAudioToStorage(recordedAudioBlob, fileName);
         if (!audioUrl) {
           alert('Erro ao fazer upload do áudio');
@@ -97,7 +109,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
         }
       }
 
-      const success = await sendRealtimeNotification('Resposta', replyText, user?.userType || 'raissa', audioUrl);
+      const success = await sendRealtimeNotification('Resposta', sanitizedReplyText, user?.userType || 'raissa', audioUrl);
       if (success) {
         setReplyText('');
         setRecordedAudioBlob(null);

@@ -1,7 +1,7 @@
 import { messaging } from './firebaseConfig';
 import { getToken, onMessage } from 'firebase/messaging';
 
-const VAPID_KEY = 'BJC0lA2yYsvDVi-ifUD3UojfrKaquVnQfAFC2jHXthIXUZBM3KEj396dV-dM5YAETyHpF4SZbmEFldM70s4i68o';
+const VAPID_KEY = import.meta.env.VITE_FCM_VAPID_KEY || 'BJC0lA2yYsvDVi-ifUD3UojfrKaquVnQfAFC2jHXthIXUZBM3KEj396dV-dM5YAETyHpF4SZbmEFldM70s4i68o';
 
 /**
  * Solicita permissão para notificações e gera o token FCM

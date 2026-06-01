@@ -231,27 +231,32 @@ export const uploadPhotoToStorage = async (file, fileName) => {
  */
 export const uploadAudioToStorage = async (file, fileName) => {
   try {
-    console.log('🎤 Iniciando upload do áudio:', file.name, 'Tamanho:', (file.size / 1024).toFixed(2), 'KB');
+    console.log('🎤 Iniciando upload do áudio:', file.name, 'Tamanho:', (file.size / 1024).toFixed(2), 'KB', 'Tipo:', file.type);
 
     // Verificar se é arquivo de áudio
     if (!file.type.startsWith('audio/')) {
+      console.error('❌ Tipo de arquivo inválido:', file.type);
       throw new Error('O arquivo deve ser um áudio (MP3, WAV, M4A, etc.)');
     }
 
     // Limitar tamanho do áudio (max 10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
+      console.error('❌ Arquivo muito grande:', file.size);
       throw new Error('O áudio é muito grande. Máximo permitido: 10MB');
     }
 
+    console.log('📤 Fazendo upload para Firebase Storage...');
     const storageRef = ref(storage, `audio/${fileName}`);
     const snapshot = await uploadBytes(storageRef, file);
+    console.log('✅ Upload concluído, obtendo URL...');
     const downloadURL = await getDownloadURL(snapshot.ref);
 
     console.log('✅ Upload de áudio concluído:', downloadURL);
     return downloadURL;
   } catch (error) {
-    console.error('Erro ao fazer upload do áudio:', error);
+    console.error('❌ Erro ao fazer upload do áudio:', error);
+    console.error('Detalhes do erro:', error.code, error.message);
     return null;
   }
 };

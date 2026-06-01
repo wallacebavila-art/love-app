@@ -47,6 +47,7 @@ function AppContent() {
   const [isTravelMapModalOpen, setIsTravelMapModalOpen] = useState(false);
   const [isMusicPlayerModalOpen, setIsMusicPlayerModalOpen] = useState(false);
   const [isYoutubeDownloaderOpen, setIsYoutubeDownloaderOpen] = useState(false);
+  const [isInterfaceHidden, setIsInterfaceHidden] = useState(false);
   const { isLoginModalOpen, setIsLoginModalOpen, isRaissaLoginModalOpen, setIsRaissaLoginModalOpen } = useLoginModal();
   const [weather, setWeather] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +85,19 @@ function AppContent() {
       setIsAdminModalOpen(true);
     }
   }, [location.pathname]);
+
+  useEffect(() => {
+    // Carregar preferência de interface escondida
+    const savedInterfaceHidden = localStorage.getItem('interfaceHidden');
+    if (savedInterfaceHidden) {
+      setIsInterfaceHidden(JSON.parse(savedInterfaceHidden));
+    }
+  }, []);
+
+  useEffect(() => {
+    // Salvar preferência de interface escondida
+    localStorage.setItem('interfaceHidden', JSON.stringify(isInterfaceHidden));
+  }, [isInterfaceHidden]);
 
   useEffect(() => {
     // Solicita permissão para notificações web
@@ -274,7 +288,7 @@ function AppContent() {
         </div>
 
         {/* Main Layout Container */}
-        <div className="relative z-10 flex flex-col min-h-screen">
+        <div className={`relative z-10 flex flex-col min-h-screen transition-opacity duration-500 ${isInterfaceHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
           <StatusBarSpacer />
           
           <Header
@@ -297,6 +311,7 @@ function AppContent() {
             onVolumeChange={setVolume}
             currentTrack={currentTrack}
             currentArtist={currentArtist}
+            onToggleInterfaceHidden={() => setIsInterfaceHidden(!isInterfaceHidden)}
           />
 
           <UpcomingEventsTicker />
@@ -480,6 +495,17 @@ function AppContent() {
             currentArtist={currentArtist}
             onOpenMusicPlayer={() => setIsMusicPlayerModalOpen(true)}
           />
+
+          {/* Botão flutuante para reabrir interface quando escondida */}
+          {isInterfaceHidden && (
+            <button
+              onClick={() => setIsInterfaceHidden(false)}
+              className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-full bg-white/20 backdrop-blur-xl border border-white/30 flex items-center justify-center text-white hover:bg-white/30 hover:scale-110 transition-all shadow-2xl"
+              title="Mostrar interface"
+            >
+              <span className="material-symbols-outlined text-2xl">visibility</span>
+            </button>
+          )}
 
           {isRaissaLoginModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setIsRaissaLoginModalOpen(false)}>

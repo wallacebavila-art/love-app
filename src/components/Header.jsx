@@ -11,7 +11,7 @@ import { useLoginModal } from '../contexts/LoginModalContext';
 import TravelMapModal from './TravelMapModal';
 import raissaAvatar from '../assets/raissa-avatar.png';
 import wallaceAvatar from '../assets/wallace-avatar.png';
-const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, onOpenTravelMap, onOpenMusicPlayer, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, onVolumeChange, currentTrack, currentArtist }) => {
+const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, onOpenTravelMap, onOpenMusicPlayer, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, onVolumeChange, currentTrack, currentArtist, onToggleInterfaceHidden }) => {
   const { getIconColor, getTextColor } = useThemeStyles();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -396,6 +396,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
         onOpenSettings={onOpenSettings}
         onOpenICloudCalendar={onOpenICloudCalendar}
         onOpenTravelMap={onOpenTravelMap}
+        onToggleInterfaceHidden={onToggleInterfaceHidden}
       />
       
       <NotificationModal
