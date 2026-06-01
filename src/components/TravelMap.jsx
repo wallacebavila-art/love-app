@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, memo } from 'react';
+import { loadGoogleMaps } from '../utils/googleMapsLoader';
 
 const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: externalAddingMode, onMapReady }) => {
   const mapRef = useRef(null);
@@ -70,7 +71,8 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.google && window.google.maps) {
+    // Carregar Google Maps lazy loading
+    loadGoogleMaps().then(() => {
       if (!mapInstanceRef.current && mapRef.current) {
         try {
           // Centralizar no primeiro lugar salvo se houver
@@ -212,7 +214,7 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
           console.error('Erro ao inicializar o mapa:', error);
         }
       }
-    }
+    });
 
     return () => {
       if (mapInstanceRef.current) {

@@ -79,10 +79,22 @@ const NotificationModal = ({ isOpen, onClose }) => {
 
   // Sanitizar input para prevenir XSS
   const sanitizeInput = (text) => {
+    if (typeof text !== 'string') return '';
+    
     // Remover tags HTML perigosas
     const tempDiv = document.createElement('div');
     tempDiv.textContent = text;
-    return tempDiv.textContent;
+    let sanitized = tempDiv.textContent;
+    
+    // Validar comprimento máximo
+    if (sanitized.length > 1000) {
+      sanitized = sanitized.substring(0, 1000);
+    }
+    
+    // Remover caracteres especiais perigosos
+    sanitized = sanitized.replace(/[<>]/g, '');
+    
+    return sanitized;
   };
 
   const handleSendReply = async () => {
@@ -90,6 +102,12 @@ const NotificationModal = ({ isOpen, onClose }) => {
 
     // Sanitizar o input
     const sanitizedReplyText = sanitizeInput(replyText);
+    
+    // Validar comprimento mínimo
+    if (sanitizedReplyText.length > 0 && sanitizedReplyText.length < 2) {
+      alert('A mensagem deve ter pelo menos 2 caracteres');
+      return;
+    }
 
     setSending(true);
     try {
@@ -260,6 +278,9 @@ const NotificationModal = ({ isOpen, onClose }) => {
                   </div>
                 )}
                 <div className={`max-w-[70%] ${notification.sender === user?.userType ? 'order-2' : ''}`}>
+                  <div className={`text-xs mb-1 ${notification.sender === user?.userType ? 'text-white/70 text-right' : 'text-white/70'}`}>
+                    {notification.sender === user?.userType ? 'Eu' : notification.sender === 'admin' ? 'Wallace' : notification.sender === 'raissa' ? 'Raíssa' : notification.sender}
+                  </div>
                   <div
                     className={`p-3 rounded-2xl ${
                       notification.sender === user?.userType

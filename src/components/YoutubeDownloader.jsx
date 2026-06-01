@@ -1,3 +1,25 @@
+/**
+ * YoutubeDownloader Component
+ * 
+ * Este componente permite baixar músicas do YouTube e adicioná-las à playlist.
+ * 
+ * CONFIGURAÇÃO DO BACKEND:
+ * Este componente depende de um backend externo (Node.js) para processar os downloads do YouTube.
+ * 
+ * Para configurar o backend:
+ * 1. O backend deve estar rodando em http://localhost:3001 (ou a URL configurada em VITE_API_URL)
+ * 2. Execute o backend com: npm run dev:full (se configurado no package.json)
+ * 3. O backend deve ter um endpoint POST /api/youtube-download que aceita:
+ *    - url: URL do YouTube
+ *    - title: Título da música (opcional)
+ *    - artist: Artista da música (opcional)
+ * 
+ * Se não estiver usando o backend, este componente pode ser removido do SettingsModal.
+ * 
+ * @param {Function} onClose - Função para fechar o modal
+ * @param {Function} onMusicDownloaded - Função chamada quando a música é baixada com sucesso
+ */
+
 import { useState } from 'react';
 import { useThemeStyles } from '../hooks/useThemeStyles';
 

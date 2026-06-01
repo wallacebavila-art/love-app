@@ -1,4 +1,4 @@
-import { collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
 const NOTIFICATIONS_COLLECTION = 'notifications';
@@ -52,5 +52,21 @@ export const markNotificationAsRead = async (notificationId) => {
     console.log('Notificação marcada como lida');
   } catch (error) {
     console.error('Erro ao marcar notificação como lida:', error);
+  }
+};
+
+export const clearAllNotifications = async () => {
+  try {
+    const notificationsRef = collection(db, NOTIFICATIONS_COLLECTION);
+    const snapshot = await getDocs(notificationsRef);
+    
+    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+    
+    console.log(`✅ ${snapshot.docs.length} notificações deletadas`);
+    return true;
+  } catch (error) {
+    console.error('Erro ao limpar notificações:', error);
+    return false;
   }
 };

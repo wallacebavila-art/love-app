@@ -1,104 +1,84 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { auth } from '../services/firebaseConfig';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 
 const AuthContext = createContext(null);
 
-// Credenciais do administrador (hardcoded para simplificar)
-// RECOMENDAÇÃO: Usar Firebase Authentication em produção
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'wallace';
+// Credenciais do administrador
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'wallace@para-raissa.firebaseapp.com';
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || '123456';
 
 // Credenciais da Raíssa
-const RAISSA_EMAIL = import.meta.env.VITE_RAISSA_EMAIL || 'raissa';
+const RAISSA_EMAIL = import.meta.env.VITE_RAISSA_EMAIL || 'raissa@para-raissa.firebaseapp.com';
 const RAISSA_PASSWORD = import.meta.env.VITE_RAISSA_PASSWORD || 'wallaceteamo';
+
+// Forçar valores corretos caso o env não funcione
+const FORCED_ADMIN_EMAIL = 'wallace@para-raissa.firebaseapp.com';
+const FORCED_RAISSA_EMAIL = 'raissa@para-raissa.firebaseapp.com';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const intervalRef = useRef(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar se há usuário salvo no localStorage e se expirou
-    const savedAdminUser = localStorage.getItem('adminUser');
-    const savedRaissaUser = localStorage.getItem('raissaUser');
-    const EXPIRATION_TIME = 10 * 60 * 1000; // 10 minutos
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // Determinar tipo de usuário baseado no email
+        const isAdmin = firebaseUser.email === FORCED_ADMIN_EMAIL;
+        const isRaissa = firebaseUser.email === FORCED_RAISSA_EMAIL;
 
-    const checkAndRestore = (data, key) => {
-      const parsed = JSON.parse(data);
-      if (Date.now() - parsed.lastActivity > EXPIRATION_TIME) {
-        localStorage.removeItem(key);
-        return null;
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          isAdmin,
+          isRaissa,
+          userType: isAdmin ? 'admin' : (isRaissa ? 'raissa' : 'user')
+        });
+      } else {
+        setUser(null);
       }
-      return parsed;
-    };
+      setLoading(false);
+    });
 
-    if (savedRaissaUser) {
-      const userData = checkAndRestore(savedRaissaUser, 'raissaUser');
-      if (userData) setUser(userData);
-    } else if (savedAdminUser) {
-      const userData = checkAndRestore(savedAdminUser, 'adminUser');
-      if (userData) setUser(userData);
-    }
-    setLoading(false);
+    return () => unsubscribe();
   }, []);
-
-  // Heartbeat: atualiza o lastActivity a cada 5s enquanto o user estiver logado
-  useEffect(() => {
-    if (user) {
-      intervalRef.current = setInterval(() => {
-        const key = user.userType === 'admin' ? 'adminUser' : 'raissaUser';
-        const savedData = localStorage.getItem(key);
-        if (savedData) {
-          const parsed = JSON.parse(savedData);
-          parsed.lastActivity = Date.now();
-          localStorage.setItem(key, JSON.stringify(parsed));
-        }
-      }, 5000);
-    }
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [user]);
 
   const login = async (email, password) => {
     setLoading(true);
     try {
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        const userData = { email, isAdmin: true, userType: 'admin', lastActivity: Date.now() };
-        setUser(userData);
-        localStorage.setItem('adminUser', JSON.stringify(userData));
-        return userData;
-      } else if (email === RAISSA_EMAIL && password === RAISSA_PASSWORD) {
-        const userData = { email, isAdmin: false, userType: 'raissa', lastActivity: Date.now() };
-        setUser(userData);
-        localStorage.setItem('raissaUser', JSON.stringify(userData));
-        return userData;
-      } else {
-        throw new Error('Email ou senha inválidos');
-      }
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // Determinar tipo de usuário baseado no email
+      const isAdmin = firebaseUser.email === FORCED_ADMIN_EMAIL;
+      const isRaissa = firebaseUser.email === FORCED_RAISSA_EMAIL;
+
+      const userData = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        isAdmin,
+        isRaissa,
+        userType: isAdmin ? 'admin' : (isRaissa ? 'raissa' : 'user')
+      };
+
+      setUser(userData);
+      return userData;
     } catch (error) {
-      throw error;
+      console.error('Erro no login:', error);
+      throw new Error('Email ou senha inválidos');
     } finally {
       setLoading(false);
     }
   };
 
   const logout = async () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    try {
+      await signOut(auth);
+      setUser(null);
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      throw error;
     }
-    if (user?.userType === 'admin') {
-      localStorage.removeItem('adminUser');
-    } else if (user?.userType === 'raissa') {
-      localStorage.removeItem('raissaUser');
-    }
-    setUser(null);
   };
 
   const value = {

@@ -6,7 +6,7 @@ import BottomPlayerBar from './components/BottomPlayerBar';
 import NotificationToast, { NotificationProvider } from './components/NotificationToast';
 import Login from './components/Login';
 import RaissaLogin from './components/RaissaLogin';
-import { useMusicPlayer } from './hooks/useMusicPlayer';
+import { useYouTubePlayer } from './hooks/useYouTubePlayer';
 import { NotificationModalProvider } from './contexts/NotificationModalContext';
 import UpcomingEventsTicker from './components/UpcomingEventsTicker';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -28,7 +28,7 @@ import ConnectionStatus from './components/ConnectionStatus';
 import { getThemeClasses, getSelectionClasses } from './utils/themeUtils';
 
 function AppContent() {
-  const { isPlaying, toggleMusic, nextTrack, prevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, setVolume, currentTrack, currentArtist, currentTrackIndex, selectTrack } = useMusicPlayer();
+  const { isPlaying, toggleMusic, nextTrack, prevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, setVolume, currentTrack, currentArtist, currentTrackIndex, selectTrack } = useYouTubePlayer({ volume: 1, autoPlay: false });
   const [dailyMessage, setDailyMessage] = useState(null);
   const [dailyVerse, setDailyVerse] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);

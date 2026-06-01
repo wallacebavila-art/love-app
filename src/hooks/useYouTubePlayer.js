@@ -13,12 +13,27 @@ function onYouTubeIframeAPIReady() {
 
 function loadYouTubeAPI() {
   if (document.getElementById('youtube-api')) return;
+  
+  // Interceptar mensagens do YouTube para silenciar logs
+  const originalPostMessage = window.postMessage;
+  window.postMessage = function(message, targetOrigin, transfer) {
+    if (typeof message === 'string' && message.includes('content script received message')) {
+      return;
+    }
+    return originalPostMessage.call(this, message, targetOrigin, transfer);
+  };
+  
   const tag = document.createElement('script');
   tag.id = 'youtube-api';
   tag.src = 'https://www.youtube.com/iframe_api';
   const firstScriptTag = document.getElementsByTagName('script')[0];
   firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
   window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+  
+  // Restaurar postMessage após carregar
+  setTimeout(() => {
+    window.postMessage = originalPostMessage;
+  }, 3000);
 }
 
 function waitForAPI() {

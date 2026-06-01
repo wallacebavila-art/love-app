@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useLoginModal } from '../contexts/LoginModalContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import { useThemeStyles } from '../hooks/useThemeStyles';
+import { exportMessages, downloadBackup } from '../services/backupService';
+import { clearAllNotifications } from '../services/realtimeNotifications';
 import naocliqueImage from '/naoclique.png';
 import raissaAvatar from '/favicon.png';
 
@@ -16,6 +18,8 @@ const SettingsModal = ({ isOpen, onClose, onOpenYoutubeDownloader }) => {
   const [showSecretImage, setShowSecretImage] = useState(false);
   const [secretStep, setSecretStep] = useState(0);
   const [useLoveName, setUseLoveName] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isClearingChat, setIsClearingChat] = useState(false);
 
   useEffect(() => {
     // Carregar preferência do localStorage
@@ -69,6 +73,40 @@ const SettingsModal = ({ isOpen, onClose, onOpenYoutubeDownloader }) => {
         return '...';
       default:
         return 'Não clique';
+    }
+  };
+
+  const handleExportMessages = async () => {
+    setIsExporting(true);
+    try {
+      const data = await exportMessages();
+      downloadBackup(data);
+    } catch (error) {
+      console.error('Erro ao exportar mensagens:', error);
+      alert('Erro ao exportar mensagens');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleClearChat = async () => {
+    if (!confirm('Tem certeza que deseja limpar todo o histórico do chat? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+    
+    setIsClearingChat(true);
+    try {
+      const success = await clearAllNotifications();
+      if (success) {
+        alert('Histórico do chat limpo com sucesso!');
+      } else {
+        alert('Erro ao limpar histórico do chat');
+      }
+    } catch (error) {
+      console.error('Erro ao limpar chat:', error);
+      alert('Erro ao limpar histórico do chat');
+    } finally {
+      setIsClearingChat(false);
     }
   };
 
@@ -201,6 +239,34 @@ const SettingsModal = ({ isOpen, onClose, onOpenYoutubeDownloader }) => {
                 <span className="material-symbols-outlined text-sm">download</span>
                 Baixar Música
               </button>
+            </div>
+          )}
+
+          {/* Exportar Dados - Visível para admin e raissa */}
+          {(user?.userType === 'admin' || user?.userType === 'raissa') && (
+            <div className={`mt-4 pt-4 border-t ${getBorderColor()}`}>
+              <h3 className={`text-sm font-semibold ${getTextColor()} mb-2`}>Exportar Dados</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={handleExportMessages}
+                  disabled={isExporting}
+                  className="w-full bg-white/20 text-white py-2 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-white/30 transition-all active:scale-[0.98] shadow-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined text-sm">description</span>
+                  {isExporting ? 'Exportando...' : 'Exportar Mensagens'}
+                </button>
+                {/* Limpar Histórico - Visível apenas para admin */}
+                {user?.userType === 'admin' && (
+                  <button
+                    onClick={handleClearChat}
+                    disabled={isClearingChat}
+                    className="w-full bg-red-500/80 text-white py-2 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-red-500 transition-all active:scale-[0.98] shadow-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                    {isClearingChat ? 'Limpando...' : 'Limpar Histórico do Chat'}
+                  </button>
+                )}
+              </div>
             </div>
           )}
 

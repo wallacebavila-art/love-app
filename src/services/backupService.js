@@ -1,5 +1,6 @@
 import { db } from './firebaseConfig';
 import { collection, getDocs, addDoc, doc, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
+// import JSZip from 'jszip'; // Temporariamente desabilitado devido a problema de instalação
 
 /**
  * Exporta todos os dados do Firestore para JSON
@@ -177,4 +178,116 @@ export const readBackupFile = (file) => {
     reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
     reader.readAsText(file);
   });
+};
+
+/**
+ * Exporta apenas mensagens para JSON
+ * @returns {Promise<Object>} Objeto com mensagens
+ */
+export const exportMessages = async () => {
+  try {
+    const messagesRef = collection(db, 'mensagens');
+    const snapshot = await getDocs(messagesRef);
+    const messages = [];
+    
+    snapshot.forEach((doc) => {
+      messages.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      version: '1.0',
+      type: 'messages',
+      data: messages
+    };
+
+    return exportData;
+  } catch (error) {
+    console.error('Erro ao exportar mensagens:', error);
+    throw error;
+  }
+};
+
+/**
+ * Exporta fotos como ZIP
+ * @returns {Promise<Blob>} Blob do arquivo ZIP
+ */
+export const exportPhotosAsZip = async () => {
+  throw new Error('Funcionalidade temporariamente desabilitada - jszip não instalado');
+  
+  // try {
+  //   const photosRef = collection(db, 'photos');
+  //   const snapshot = await getDocs(photosRef);
+  //   const photos = [];
+    
+  //   snapshot.forEach((doc) => {
+  //     photos.push({
+  //       id: doc.id,
+  //       ...doc.data()
+  //     });
+  //   });
+
+  //   const zip = new JSZip();
+  //   const photosFolder = zip.folder('photos');
+  //   const metadataFile = {
+  //     timestamp: new Date().toISOString(),
+  //     version: '1.0',
+  //     type: 'photos',
+  //     count: photos.length
+  //   };
+
+  //   // Adicionar metadados
+  //   zip.file('metadata.json', JSON.stringify(metadataFile, null, 2));
+
+  //   // Adicionar fotos ao ZIP
+  //   for (const photo of photos) {
+  //     try {
+  //       // Converter base64 para blob
+  //       const base64Data = photo.url.split(',')[1];
+  //       const byteCharacters = atob(base64Data);
+  //       const byteNumbers = new Array(byteCharacters.length);
+        
+  //       for (let i = 0; i < byteCharacters.length; i++) {
+  //         byteNumbers[i] = byteCharacters.charCodeAt(i);
+  //       }
+        
+  //       const byteArray = new Uint8Array(byteNumbers);
+  //       const blob = new Blob([byteArray], { type: 'image/jpeg' });
+        
+  //       // Adicionar ao ZIP
+  //       const filename = `${photo.id}.jpg`;
+  //       photosFolder.file(filename, blob);
+  //     } catch (error) {
+  //       console.error(`Erro ao processar foto ${photo.id}:`, error);
+  //     }
+  //   }
+
+  //   // Gerar ZIP
+  //   const zipBlob = await zip.generateAsync({ type: 'blob' });
+  //   return zipBlob;
+  // } catch (error) {
+  //   console.error('Erro ao exportar fotos como ZIP:', error);
+  //   throw error;
+  // }
+};
+
+/**
+ * Faz download do arquivo ZIP
+ * @param {Blob} zipBlob - Blob do arquivo ZIP
+ * @param {string} filename - Nome do arquivo
+ */
+export const downloadZip = (zipBlob, filename) => {
+  throw new Error('Funcionalidade temporariamente desabilitada - jszip não instalado');
+  
+  // const url = URL.createObjectURL(zipBlob);
+  // const link = document.createElement('a');
+  // link.href = url;
+  // link.download = filename;
+  // document.body.appendChild(link);
+  // link.click();
+  // document.body.removeChild(link);
+  // URL.revokeObjectURL(url);
 };
