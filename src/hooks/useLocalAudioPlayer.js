@@ -217,7 +217,9 @@ export const useLocalAudioPlayer = ({ volume, autoPlay, onTrackChange, onPlaying
   const selectTrack = useCallback((index) => {
     if (index < 0 || index >= playlist.length) return;
     setCurrentTrackIndex(index);
-  }, []);
+    // Atualizar estado de playing para true quando selecionar uma música
+    onPlayingChange?.(true);
+  }, [onPlayingChange]);
 
   const toggleShuffle = useCallback(() => {
     if (!isShuffled) {

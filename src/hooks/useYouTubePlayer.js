@@ -136,7 +136,7 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
             }
           },
           onError: (e) => {
-            console.log('Erro no player YouTube:', e);
+            console.error('Erro no player YouTube:', e);
           },
         },
       });
@@ -167,23 +167,28 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
   const nextTrack = useCallback(() => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.nextVideo();
-      setTimeout(updateTrackInfo, 500);
+      setTimeout(updateTrackInfo, 1000);
+      setTimeout(updateTrackInfo, 2000);
     }
   }, [updateTrackInfo]);
 
   const prevTrack = useCallback(() => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.previousVideo();
-      setTimeout(updateTrackInfo, 500);
+      setTimeout(updateTrackInfo, 1000);
+      setTimeout(updateTrackInfo, 2000);
     }
   }, [updateTrackInfo]);
 
   const selectTrack = useCallback((index) => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.playVideoAt(index);
-      setTimeout(updateTrackInfo, 500);
+      setTimeout(updateTrackInfo, 1000);
+      setTimeout(updateTrackInfo, 2000);
+      // Atualizar estado de playing para true
+      onPlayingChange?.(true);
     }
-  }, [updateTrackInfo]);
+  }, [updateTrackInfo, onPlayingChange]);
 
   const cleanup = useCallback(() => {
     if (trackIntervalRef.current) {

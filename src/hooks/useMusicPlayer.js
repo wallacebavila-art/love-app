@@ -121,6 +121,8 @@ export const useMusicPlayer = () => {
   const nextTrack = useCallback(() => {
     if (musicMode === 'youtube') {
       youtubePlayer.nextTrack();
+      // Atualizar o índice selecionado
+      setYoutubeSelectedIndex(prev => (prev + 1) % 100); // Assumindo máximo de 100 músicas
     } else {
       localPlayer.nextTrack();
     }
@@ -129,6 +131,8 @@ export const useMusicPlayer = () => {
   const prevTrack = useCallback(() => {
     if (musicMode === 'youtube') {
       youtubePlayer.prevTrack();
+      // Atualizar o índice selecionado
+      setYoutubeSelectedIndex(prev => (prev - 1 + 100) % 100); // Assumindo máximo de 100 músicas
     } else {
       localPlayer.prevTrack();
     }

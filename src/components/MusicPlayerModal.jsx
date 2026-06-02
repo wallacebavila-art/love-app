@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { playlist } from '../data/playlist';
 import { fetchYouTubePlaylist } from '../services/youtubeService';
 
-const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, onVolumeChange, currentTrack, currentArtist, currentTrackIndex, onSelectTrack }) => {
+const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, onToggleShuffle, isShuffled, musicMode, onToggleMusicMode, volume, onVolumeChange, currentTrack, currentArtist, currentTrackIndex, totalTracks, playlistData, onSelectTrack }) => {
   const [youtubePlaylist, setYoutubePlaylist] = useState([]);
   const [isLoadingYoutube, setIsLoadingYoutube] = useState(false);
 
@@ -91,7 +91,7 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
         <div className="flex items-center justify-center gap-3 mb-5">
           {/* Shuffle */}
           <button
-            onClick={(e) => { e.stopPropagation(); toggleShuffle && toggleShuffle(); }}
+            onClick={(e) => { e.stopPropagation(); onToggleShuffle && onToggleShuffle(); }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               isShuffled
                 ? 'bg-green-500/20 text-green-400 border border-green-500/30'
@@ -105,7 +105,7 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
 
           {/* Alternar Modo */}
           <button
-            onClick={(e) => { e.stopPropagation(); toggleMusicMode && toggleMusicMode(); }}
+            onClick={(e) => { e.stopPropagation(); onToggleMusicMode && onToggleMusicMode(); }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
               musicMode === 'youtube'
                 ? 'bg-red-500/20 text-red-400 border border-red-500/30'
@@ -150,9 +150,9 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
         {/* Lista de Músicas */}
         <div className="mt-4">
           <h3 className="text-white/60 text-xs font-medium mb-2 px-1">
-            Playlist ({musicMode === 'youtube' ? youtubePlaylist.length : playlist.length})
+            Playlist ({musicMode === 'youtube' ? youtubePlaylist.length : (playlistData || playlist).length})
           </h3>
-          <div className="bg-white/5 rounded-xl max-h-48 overflow-y-auto">
+          <div className="bg-white/5 rounded-xl max-h-48 overflow-y-auto music-scrollbar">
             {isLoadingYoutube ? (
               <div className="px-3 py-4 text-center">
                 <p className="text-white/40 text-sm">Carregando playlist...</p>
@@ -196,8 +196,8 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
                 <p className="text-white/40 text-sm">Não foi possível carregar a playlist</p>
                 <p className="text-white/30 text-xs mt-1">Verifique sua API key do YouTube</p>
               </div>
-            ) : (
-              playlist.map((track, index) => (
+            ) : (playlistData || playlist).length > 0 ? (
+              (playlistData || playlist).map((track, index) => (
                 <button
                   key={track.id}
                   onClick={(e) => {
@@ -230,6 +230,10 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
                   )}
                 </button>
               ))
+            ) : (
+              <div className="px-3 py-4 text-center">
+                <p className="text-white/40 text-sm">Nenhuma música na playlist</p>
+              </div>
             )}
           </div>
         </div>

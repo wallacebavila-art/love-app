@@ -42,13 +42,13 @@ const ModalsContainer = ({
   weather,
   handleDateSelect,
   isPlaying,
-  toggleMusic,
+  toggleMusic: toggleMusic,
   nextTrack,
   prevTrack,
   toggleShuffle,
   isShuffled,
   musicMode,
-  toggleMusicMode,
+  toggleMusicMode: toggleMusicMode,
   volume,
   setVolume,
   currentTrack,
@@ -160,7 +160,7 @@ const ModalsContainer = ({
         currentArtist={currentArtist}
         currentTrackIndex={currentTrackIndex}
         totalTracks={totalTracks}
-        playlist={playlist}
+        playlistData={playlist}
         onSelectTrack={selectTrack}
       />
 

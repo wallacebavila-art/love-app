@@ -6,7 +6,7 @@ import BottomPlayerBar from './components/BottomPlayerBar';
 import NotificationToast, { NotificationProvider } from './components/NotificationToast';
 import Login from './components/Login';
 import RaissaLogin from './components/RaissaLogin';
-import { useYouTubePlayer } from './hooks/useYouTubePlayer';
+import { useMusicPlayer } from './hooks/useMusicPlayer';
 import { NotificationModalProvider } from './contexts/NotificationModalContext';
 import UpcomingEventsTicker from './components/UpcomingEventsTicker';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -28,7 +28,7 @@ import ConnectionStatus from './components/ConnectionStatus';
 import { getThemeClasses, getSelectionClasses } from './utils/themeUtils';
 
 function AppContent() {
-  const { isPlaying, toggleMusic, nextTrack, prevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, setVolume, currentTrack, currentArtist, currentTrackIndex, selectTrack } = useYouTubePlayer({ volume: 1, autoPlay: false });
+  const { isPlaying, toggleMusic, nextTrack, prevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, setVolume, currentTrack, currentArtist, currentTrackIndex, totalTracks, playlist, selectTrack } = useMusicPlayer();
   const [dailyMessage, setDailyMessage] = useState(null);
   const [dailyVerse, setDailyVerse] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -270,8 +270,8 @@ function AppContent() {
             currentTrack={currentTrack}
             currentArtist={currentArtist}
             currentTrackIndex={currentTrackIndex}
-            totalTracks={0}
-            playlist={[]}
+            totalTracks={totalTracks}
+            playlist={playlist}
             selectTrack={selectTrack}
           />
 
