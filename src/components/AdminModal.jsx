@@ -5,7 +5,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import { db } from '../services/firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { fetchAllPhotos, uploadPhotoToStorage, savePhoto, deletePhoto, deletePhotoFromStorage } from '../services/photoService';
-import { exportAllData, importAllData, downloadBackup, readBackupFile } from '../services/backupService';
 import { useToast } from './Toast';
 
 const AdminModal = ({ isOpen, onClose }) => {
@@ -13,7 +12,7 @@ const AdminModal = ({ isOpen, onClose }) => {
   const { getCardBackground, getBorderColor, getTextColor } = useTheme();
   const { warning, success, error } = useToast();
   const messagesEndRef = useRef(null);
-  const [activeTab, setActiveTab] = useState('messages'); // 'messages', 'verses', 'photos', 'backup'
+  const [activeTab, setActiveTab] = useState('messages'); // 'messages', 'verses', 'photos'
   
   // Dados das mensagens
   const [messages, setMessages] = useState([]);
@@ -38,13 +37,8 @@ const AdminModal = ({ isOpen, onClose }) => {
     files: []
   });
   const [selectedFilePreviews, setSelectedFilePreviews] = useState([]);
-
-  // Estado para backup
-  const [backupLoading, setBackupLoading] = useState(false);
-  const [restoreLoading, setRestoreLoading] = useState(false);
-  const [backupMessage, setBackupMessage] = useState('');
-  const [overwriteBackup, setOverwriteBackup] = useState(false);
-  const [clearBeforeImport, setClearBeforeImport] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState(new Set());
+  const [selectAllPhotos, setSelectAllPhotos] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -315,47 +309,45 @@ const AdminModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // Funções de backup
-  const handleExportBackup = async () => {
-    setBackupLoading(true);
-    setBackupMessage('');
-    try {
-      const backupData = await exportAllData();
-      downloadBackup(backupData);
-      setBackupMessage('✅ Backup exportado com sucesso!');
-    } catch (error) {
-      logger.error('Erro ao exportar backup:', error);
-      setBackupMessage('❌ Erro ao exportar backup: ' + error.message);
-    } finally {
-      setBackupLoading(false);
+  const handleSelectPhoto = (photoId) => {
+    const newSelected = new Set(selectedPhotos);
+    if (newSelected.has(photoId)) {
+      newSelected.delete(photoId);
+    } else {
+      newSelected.add(photoId);
+    }
+    setSelectedPhotos(newSelected);
+    setSelectAllPhotos(newSelected.size === photos.length);
+  };
+
+  const handleSelectAllPhotos = () => {
+    if (selectAllPhotos) {
+      setSelectedPhotos(new Set());
+      setSelectAllPhotos(false);
+    } else {
+      setSelectedPhotos(new Set(photos.map(photo => photo.id)));
+      setSelectAllPhotos(true);
     }
   };
 
-  const handleImportBackup = async (file) => {
-    setRestoreLoading(true);
-    setBackupMessage('');
+  const handleDeleteSelectedPhotos = async () => {
+    if (selectedPhotos.size === 0) return;
+    if (!confirm(`Tem certeza que deseja excluir ${selectedPhotos.size} foto(s)? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
     try {
-      const backupData = await readBackupFile(file);
-      const result = await importAllData(backupData, {
-        overwrite: overwriteBackup,
-        clearBeforeImport: clearBeforeImport
-      });
-      
-      if (result.success) {
-        setBackupMessage('✅ Backup importado com sucesso!');
-        // Recarregar dados
-        await fetchStatistics();
-        await fetchMessages();
-        await fetchVerses();
-        await fetchPhotos();
-      } else {
-        setBackupMessage('⚠️ Backup importado com erros. Veja o logger para detalhes.');
+      for (const photoId of selectedPhotos) {
+        await deletePhoto(photoId);
       }
+      success(`${selectedPhotos.size} foto(s) excluída(s) com sucesso!`);
+      setSelectedPhotos(new Set());
+      setSelectAllPhotos(false);
+      fetchStatistics();
+      fetchPhotos();
     } catch (error) {
-      logger.error('Erro ao importar backup:', error);
-      setBackupMessage('❌ Erro ao importar backup: ' + error.message);
-    } finally {
-      setRestoreLoading(false);
+      logger.error('Erro ao excluir fotos:', error);
+      error('Erro ao excluir fotos');
     }
   };
 
@@ -566,21 +558,11 @@ const AdminModal = ({ isOpen, onClose }) => {
             >
               Fotos
             </button>
-            <button
-              onClick={() => { setActiveTab('backup'); resetForm(); }}
-              className={`px-6 py-3 font-semibold transition-all border-b-2 ${
-                activeTab === 'backup'
-                  ? 'border-purple-400 text-purple-400'
-                  : 'border-transparent text-white/60 hover:text-white'
-              }`}
-            >
-              Backup
-            </button>
           </div>
 
           {/* Add Button */}
           <div className="mb-6">
-            {activeTab !== 'photos' && activeTab !== 'backup' && (
+            {activeTab !== 'photos' && (
               <button
                 onClick={() => {
                   if (showAddForm) resetForm();
@@ -752,9 +734,30 @@ const AdminModal = ({ isOpen, onClose }) => {
           {activeTab === 'photos' ? (
             <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 overflow-hidden">
               <div className={`px-6 py-4 border-b ${getBorderColor()} bg-white/5`}>
-                <h3 className={`text-lg font-semibold ${getTextColor()}`}>
-                  Fotos na Galeria ({photos.length})
-                </h3>
+                <div className="flex items-center justify-between">
+                  <h3 className={`text-lg font-semibold ${getTextColor()}`}>
+                    Fotos na Galeria ({photos.length})
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectAllPhotos}
+                        onChange={handleSelectAllPhotos}
+                        className="w-4 h-4 rounded"
+                      />
+                      <span className="text-white/80 text-sm">Selecionar Todas</span>
+                    </label>
+                    {selectedPhotos.size > 0 && (
+                      <button
+                        onClick={handleDeleteSelectedPhotos}
+                        className="px-4 py-2 bg-red-500/50 text-white rounded-lg hover:bg-red-500/70 transition text-sm font-semibold"
+                      >
+                        Excluir ({selectedPhotos.size})
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="p-4 max-h-96 overflow-y-auto">
                 {loading ? (
@@ -767,6 +770,14 @@ const AdminModal = ({ isOpen, onClose }) => {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {photos.map((photo) => (
                       <div key={photo.id} className="relative group">
+                        <div className="absolute top-2 left-2 z-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedPhotos.has(photo.id)}
+                            onChange={() => handleSelectPhoto(photo.id)}
+                            className="w-4 h-4 rounded"
+                          />
+                        </div>
                         <img
                           src={photo.url}
                           alt={photo.caption || 'Foto'}
@@ -790,105 +801,6 @@ const AdminModal = ({ isOpen, onClose }) => {
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
-          ) : activeTab === 'backup' ? (
-            <div className="bg-white/10 backdrop-blur-md rounded-lg border border-white/20 overflow-hidden">
-              <div className={`px-6 py-4 border-b ${getBorderColor()} bg-white/5`}>
-                <h3 className={`text-lg font-semibold ${getTextColor()}`}>
-                  Backup e Restauração
-                </h3>
-              </div>
-              <div className="p-6 space-y-6">
-                {/* Exportar Backup */}
-                <div className="bg-purple-500/20 border border-purple-400/30 rounded-lg p-6">
-                  <h4 className={`text-lg font-semibold mb-4 ${getTextColor()}`}>Exportar Backup</h4>
-                  <p className="text-white/70 mb-4 text-sm">
-                    Exporte todos os dados do app (mensagens, versículos, fotos, etc.) para um arquivo JSON.
-                  </p>
-                  <button
-                    onClick={handleExportBackup}
-                    disabled={backupLoading}
-                    className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {backupLoading ? 'Exportando...' : '📥 Exportar Backup'}
-                  </button>
-                </div>
-
-                {/* Importar Backup */}
-                <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-6">
-                  <h4 className={`text-lg font-semibold mb-4 ${getTextColor()}`}>Restaurar Backup</h4>
-                  <p className="text-white/70 mb-4 text-sm">
-                    Importe um arquivo de backup para restaurar os dados do app.
-                  </p>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="file"
-                        accept=".json"
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (file) handleImportBackup(file);
-                        }}
-                        disabled={restoreLoading}
-                        className="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-500 file:text-white hover:file:bg-purple-600 disabled:opacity-50"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={overwriteBackup}
-                          onChange={(e) => setOverwriteBackup(e.target.checked)}
-                          className="w-4 h-4 rounded"
-                        />
-                        <span className="text-white/80 text-sm">Sobrescrever documentos existentes</span>
-                      </label>
-                      
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={clearBeforeImport}
-                          onChange={(e) => setClearBeforeImport(e.target.checked)}
-                          className="w-4 h-4 rounded"
-                        />
-                        <span className="text-white/80 text-sm">Limpar coleções antes de importar</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mensagem de status */}
-                {backupMessage && (
-                  <div className={`p-4 rounded-lg ${
-                    backupMessage.includes('✅') ? 'bg-green-500/20 border border-green-400/30' :
-                    backupMessage.includes('❌') ? 'bg-red-500/20 border border-red-400/30' :
-                    'bg-yellow-500/20 border border-yellow-400/30'
-                  }`}>
-                    <p className="text-white">{backupMessage}</p>
-                  </div>
-                )}
-
-                {/* Estatísticas */}
-                <div className="bg-white/10 border border-white/20 rounded-lg p-6">
-                  <h4 className={`text-lg font-semibold mb-4 ${getTextColor()}`}>Estatísticas Atuais</h4>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-pink-400">{messageCount}</p>
-                      <p className="text-white/70 text-sm">Mensagens</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-blue-400">{verseCount}</p>
-                      <p className="text-white/70 text-sm">Versículos</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-green-400">{photoCount}</p>
-                      <p className="text-white/70 text-sm">Fotos</p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           ) : (

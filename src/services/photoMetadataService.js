@@ -4,11 +4,11 @@ import { doc, getDoc, collection, getDocs, addDoc, updateDoc, deleteDoc, query, 
 
 const PHOTOS_COLLECTION = 'photos';
 
-// Fotos locais servidas da pasta public/photos/ como fallback
+// Fotos locais servidas da pasta public/ como fallback
 const LOCAL_PHOTOS = [
-  { id: 'local-1', url: '/photos/foto1.jpg', caption: 'Nossas Memórias 💕', order: 0, isLocal: true },
-  { id: 'local-2', url: '/photos/foto2.jpg', caption: 'Momentos Especiais ✨', order: 1, isLocal: true },
-  { id: 'local-3', url: '/photos/foto3.jpg', caption: 'Juntos para Sempre 💑', order: 2, isLocal: true },
+  { id: 'local-1', url: '/love-app/foto1.jpg', caption: 'Nossas Memórias 💕', order: 0, isLocal: true },
+  { id: 'local-2', url: '/love-app/foto2.jpg', caption: 'Momentos Especiais ✨', order: 1, isLocal: true },
+  { id: 'local-3', url: '/love-app/foto3.jpg', caption: 'Juntos para Sempre 💑', order: 2, isLocal: true },
 ];
 
 /**

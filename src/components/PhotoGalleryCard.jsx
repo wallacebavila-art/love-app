@@ -50,28 +50,17 @@ const PhotoGalleryCard = () => {
       img.onload = () => {
         setLoadedImages(prev => new Set(prev).add(url));
       };
+      img.onerror = () => {
+        console.error('Erro ao carregar imagem:', url);
+      };
     };
 
-    // Preload imagem atual
+    // Preload apenas a imagem atual
     const currentPhoto = photos[currentIndex];
     if (currentPhoto?.url) {
       preloadImage(currentPhoto.url);
     }
-
-    // Preload imagem anterior
-    const prevIndex = currentIndex === 0 ? photos.length - 1 : currentIndex - 1;
-    const prevPhoto = photos[prevIndex];
-    if (prevPhoto?.url) {
-      preloadImage(prevPhoto.url);
-    }
-
-    // Preload próxima imagem
-    const nextIndex = (currentIndex + 1) % photos.length;
-    const nextPhoto = photos[nextIndex];
-    if (nextPhoto?.url) {
-      preloadImage(nextPhoto.url);
-    }
-  }, [currentIndex, photos, loadedImages]);
+  }, [currentIndex, photos]);
 
   // Slide automático com requestAnimationFrame
   useEffect(() => {

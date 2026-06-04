@@ -182,24 +182,27 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
   const nextTrack = useCallback(() => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.nextVideo();
-      // A atualização de info será feita via onStateChange
+      // Atualizar info explicitamente após mudar
+      setTimeout(() => updateTrackInfo(), 500);
     }
-  }, []);
+  }, [updateTrackInfo]);
 
   const prevTrack = useCallback(() => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.previousVideo();
-      // A atualização de info será feita via onStateChange
+      // Atualizar info explicitamente após mudar
+      setTimeout(() => updateTrackInfo(), 500);
     }
-  }, []);
+  }, [updateTrackInfo]);
 
   const selectTrack = useCallback((index) => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.playVideoAt(index);
-      // A atualização de info será feita via onStateChange
+      // Atualizar info explicitamente após mudar
+      setTimeout(() => updateTrackInfo(), 500);
       onPlayingChange?.(true);
     }
-  }, [onPlayingChange]);
+  }, [updateTrackInfo, onPlayingChange]);
 
   const loadPlaylist = useCallback((newPlaylistId) => {
     // Destruir o player atual
