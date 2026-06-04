@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { playlist } from '../data/playlist';
+import { YOUTUBE_TRACK_UPDATE_DELAY_1 } from '../constants/appConfig';
+import { logger } from '../utils/logger';
+
+// Constantes locais
+const AUDIO_LOAD_TIMEOUT_MS = 1000;
+const AUDIO_LOAD_FALLBACK_MS = 1000;
 
 function shuffleArray(array) {
   const shuffled = [...array];
@@ -102,7 +108,7 @@ export const useLocalAudioPlayer = ({ volume, autoPlay, onTrackChange, onPlaying
       const onCanPlay = () => {
         audio.removeEventListener('canplay', onCanPlay);
         audio.play().catch(error => {
-          console.warn('Erro ao tocar:', error);
+          logger.warn('Erro ao tocar:', error);
           onPlayingChange?.(false);
         }).finally(() => {
           isChangingTrackRef.current = false;
@@ -114,12 +120,16 @@ export const useLocalAudioPlayer = ({ volume, autoPlay, onTrackChange, onPlaying
         if (isChangingTrackRef.current) {
           isChangingTrackRef.current = false;
           audio.play().catch(error => {
-            console.warn('Erro ao tocar (fallback):', error);
+            logger.warn('Erro ao tocar (fallback):', error);
             onPlayingChange?.(false);
           });
         }
-      }, 1000);
+      }, AUDIO_LOAD_FALLBACK_MS);
       onPlayingChange?.(true);
+
+      return () => {
+        audio.removeEventListener('canplay', onCanPlay);
+      };
     } else {
       isChangingTrackRef.current = false;
     }
@@ -137,7 +147,7 @@ export const useLocalAudioPlayer = ({ volume, autoPlay, onTrackChange, onPlaying
     };
 
     const onError = (e) => {
-      console.error('Erro ao carregar áudio:', e);
+      logger.error('Erro ao carregar áudio:', e);
       onPlayingChange?.(false);
     };
 
@@ -168,7 +178,7 @@ export const useLocalAudioPlayer = ({ volume, autoPlay, onTrackChange, onPlaying
 
     if (autoPlay) {
       audio.play().catch(error => {
-        console.warn('Erro ao resumir play:', error);
+        logger.warn('Erro ao resumir play:', error);
         onPlayingChange?.(false);
       });
     } else {
@@ -191,7 +201,7 @@ export const useLocalAudioPlayer = ({ volume, autoPlay, onTrackChange, onPlaying
       audio.pause();
       onPlayingChange?.(false);
     } else {
-      audio.play().catch(error => console.warn('Erro ao tocar:', error));
+      audio.play().catch(error => logger.warn('Erro ao tocar:', error));
       onPlayingChange?.(true);
     }
   }, [autoPlay, onPlayingChange]);
@@ -266,7 +276,11 @@ export const useLocalAudioPlayer = ({ volume, autoPlay, onTrackChange, onPlaying
       isShuffled: isShuffled,
       shuffleOrder: shuffleOrderRef.current,
     };
-    localStorage.setItem('musicPlayer', JSON.stringify(state));
+    try {
+      localStorage.setItem('musicPlayer', JSON.stringify(state));
+    } catch (error) {
+      logger.error('Erro ao salvar estado do player no localStorage:', error);
+    }
   }, [currentTrackIndex, isShuffled]);
 
   useEffect(() => {

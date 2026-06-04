@@ -1,5 +1,6 @@
 import { collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
+import { logger } from '../utils/logger';
 
 const NOTIFICATIONS_COLLECTION = 'notifications';
 
@@ -18,7 +19,7 @@ export const sendRealtimeNotification = async (title, body, sender = 'admin', au
     await addDoc(notificationsRef, notificationData);
     return true;
   } catch (error) {
-    console.error('Erro ao enviar notificação para Firestore:', error);
+    logger.error('Erro ao enviar notificação para Firestore:', error);
     return false;
   }
 };
@@ -39,7 +40,7 @@ export const listenToNotifications = (callback) => {
 
     callback(notifications);
   }, (error) => {
-    console.error('Erro ao ouvir notificações:', error);
+    logger.error('Erro ao ouvir notificações:', error);
   });
 
   return unsubscribe;
@@ -49,9 +50,9 @@ export const markNotificationAsRead = async (notificationId) => {
   try {
     const notificationRef = doc(db, NOTIFICATIONS_COLLECTION, notificationId);
     await updateDoc(notificationRef, { read: true });
-    console.log('Notificação marcada como lida');
+    logger.log('Notificação marcada como lida');
   } catch (error) {
-    console.error('Erro ao marcar notificação como lida:', error);
+    logger.error('Erro ao marcar notificação como lida:', error);
   }
 };
 
@@ -63,10 +64,10 @@ export const clearAllNotifications = async () => {
     const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
     await Promise.all(deletePromises);
     
-    console.log(`✅ ${snapshot.docs.length} notificações deletadas`);
+    logger.log(`✅ ${snapshot.docs.length} notificações deletadas`);
     return true;
   } catch (error) {
-    console.error('Erro ao limpar notificações:', error);
+    logger.error('Erro ao limpar notificações:', error);
     return false;
   }
 };

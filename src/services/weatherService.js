@@ -1,6 +1,7 @@
-// API Key gratuita do OpenWeatherMap (limitada)
-const API_KEY = import.meta.env.VITE_OPENWEATHERMAP_API_KEY || '4d8fb5b93d4af21d66a2948710284366';
-const CITY = 'Rio de Janeiro';
+import { OPENWEATHERMAP_API_KEY, WEATHER_CITY } from '../constants/appConfig';
+
+const API_KEY = OPENWEATHERMAP_API_KEY;
+const CITY = WEATHER_CITY;
 const CACHE_KEY = 'weather-cache';
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutos
 

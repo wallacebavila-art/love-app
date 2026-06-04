@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { db } from './firebaseConfig';
 import { doc, setDoc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 
@@ -20,10 +21,10 @@ export const saveFCMToken = async (token, userId = null) => {
       lastUsed: new Date().toISOString(),
     });
     
-    console.log('✅ Token FCM salvo no Firestore');
+    logger.log('✅ Token FCM salvo no Firestore');
     return true;
   } catch (error) {
-    console.error('❌ Erro ao salvar token FCM:', error);
+    logger.error('❌ Erro ao salvar token FCM:', error);
     return false;
   }
 };
@@ -42,10 +43,10 @@ export const getAllFCMTokens = async () => {
       tokens.push(doc.data().token);
     });
     
-    console.log(`✅ ${tokens.length} tokens encontrados`);
+    logger.log(`✅ ${tokens.length} tokens encontrados`);
     return tokens;
   } catch (error) {
-    console.error('❌ Erro ao buscar tokens FCM:', error);
+    logger.error('❌ Erro ao buscar tokens FCM:', error);
     return [];
   }
 };
@@ -58,10 +59,10 @@ export const removeFCMToken = async (token) => {
   try {
     const tokenRef = doc(db, TOKENS_COLLECTION, token);
     await deleteDoc(tokenRef);
-    console.log('✅ Token FCM removido do Firestore');
+    logger.log('✅ Token FCM removido do Firestore');
     return true;
   } catch (error) {
-    console.error('❌ Erro ao remover token FCM:', error);
+    logger.error('❌ Erro ao remover token FCM:', error);
     return false;
   }
 };
@@ -77,6 +78,6 @@ export const updateTokenLastUsed = async (token) => {
       lastUsed: new Date().toISOString(),
     }, { merge: true });
   } catch (error) {
-    console.error('❌ Erro ao atualizar último uso do token:', error);
+    logger.error('❌ Erro ao atualizar último uso do token:', error);
   }
 };

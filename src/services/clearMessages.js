@@ -1,4 +1,4 @@
-import { db } from './firebaseConfig';
+import { logger } from '../utils/logger';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 
 /**
@@ -7,14 +7,14 @@ import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
  */
 export const clearAllMessages = async () => {
   try {
-    console.log('🗑️ Iniciando limpeza de todas as mensagens...');
+    logger.log('🗑️ Iniciando limpeza de todas as mensagens...');
     
     // Buscar todos os documentos da coleção 'mensagens'
     const messagesRef = collection(db, 'mensagens');
     const snapshot = await getDocs(messagesRef);
     
     if (snapshot.empty) {
-      console.log('✅ Nenhuma mensagem encontrada para apagar.');
+      logger.log('✅ Nenhuma mensagem encontrada para apagar.');
       return true;
     }
     
@@ -23,15 +23,15 @@ export const clearAllMessages = async () => {
     snapshot.forEach((docSnapshot) => {
       const docRef = doc(db, 'mensagens', docSnapshot.id);
       deletePromises.push(deleteDoc(docRef));
-      console.log(`🗑️ Apagando mensagem: ${docSnapshot.id}`);
+      logger.log(`🗑️ Apagando mensagem: ${docSnapshot.id}`);
     });
     
     await Promise.all(deletePromises);
     
-    console.log(`✅ ${snapshot.size} mensagens apagadas com sucesso!`);
+    logger.log(`✅ ${snapshot.size} mensagens apagadas com sucesso!`);
     return true;
   } catch (error) {
-    console.error('❌ Erro ao apagar mensagens:', error);
+    logger.error('❌ Erro ao apagar mensagens:', error);
     return false;
   }
 };

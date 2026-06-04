@@ -14,7 +14,11 @@ const Login = ({ onClose, isModal = false }) => {
     // Carregar preferência do localStorage
     const saved = localStorage.getItem('useLoveName');
     if (saved) {
-      setUseLoveName(JSON.parse(saved));
+      try {
+        setUseLoveName(JSON.parse(saved));
+      } catch (error) {
+        console.error('Erro ao fazer parse de useLoveName:', error);
+      }
     }
 
     // Ouvir evento de toggle

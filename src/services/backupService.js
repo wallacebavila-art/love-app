@@ -1,6 +1,5 @@
 import { db } from './firebaseConfig';
-import { collection, getDocs, addDoc, doc, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
-// import JSZip from 'jszip'; // Temporariamente desabilitado devido a problema de instalação
+import { logger } from '../utils/logger';
 
 /**
  * Exporta todos os dados do Firestore para JSON
@@ -29,16 +28,16 @@ export const exportAllData = async () => {
         });
 
         backupData.data[collectionName] = documents;
-        console.log(`✅ Exportados ${documents.length} documentos da coleção ${collectionName}`);
+        logger.log(`✅ Exportados ${documents.length} documentos da coleção ${collectionName}`);
       } catch (error) {
-        console.error(`❌ Erro ao exportar coleção ${collectionName}:`, error);
+        logger.error(`❌ Erro ao exportar coleção ${collectionName}:`, error);
         backupData.data[collectionName] = [];
       }
     }
 
     return backupData;
   } catch (error) {
-    console.error('Erro ao exportar dados:', error);
+    logger.error('Erro ao exportar dados:', error);
     throw error;
   }
 };
@@ -77,7 +76,7 @@ export const importAllData = async (backupData, options = { overwrite: false, cl
           const existingSnapshot = await getDocs(collectionRef);
           const deletePromises = existingSnapshot.docs.map(doc => deleteDoc(doc.ref));
           await Promise.all(deletePromises);
-          console.log(`🗑️ Limpa coleção ${collectionName}`);
+          logger.log(`🗑️ Limpa coleção ${collectionName}`);
         }
 
         let importedCount = 0;
@@ -105,7 +104,7 @@ export const importAllData = async (backupData, options = { overwrite: false, cl
               }
             }
           } catch (error) {
-            console.error(`Erro ao importar documento ${docData.id}:`, error);
+            logger.error(`Erro ao importar documento ${docData.id}:`, error);
             result.errors.push({
               collection: collectionName,
               documentId: docData.id,
@@ -120,9 +119,9 @@ export const importAllData = async (backupData, options = { overwrite: false, cl
           total: documents.length
         };
 
-        console.log(`✅ Importados ${importedCount} documentos na coleção ${collectionName} (pulados: ${skippedCount})`);
+        logger.log(`✅ Importados ${importedCount} documentos na coleção ${collectionName} (pulados: ${skippedCount})`);
       } catch (error) {
-        console.error(`❌ Erro ao importar coleção ${collectionName}:`, error);
+        logger.error(`❌ Erro ao importar coleção ${collectionName}:`, error);
         result.errors.push({
           collection: collectionName,
           error: error.message
@@ -136,7 +135,7 @@ export const importAllData = async (backupData, options = { overwrite: false, cl
 
     return result;
   } catch (error) {
-    console.error('Erro ao importar dados:', error);
+    logger.error('Erro ao importar dados:', error);
     throw error;
   }
 };
@@ -206,88 +205,8 @@ export const exportMessages = async () => {
 
     return exportData;
   } catch (error) {
-    console.error('Erro ao exportar mensagens:', error);
+    logger.error('Erro ao exportar mensagens:', error);
     throw error;
   }
 };
 
-/**
- * Exporta fotos como ZIP
- * @returns {Promise<Blob>} Blob do arquivo ZIP
- */
-export const exportPhotosAsZip = async () => {
-  throw new Error('Funcionalidade temporariamente desabilitada - jszip não instalado');
-  
-  // try {
-  //   const photosRef = collection(db, 'photos');
-  //   const snapshot = await getDocs(photosRef);
-  //   const photos = [];
-    
-  //   snapshot.forEach((doc) => {
-  //     photos.push({
-  //       id: doc.id,
-  //       ...doc.data()
-  //     });
-  //   });
-
-  //   const zip = new JSZip();
-  //   const photosFolder = zip.folder('photos');
-  //   const metadataFile = {
-  //     timestamp: new Date().toISOString(),
-  //     version: '1.0',
-  //     type: 'photos',
-  //     count: photos.length
-  //   };
-
-  //   // Adicionar metadados
-  //   zip.file('metadata.json', JSON.stringify(metadataFile, null, 2));
-
-  //   // Adicionar fotos ao ZIP
-  //   for (const photo of photos) {
-  //     try {
-  //       // Converter base64 para blob
-  //       const base64Data = photo.url.split(',')[1];
-  //       const byteCharacters = atob(base64Data);
-  //       const byteNumbers = new Array(byteCharacters.length);
-        
-  //       for (let i = 0; i < byteCharacters.length; i++) {
-  //         byteNumbers[i] = byteCharacters.charCodeAt(i);
-  //       }
-        
-  //       const byteArray = new Uint8Array(byteNumbers);
-  //       const blob = new Blob([byteArray], { type: 'image/jpeg' });
-        
-  //       // Adicionar ao ZIP
-  //       const filename = `${photo.id}.jpg`;
-  //       photosFolder.file(filename, blob);
-  //     } catch (error) {
-  //       console.error(`Erro ao processar foto ${photo.id}:`, error);
-  //     }
-  //   }
-
-  //   // Gerar ZIP
-  //   const zipBlob = await zip.generateAsync({ type: 'blob' });
-  //   return zipBlob;
-  // } catch (error) {
-  //   console.error('Erro ao exportar fotos como ZIP:', error);
-  //   throw error;
-  // }
-};
-
-/**
- * Faz download do arquivo ZIP
- * @param {Blob} zipBlob - Blob do arquivo ZIP
- * @param {string} filename - Nome do arquivo
- */
-export const downloadZip = (zipBlob, filename) => {
-  throw new Error('Funcionalidade temporariamente desabilitada - jszip não instalado');
-  
-  // const url = URL.createObjectURL(zipBlob);
-  // const link = document.createElement('a');
-  // link.href = url;
-  // link.download = filename;
-  // document.body.appendChild(link);
-  // link.click();
-  // document.body.removeChild(link);
-  // URL.revokeObjectURL(url);
-};

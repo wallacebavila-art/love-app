@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { db } from './firebaseConfig';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { getTodayDateString } from '../utils/dateUtils';
@@ -19,7 +20,7 @@ export const fetchDailyMessage = async () => {
     
     return 'Pensando...';
   } catch (error) {
-    console.error('Erro ao buscar mensagem do dia:', error);
+    logger.error('Erro ao buscar mensagem do dia:', error);
     return 'Pensando...';
   }
 };
@@ -41,7 +42,7 @@ export const fetchMessageByDate = async (dateKey) => {
     
     return null;
   } catch (error) {
-    console.error('Erro ao buscar mensagem da data:', error);
+    logger.error('Erro ao buscar mensagem da data:', error);
     return null;
   }
 };
@@ -63,10 +64,10 @@ export const saveDailyMessage = async (message) => {
       await setDoc(messageDoc, { mensagem: message });
     }
     
-    console.log('✅ Mensagem do dia salva no Firebase!');
+    logger.log('✅ Mensagem do dia salva no Firebase!');
     return true;
   } catch (error) {
-    console.error('❌ Erro ao salvar mensagem do dia:', error);
+    logger.error('❌ Erro ao salvar mensagem do dia:', error);
     return false;
   }
 };
@@ -88,10 +89,10 @@ export const saveMessageByDate = async (dateKey, message) => {
       await setDoc(messageDoc, { mensagem: message });
     }
     
-    console.log(`✅ Mensagem salva para ${dateKey}!`);
+    logger.log(`✅ Mensagem salva para ${dateKey}!`);
     return true;
   } catch (error) {
-    console.error(`❌ Erro ao salvar mensagem para ${dateKey}:`, error);
+    logger.error(`❌ Erro ao salvar mensagem para ${dateKey}:`, error);
     return false;
   }
 };

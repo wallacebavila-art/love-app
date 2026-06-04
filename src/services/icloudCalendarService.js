@@ -7,8 +7,99 @@
  * @module icloudCalendarService
  */
 
-const ICAL_URL = 'webcal://p53-caldav.icloud.com/published/2/MjEzNzMzMjM4NDIyMTM3M5EAdSTRxD1rffBLU84wLQGIjX5WKiOvBlRSnSfjgWZ-sN4vXdQ_gCoeoR_j7_xzsVmRLXKS25VrtuiAeMv7NeE';
-const CORS_PROXY = 'https://corsproxy.io/?';
+import { ICLOUD_CALENDAR_URL, CORS_PROXY_URL } from '../constants/appConfig';
+import { logger } from '../utils/logger';
+
+const ICAL_URL = ICLOUD_CALENDAR_URL;
+const CORS_PROXY = CORS_PROXY_URL;
+
+// IndexedDB configuration para cache de calendário
+const CALENDAR_DB_NAME = 'love-app-calendar';
+const CALENDAR_DB_VERSION = 1;
+const CALENDAR_STORE_NAME = 'calendar-cache';
+
+/**
+ * Abre o IndexedDB para cache de calendário
+ */
+const openCalendarDB = () => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(CALENDAR_DB_NAME, CALENDAR_DB_VERSION);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(CALENDAR_STORE_NAME)) {
+        db.createObjectStore(CALENDAR_STORE_NAME, { keyPath: 'key' });
+      }
+    };
+  });
+};
+
+/**
+ * Salva eventos no IndexedDB
+ */
+const saveCalendarCache = async (events) => {
+  try {
+    const db = await openCalendarDB();
+    const tx = db.transaction(CALENDAR_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(CALENDAR_STORE_NAME);
+
+    await store.put({
+      key: 'events',
+      data: events,
+      timestamp: Date.now()
+    });
+
+    await tx.done;
+    db.close();
+  } catch (error) {
+    logger.error('Erro ao salvar cache de calendário:', error);
+  }
+};
+
+/**
+ * Lê eventos do IndexedDB (função interna)
+ */
+const readCalendarCacheInternal = async () => {
+  try {
+    const db = await openCalendarDB();
+    const tx = db.transaction(CALENDAR_STORE_NAME, 'readonly');
+    const store = tx.objectStore(CALENDAR_STORE_NAME);
+    const result = await store.get('events');
+    await tx.done;
+    db.close();
+
+    if (result) {
+      // Verificar se o cache ainda é válido (24 horas)
+      const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
+      if (Date.now() - result.timestamp < CACHE_TTL) {
+        return result.data;
+      }
+    }
+    return null;
+  } catch (error) {
+    logger.error('Erro ao ler cache de calendário:', error);
+    return null;
+  }
+};
+
+/**
+ * Limpa o cache de calendário
+ */
+const clearCalendarCache = async () => {
+  try {
+    const db = await openCalendarDB();
+    const tx = db.transaction(CALENDAR_STORE_NAME, 'readwrite');
+    const store = tx.objectStore(CALENDAR_STORE_NAME);
+    await store.delete('events');
+    await tx.done;
+    db.close();
+  } catch (error) {
+    logger.error('Erro ao limpar cache de calendário:', error);
+  }
+};
 
 /**
  * Converte URL webcal para HTTPS com proxy CORS
@@ -229,50 +320,34 @@ const deserializeEventsFromCache = (events) =>
   }));
 
 /**
- * Lê eventos do cache do sessionStorage
+ * Lê eventos do cache do IndexedDB
  * 
  * @returns {Object|null} Objeto com eventos e data de atualização, ou null se cache inválido/expirado
  */
-export const readCalendarCache = () => {
+export const readCalendarCache = async () => {
   try {
-    const updatedAtStr = sessionStorage.getItem(CALENDAR_UPDATED_CACHE_KEY);
-    const eventsStr = sessionStorage.getItem(CALENDAR_EVENTS_CACHE_KEY);
-
-    if (!updatedAtStr || !eventsStr) return null;
-
-    const lastUpdated = new Date(updatedAtStr);
-    if (Number.isNaN(lastUpdated.getTime())) return null;
-
-    if (Date.now() - lastUpdated.getTime() > CALENDAR_CACHE_TTL_MS) {
-      return null;
+    const cached = await readCalendarCacheInternal();
+    if (cached) {
+      return {
+        events: cached,
+        lastUpdated: new Date()
+      };
     }
-
-    const parsed = JSON.parse(eventsStr);
-    if (!Array.isArray(parsed)) return null;
-
-    return {
-      events: deserializeEventsFromCache(parsed),
-      lastUpdated,
-    };
+    return null;
   } catch {
     return null;
   }
 };
 
 /**
- * Escreve eventos no cache do sessionStorage
+ * Escreve eventos no cache do IndexedDB
  * 
  * @param {Array} events - Lista de eventos para armazenar
  * @returns {Date} Data de atualização
  */
-export const writeCalendarCache = (events) => {
-  const lastUpdated = new Date();
-  sessionStorage.setItem(
-    CALENDAR_EVENTS_CACHE_KEY,
-    JSON.stringify(serializeEventsForCache(events))
-  );
-  sessionStorage.setItem(CALENDAR_UPDATED_CACHE_KEY, lastUpdated.toISOString());
-  return lastUpdated;
+export const writeCalendarCache = async (events) => {
+  await saveCalendarCache(events);
+  return new Date();
 };
 
 /**
@@ -297,7 +372,7 @@ export const fetchICloudCalendar = async () => {
     
     return events;
   } catch (error) {
-    console.error('Erro ao carregar calendário iCloud:', error);
+    logger.error('Erro ao carregar calendário iCloud:', error);
     return [];
   }
 };

@@ -2,13 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useCalendarEvents } from '../contexts/CalendarEventsContext';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useThemeStyles } from '../hooks/useThemeStyles';
+import { useTheme } from '../contexts/ThemeContext';
 
 const ICloudCalendarWidget = ({ isModal = false }) => {
   const { period } = useTimePeriod();
   const { events, isLoading, isRefreshing, lastUpdated, refresh } = useCalendarEvents();
   const { user } = useAuth();
-  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
+  const { getCardBackground, getBorderColor, getTextColor } = useTheme();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [showYearPicker, setShowYearPicker] = useState(false);
@@ -128,9 +128,10 @@ const ICloudCalendarWidget = ({ isModal = false }) => {
   // Scroll automático para a seção de eventos ao selecionar uma data
   useEffect(() => {
     if (selectedDate && eventsSectionRef.current && calendarContainerRef.current) {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         eventsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
+      return () => clearTimeout(timeout);
     }
   }, [selectedDate]);
 

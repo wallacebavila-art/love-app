@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useYouTubePlayer } from './useYouTubePlayer';
 import { useLocalAudioPlayer } from './useLocalAudioPlayer';
+import { MAX_YOUTUBE_TRACKS } from '../constants/appConfig';
 
 /**
  * Hook principal que coordena os players de música (YouTube e Local)
@@ -60,7 +61,11 @@ export const useMusicPlayer = () => {
 
   // Salvar volume
   useEffect(() => {
-    localStorage.setItem('musicVolume', volume.toString());
+    try {
+      localStorage.setItem('musicVolume', volume.toString());
+    } catch (error) {
+      console.error('Erro ao salvar volume no localStorage:', error);
+    }
   }, [volume]);
 
   // Alternar modo de música
@@ -81,31 +86,43 @@ export const useMusicPlayer = () => {
     }
 
     setMusicMode(newMode);
-    localStorage.setItem('musicMode', newMode);
+    try {
+      localStorage.setItem('musicMode', newMode);
+    } catch (error) {
+      console.error('Erro ao salvar modo de música no localStorage:', error);
+    }
     setIsPlaying(false);
 
     // Inicializar o novo modo
     if (newMode === 'youtube') {
       setIsYouTubeReady(true);
-      setTimeout(() => {
+      const timeout1 = setTimeout(() => {
         if (wasPlaying) {
           setIsPlaying(true); // Atualiza estado antes de tentar tocar
-          setTimeout(() => {
+          const timeout2 = setTimeout(() => {
             youtubePlayer.togglePlay();
           }, 500);
+          // Cleanup para timeout2
+          return () => clearTimeout(timeout2);
         }
       }, 1500);
+      // Cleanup para timeout1
+      return () => clearTimeout(timeout1);
     } else {
       localPlayer.loadSavedState();
       setIsLocalReady(true);
-      setTimeout(() => {
+      const timeout1 = setTimeout(() => {
         if (wasPlaying) {
           setIsPlaying(true); // Atualiza estado antes de tentar tocar
-          setTimeout(() => {
+          const timeout2 = setTimeout(() => {
             localPlayer.togglePlay();
           }, 100);
+          // Cleanup para timeout2
+          return () => clearTimeout(timeout2);
         }
       }, 100);
+      // Cleanup para timeout1
+      return () => clearTimeout(timeout1);
     }
   }, [musicMode, isPlaying, youtubePlayer, localPlayer]);
 
@@ -122,7 +139,7 @@ export const useMusicPlayer = () => {
     if (musicMode === 'youtube') {
       youtubePlayer.nextTrack();
       // Atualizar o índice selecionado
-      setYoutubeSelectedIndex(prev => (prev + 1) % 100); // Assumindo máximo de 100 músicas
+      setYoutubeSelectedIndex(prev => (prev + 1) % MAX_YOUTUBE_TRACKS);
     } else {
       localPlayer.nextTrack();
     }
@@ -132,7 +149,7 @@ export const useMusicPlayer = () => {
     if (musicMode === 'youtube') {
       youtubePlayer.prevTrack();
       // Atualizar o índice selecionado
-      setYoutubeSelectedIndex(prev => (prev - 1 + 100) % 100); // Assumindo máximo de 100 músicas
+      setYoutubeSelectedIndex(prev => (prev - 1 + MAX_YOUTUBE_TRACKS) % MAX_YOUTUBE_TRACKS);
     } else {
       localPlayer.prevTrack();
     }
@@ -158,7 +175,7 @@ export const useMusicPlayer = () => {
   const currentArtist = musicMode === 'youtube' ? youtubePlayer.currentArtist : localPlayer.currentArtist;
   const isShuffled = musicMode === 'youtube' ? false : localPlayer.isShuffled;
   const currentTrackIndex = musicMode === 'youtube' ? youtubeSelectedIndex : localPlayer.currentTrackIndex;
-  const totalTracks = musicMode === 'youtube' ? 0 : localPlayer.totalTracks;
+  const totalTracks = musicMode === 'youtube' ? youtubePlayer.totalTracks : localPlayer.totalTracks;
   const playlistData = musicMode === 'youtube' ? [] : localPlayer.playlist;
 
   return {

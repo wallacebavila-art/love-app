@@ -1,14 +1,21 @@
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBqe0OxrOdjIPY1pCaMwr8e3Kf-WcCDeGA';
+import { GOOGLE_MAPS_API_KEY } from '../constants/appConfig';
+
 const GOOGLE_MAPS_URL = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
 
 let isLoaded = false;
 let loadPromise = null;
+let hasFailed = false;
 
 /**
  * Carrega o script do Google Maps dinamicamente (lazy loading)
  * @returns {Promise<void>} Promise que resolve quando o script estiver carregado
  */
 export const loadGoogleMaps = () => {
+  // Se já falhou anteriormente, retorna erro imediatamente
+  if (hasFailed) {
+    return Promise.reject(new Error('Google Maps falhou anteriormente'));
+  }
+
   // Se já estiver carregado, retorna o promise existente
   if (isLoaded) {
     return Promise.resolve();
@@ -39,6 +46,7 @@ export const loadGoogleMaps = () => {
 
     script.onerror = () => {
       loadPromise = null;
+      hasFailed = true;
       reject(new Error('Falha ao carregar o Google Maps'));
     };
 
@@ -54,4 +62,12 @@ export const loadGoogleMaps = () => {
  */
 export const isGoogleMapsLoaded = () => {
   return isLoaded || (window.google && window.google.maps);
+};
+
+/**
+ * Verifica se o Google Maps falhou
+ * @returns {boolean} True se o Google Maps falhou
+ */
+export const hasGoogleMapsFailed = () => {
+  return hasFailed;
 };

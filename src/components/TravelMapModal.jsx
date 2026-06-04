@@ -1,16 +1,20 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { db } from '../services/firebaseConfig';
 import { collection, getDocs, addDoc, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import TravelMap from './TravelMap';
-import { useThemeStyles } from '../hooks/useThemeStyles';
-import { loadGoogleMaps } from '../utils/googleMapsLoader';
+import { useTheme } from '../contexts/ThemeContext';
+import { loadGoogleMaps, hasGoogleMapsFailed } from '../utils/googleMapsLoader';
+import { useToast } from './Toast';
 
 const TravelMapModal = ({ isOpen, onClose }) => {
-  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
+  const { getCardBackground, getBorderColor, getTextColor } = useTheme();
+  const { error, success } = useToast();
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mapsLoading, setMapsLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [googleMapsFailed, setGoogleMapsFailed] = useState(false);
   const [newPlace, setNewPlace] = useState({
     name: '',
     description: '',
@@ -98,6 +102,14 @@ const TravelMapModal = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
+      // Verificar se o Google Maps já falhou anteriormente
+      if (hasGoogleMapsFailed()) {
+        setGoogleMapsFailed(true);
+        setMapsLoading(false);
+        setLoading(false);
+        return;
+      }
+
       // Carregar Google Maps lazy loading
       setMapsLoading(true);
       loadGoogleMaps()
@@ -106,9 +118,11 @@ const TravelMapModal = ({ isOpen, onClose }) => {
           fetchPlaces();
         })
         .catch((error) => {
-          console.error('Erro ao carregar Google Maps:', error);
+          logger.error('Erro ao carregar Google Maps:', error);
+          setGoogleMapsFailed(true);
           setMapsLoading(false);
           setLoading(false);
+          error('Não foi possível carregar o Google Maps. Verifique sua conexão ou a API key.');
         });
     }
   }, [isOpen]);
@@ -125,7 +139,7 @@ const TravelMapModal = ({ isOpen, onClose }) => {
       }));
       setPlaces(placesData);
     } catch (error) {
-      console.error('Erro ao buscar lugares:', error);
+      logger.error('Erro ao buscar lugares:', error);
     } finally {
       setLoading(false);
     }
@@ -159,16 +173,16 @@ const TravelMapModal = ({ isOpen, onClose }) => {
   }, []);
 
   const handleSavePlace = async () => {
-    console.log('Tentando salvar lugar:', newPlace);
-    console.log('TempPosition:', tempPosition);
+    logger.log('Tentando salvar lugar:', newPlace);
+    logger.log('TempPosition:', tempPosition);
 
     if (!tempPosition) {
-      alert('Por favor, clique no mapa para selecionar a localização');
+      error('Por favor, clique no mapa para selecionar a localização');
       return;
     }
 
     if (!newPlace.name || newPlace.name.trim() === '') {
-      alert('Por favor, preencha o nome do lugar');
+      error('Por favor, preencha o nome do lugar');
       return;
     }
 
@@ -204,9 +218,10 @@ const TravelMapModal = ({ isOpen, onClose }) => {
       setShowAddForm(false);
       setEditingPlace(null);
       fetchPlaces();
+      success('Lugar salvo com sucesso!');
     } catch (error) {
-      console.error('Erro ao salvar lugar:', error);
-      alert('Erro ao salvar lugar');
+      logger.error('Erro ao salvar lugar:', error);
+      error('Erro ao salvar lugar');
     }
   };
 
@@ -218,14 +233,15 @@ const TravelMapModal = ({ isOpen, onClose }) => {
     try {
       await deleteDoc(doc(db, 'places', placeId));
       fetchPlaces();
+      success('Lugar deletado com sucesso!');
     } catch (error) {
-      console.error('Erro ao deletar lugar:', error);
-      alert('Erro ao deletar lugar');
+      logger.error('Erro ao deletar lugar:', error);
+      error('Erro ao deletar lugar');
     }
   };
 
   const handlePlaceClick = useCallback((place) => {
-    console.log('Place clicked:', place);
+    logger.log('Place clicked:', place);
     // Centralizar no lugar no mapa
     if (mapInstanceRef.current) {
       mapInstanceRef.current.panTo({ lat: place.lat, lng: place.lng });
@@ -246,6 +262,13 @@ const TravelMapModal = ({ isOpen, onClose }) => {
               <div className="absolute inset-0 flex items-center justify-center text-white/60">
                 <span className="material-symbols-outlined text-4xl mb-2 animate-pulse">map</span>
                 <p className="ml-2">Carregando mapa...</p>
+              </div>
+            ) : googleMapsFailed ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-white/60 p-8 text-center">
+                <span className="material-symbols-outlined text-6xl mb-4 text-red-400">error</span>
+                <h3 className="text-xl font-semibold mb-2">Google Maps não disponível</h3>
+                <p className="text-sm mb-4">Não foi possível carregar o Google Maps. Verifique sua conexão ou a API key.</p>
+                <p className="text-xs text-white/40">Fallback para OpenStreetMap será implementado em breve.</p>
               </div>
             ) : (
               <div className="absolute inset-0">

@@ -1,11 +1,10 @@
 // YouTube Data API Service
-const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || 'AIzaSyBqe0OxrOdjIPY1pCaMwr8e3Kf-WcCDeGA';
-const PLAYLIST_ID = 'PL7Z2KjbeQrjT0TQw0_3JZAFJF9hhwdVOQ';
+import { YOUTUBE_API_KEY, YOUTUBE_PLAYLIST_ID } from '../constants/appConfig';
 
 export const fetchYouTubePlaylist = async () => {
   try {
     const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=${PLAYLIST_ID}&key=${YOUTUBE_API_KEY}`
+      `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&maxResults=50&playlistId=${YOUTUBE_PLAYLIST_ID}&key=${YOUTUBE_API_KEY}`
     );
 
     if (!response.ok) {
@@ -58,9 +57,11 @@ export const fetchYouTubePlaylist = async () => {
 };
 
 export const setYouTubeApiKey = (apiKey) => {
-  // Em produção, isso deveria ser configurado via variável de ambiente
-  // Por enquanto, vamos armazenar no localStorage para facilitar
-  localStorage.setItem('youtubeApiKey', apiKey);
+  try {
+    localStorage.setItem('youtubeApiKey', apiKey);
+  } catch (error) {
+    console.error('Erro ao salvar API key no localStorage:', error);
+  }
 };
 
 export const getYouTubeApiKey = () => {

@@ -1,14 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { useAuth } from '../contexts/AuthContext';
-import { useThemeStyles } from '../hooks/useThemeStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import { db } from '../services/firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { fetchAllPhotos, uploadPhotoToStorage, savePhoto, deletePhoto, deletePhotoFromStorage } from '../services/photoService';
 import { exportAllData, importAllData, downloadBackup, readBackupFile } from '../services/backupService';
+import { useToast } from './Toast';
 
 const AdminModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
+  const { getCardBackground, getBorderColor, getTextColor } = useTheme();
+  const { warning, success, error } = useToast();
   const messagesEndRef = useRef(null);
   const [activeTab, setActiveTab] = useState('messages'); // 'messages', 'verses', 'photos', 'backup'
   
@@ -124,7 +127,7 @@ const AdminModal = ({ isOpen, onClose }) => {
       const photosSnapshot = await getDocs(collection(db, 'photos'));
       setPhotoCount(photosSnapshot.size);
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
+      logger.error('Erro ao buscar estatísticas:', error);
     }
   };
 
@@ -138,7 +141,7 @@ const AdminModal = ({ isOpen, onClose }) => {
       data.sort((a, b) => (a.date || a.id).localeCompare(b.date || b.id));
       setMessages(data);
     } catch (error) {
-      console.error('Erro ao buscar mensagens:', error);
+      logger.error('Erro ao buscar mensagens:', error);
     } finally {
       setLoading(false);
     }
@@ -154,7 +157,7 @@ const AdminModal = ({ isOpen, onClose }) => {
       data.sort((a, b) => (a.date || a.id).localeCompare(b.date || b.id));
       setVerses(data);
     } catch (error) {
-      console.error('Erro ao buscar versículos:', error);
+      logger.error('Erro ao buscar versículos:', error);
     } finally {
       setLoading(false);
     }
@@ -165,7 +168,7 @@ const AdminModal = ({ isOpen, onClose }) => {
       const photosData = await fetchAllPhotos();
       setPhotos(photosData);
     } catch (error) {
-      console.error('Erro ao buscar fotos:', error);
+      logger.error('Erro ao buscar fotos:', error);
     } finally {
       setLoading(false);
     }
@@ -173,16 +176,16 @@ const AdminModal = ({ isOpen, onClose }) => {
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
-    console.log('🚀 handleAddSubmit chamado, activeTab:', activeTab);
+    logger.log('🚀 handleAddSubmit chamado, activeTab:', activeTab);
     try {
       if (activeTab === 'photos') {
-        console.log('📷 Processando upload de fotos');
+        logger.log('📷 Processando upload de fotos');
         if (!formData.files || formData.files.length === 0) {
-          alert('Por favor, selecione pelo menos uma foto');
+          warning('Por favor, selecione pelo menos uma foto');
           return;
         }
 
-        console.log('📸 Arquivos selecionados:', formData.files.length);
+        logger.log('📸 Arquivos selecionados:', formData.files.length);
 
         const successfulUploads = [];
         const failedUploads = [];
@@ -190,7 +193,7 @@ const AdminModal = ({ isOpen, onClose }) => {
         // Processar cada arquivo
         for (let i = 0; i < formData.files.length; i++) {
           const file = formData.files[i];
-          console.log(`📸 Processando arquivo ${i + 1}/${formData.files.length}:`, file.name, 'Tamanho:', file.size);
+          logger.log(`📸 Processando arquivo ${i + 1}/${formData.files.length}:`, file.name, 'Tamanho:', file.size);
 
           try {
             // Upload para Firebase Storage
@@ -207,26 +210,26 @@ const AdminModal = ({ isOpen, onClose }) => {
               });
 
               if (photoId) {
-                console.log(`✅ Foto ${i + 1} salva com sucesso, ID:`, photoId);
+                logger.log(`✅ Foto ${i + 1} salva com sucesso, ID:`, photoId);
                 successfulUploads.push(file.name);
               } else {
-                console.log(`❌ Foto ${i + 1} falhou ao salvar metadados`);
+                logger.log(`❌ Foto ${i + 1} falhou ao salvar metadados`);
                 failedUploads.push(file.name);
               }
             } else {
-              console.log(`❌ Foto ${i + 1} falhou no upload para Storage`);
+              logger.log(`❌ Foto ${i + 1} falhou no upload para Storage`);
               failedUploads.push(file.name);
             }
           } catch (error) {
-            console.error(`❌ Erro ao processar foto ${i + 1} (${file.name}):`, error);
+            logger.error(`❌ Erro ao processar foto ${i + 1} (${file.name}):`, error);
             failedUploads.push(file.name);
           }
         }
 
         if (failedUploads.length > 0) {
-          alert(`${successfulUploads.length} foto(s) enviada(s) com sucesso!\n\nFalhas: ${failedUploads.length} foto(s)\n${failedUploads.join(', ')}`);
+          warning(`${successfulUploads.length} foto(s) enviada(s) com sucesso!\n\nFalhas: ${failedUploads.length} foto(s)\n${failedUploads.join(', ')}`);
         } else {
-          alert(`${successfulUploads.length} foto(s) enviada(s) com sucesso!`);
+          success(`${successfulUploads.length} foto(s) enviada(s) com sucesso!`);
         }
         resetForm();
         fetchStatistics();
@@ -254,8 +257,8 @@ const AdminModal = ({ isOpen, onClose }) => {
         else fetchVerses();
       }
     } catch (error) {
-      console.error('Erro ao adicionar item:', error);
-      alert('Erro ao adicionar item: ' + error.message);
+      logger.error('Erro ao adicionar item:', error);
+      error('Erro ao adicionar item: ' + error.message);
     }
   };
 
@@ -283,7 +286,7 @@ const AdminModal = ({ isOpen, onClose }) => {
       if (activeTab === 'messages') fetchMessages();
       else fetchVerses();
     } catch (error) {
-      console.error('Erro ao atualizar item:', error);
+      logger.error('Erro ao atualizar item:', error);
     }
   };
 
@@ -307,7 +310,7 @@ const AdminModal = ({ isOpen, onClose }) => {
           else fetchVerses();
         }
       } catch (error) {
-        console.error('Erro ao excluir item:', error);
+        logger.error('Erro ao excluir item:', error);
       }
     }
   };
@@ -321,7 +324,7 @@ const AdminModal = ({ isOpen, onClose }) => {
       downloadBackup(backupData);
       setBackupMessage('✅ Backup exportado com sucesso!');
     } catch (error) {
-      console.error('Erro ao exportar backup:', error);
+      logger.error('Erro ao exportar backup:', error);
       setBackupMessage('❌ Erro ao exportar backup: ' + error.message);
     } finally {
       setBackupLoading(false);
@@ -346,10 +349,10 @@ const AdminModal = ({ isOpen, onClose }) => {
         await fetchVerses();
         await fetchPhotos();
       } else {
-        setBackupMessage('⚠️ Backup importado com erros. Veja o console para detalhes.');
+        setBackupMessage('⚠️ Backup importado com erros. Veja o logger para detalhes.');
       }
     } catch (error) {
-      console.error('Erro ao importar backup:', error);
+      logger.error('Erro ao importar backup:', error);
       setBackupMessage('❌ Erro ao importar backup: ' + error.message);
     } finally {
       setRestoreLoading(false);

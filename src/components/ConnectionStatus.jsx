@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 /**
  * Componente de status de conexão
@@ -33,4 +33,4 @@ const ConnectionStatus = () => {
   );
 };
 
-export default ConnectionStatus;
+export default React.memo(ConnectionStatus);

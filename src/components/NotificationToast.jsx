@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { useThemeStyles } from '../hooks/useThemeStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { onForegroundMessage } from '../services/fcmService';
 import { getAllNotifications, clearNotifications, deleteOldNotifications } from '../utils/indexedDB';
@@ -22,7 +22,11 @@ export const NotificationProvider = ({ children }) => {
   // Atualizar timestamp quando mudar
   useEffect(() => {
     if (lastViewedTimestamp !== null) {
-      localStorage.setItem('lastViewedTimestamp', lastViewedTimestamp.toString());
+      try {
+        localStorage.setItem('lastViewedTimestamp', lastViewedTimestamp.toString());
+      } catch (error) {
+        console.error('Erro ao salvar lastViewedTimestamp no localStorage:', error);
+      }
     }
   }, [lastViewedTimestamp]);
 
@@ -114,7 +118,7 @@ export const useNotifications = () => {
 };
 
 const NotificationToast = () => {
-  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
+  const { getCardBackground, getBorderColor, getTextColor } = useTheme();
   const { user } = useAuth();
   const { notifications, setNotifications, lastViewedTimestamp, setLastViewedTimestamp } = useNotifications();
   const [visible, setVisible] = useState(false);

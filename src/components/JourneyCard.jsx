@@ -1,13 +1,15 @@
 ﻿import { calculateDaysTogether } from '../utils/dateUtils';
-import { useThemeStyles } from '../hooks/useThemeStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { fetchTimelineData, saveMilestones, saveCustomDays } from '../services/timelineService';
+import { useToast } from './Toast';
 
 const JourneyCard = () => {
   const daysTogether = calculateDaysTogether();
-  const { getCardBackground, getBorderColor, getTextColor, getAccentColor } = useThemeStyles();
+  const { getCardBackground, getBorderColor, getTextColor, getAccentColor } = useTheme();
   const { user } = useAuth();
+  const { warning } = useToast();
   const [showTimeline, setShowTimeline] = useState(false);
   const [showLoginAlert, setShowLoginAlert] = useState(false);
   // Sempre usar o cálculo atual, ignorar Firebase
@@ -144,11 +146,11 @@ const JourneyCard = () => {
 
   const handleSaveNewMilestone = () => {
     if (!newMilestone.title.trim()) {
-      alert('Por favor, preencha o título do marco');
+      warning('Por favor, preencha o título do marco');
       return;
     }
     if (!user) {
-      alert('Você precisa estar logado para salvar marcos na timeline');
+      warning('Você precisa estar logado para salvar marcos na timeline');
       setShowLoginAlert(true);
       return;
     }
@@ -166,7 +168,7 @@ const JourneyCard = () => {
 
   const handleDeleteMilestone = (index) => {
     if (!user) {
-      alert('Você precisa estar logado para excluir marcos da timeline');
+      warning('Você precisa estar logado para excluir marcos da timeline');
       setShowLoginAlert(true);
       return;
     }

@@ -1,7 +1,7 @@
 import { messaging } from './firebaseConfig';
 import { getToken, onMessage } from 'firebase/messaging';
-
-const VAPID_KEY = import.meta.env.VITE_FCM_VAPID_KEY || 'BJC0lA2yYsvDVi-ifUD3UojfrKaquVnQfAFC2jHXthIXUZBM3KEj396dV-dM5YAETyHpF4SZbmEFldM70s4i68o';
+import { FCM_VAPID_KEY } from '../constants/appConfig';
+import { logger } from '../utils/logger';
 
 /**
  * Solicita permissão para notificações e gera o token FCM
@@ -11,14 +11,14 @@ export const requestFCMToken = async () => {
   try {
     // Verificar se o navegador suporta notificações
     if (!('Notification' in window)) {
-      console.log('Este navegador não suporta notificações');
+      logger.log('Este navegador não suporta notificações');
       return null;
     }
 
     // Solicitar permissão
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      console.log('Permissão de notificação não concedida');
+      logger.log('Permissão de notificação não concedida');
       return null;
     }
 
@@ -32,31 +32,31 @@ export const requestFCMToken = async () => {
         updateViaCache: 'none'
       });
       await registration.update();
-      console.log('Service worker registrado e atualizado:', registration);
+      logger.log('Service worker registrado e atualizado:', registration);
     } catch (swError) {
-      console.warn('Não foi possível registrar o service worker do Firebase:', swError.message);
-      console.warn('FCM pode não funcionar em desenvolvimento local. Em produção, o VitePWA gerará o service worker automaticamente.');
+      logger.warn('Não foi possível registrar o service worker do Firebase:', swError.message);
+      logger.warn('FCM pode não funcionar em desenvolvimento local. Em produção, o VitePWA gerará o service worker automaticamente.');
       // Continuar sem service worker - FCM não funcionará em foreground
     }
 
     const token = await getToken(messaging, {
-      vapidKey: VAPID_KEY,
+      vapidKey: FCM_VAPID_KEY,
       serviceWorkerRegistration: registration
     });
 
     if (token) {
-      console.log('Token FCM gerado:', token);
+      logger.log('Token FCM gerado:', token);
       // Aqui você pode enviar o token para o seu servidor
       return token;
     } else {
-      console.log('Nenhum token de registro disponível');
+      logger.log('Nenhum token de registro disponível');
       return null;
     }
   } catch (error) {
-    console.error('Erro ao obter token FCM:', error);
+    logger.error('Erro ao obter token FCM:', error);
     if (error.code === 'messaging/token-subscribe-failed') {
-      console.warn('Erro de autenticação FCM: VAPID Key pode estar incorreta ou não configurada no Firebase Console');
-      console.warn('Para configurar: Firebase Console > Project Settings > Cloud Messaging > Web Push Certificates');
+      logger.warn('Erro de autenticação FCM: VAPID Key pode estar incorreta ou não configurada no Firebase Console');
+      logger.warn('Para configurar: Firebase Console > Project Settings > Cloud Messaging > Web Push Certificates');
     }
     return null;
   }
@@ -67,9 +67,9 @@ export const requestFCMToken = async () => {
  * @param {Function} callback - Função a ser chamada quando receber uma mensagem
  */
 export const onForegroundMessage = (callback) => {
-  console.log('Configurando listener de mensagens em foreground');
+  logger.log('Configurando listener de mensagens em foreground');
   return onMessage(messaging, (payload) => {
-    console.log('Mensagem recebida em foreground:', payload);
+    logger.log('Mensagem recebida em foreground:', payload);
     callback(payload);
   });
 };

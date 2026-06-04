@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
-import { useThemeStyles } from '../hooks/useThemeStyles';
+import { useTheme } from '../contexts/ThemeContext';
+import { logger } from '../utils/logger';
 
 const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
   const { user } = useAuth();
-  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
+  const { getCardBackground, getBorderColor, getTextColor } = useTheme();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const isAdmin = user && user.isAdmin;
@@ -27,7 +28,7 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
     const dateKey = formatDateKey(day, currentDate.getMonth(), currentDate.getFullYear());
     setSelectedDate(dateKey);
     
-    console.log('📅 Clicou no dia:', day, 'Data key:', dateKey);
+    logger.log('📅 Clicou no dia:', day, 'Data key:', dateKey);
     
     try {
       // Buscar mensagem
@@ -40,13 +41,13 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
       const verseSnapshot = await getDoc(verseDoc);
       const verse = verseSnapshot.exists() ? verseSnapshot.data() : null;
       
-      console.log('✅ Mensagem:', message);
-      console.log('✅ Versículo:', verse);
+      logger.log('✅ Mensagem:', message);
+      logger.log('✅ Versículo:', verse);
       
       onDateSelect(dateKey, message, verse);
       onClose();
     } catch (error) {
-      console.error('❌ Erro ao buscar dados:', error);
+      logger.error('❌ Erro ao buscar dados:', error);
       onDateSelect(dateKey, null, null);
       onClose();
     }
@@ -107,17 +108,18 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}></div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="calendar-modal-title">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true"></div>
       <div className={`relative ${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border-2 ${getBorderColor()} rounded-3xl p-6 max-w-md w-full shadow-2xl shadow-black/10`}>
         <button
           onClick={onClose}
           className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-all hover:scale-110"
+          aria-label="Fechar modal"
         >
           <span className="material-symbols-outlined text-white text-[20px]">close</span>
         </button>
 
-        <h2 className={`font-headline-lg text-[28px] ${getTextColor()} mb-4 text-center`}>Histórico de Mensagens</h2>
+        <h2 id="calendar-modal-title" className={`font-headline-lg text-[28px] ${getTextColor()} mb-4 text-center`}>Histórico de Mensagens</h2>
 
         <p className={`font-body-md text-[13px] text-white/70 text-center mb-4`}>
           Clique nos dias anteriores para ver o histórico de mensagens
@@ -128,6 +130,7 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
           <button
             onClick={previousMonth}
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
+            aria-label="Mês anterior"
           >
             <span className="material-symbols-outlined text-white/80">chevron_left</span>
           </button>
@@ -137,6 +140,7 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
           <button
             onClick={nextMonth}
             className="p-2 rounded-full hover:bg-white/20 transition-colors"
+            aria-label="Próximo mês"
           >
             <span className="material-symbols-outlined text-white/80">chevron_right</span>
           </button>

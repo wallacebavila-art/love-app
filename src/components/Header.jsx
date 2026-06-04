@@ -1,5 +1,5 @@
 import { getGreeting } from '../utils/dateUtils';
-import { useThemeStyles } from '../hooks/useThemeStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import { fetchWeather } from '../services/weatherService';
 import { useState, useEffect, useRef } from 'react';
 import SideMenu from './SideMenu';
@@ -12,7 +12,7 @@ import TravelMapModal from './TravelMapModal';
 import raissaAvatar from '../assets/raissa-avatar.png';
 import wallaceAvatar from '../assets/wallace-avatar.png';
 const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, onOpenICloudCalendar, onOpenTravelMap, onOpenMusicPlayer, isPlaying, onToggleMusic, onNextTrack, onPrevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, onVolumeChange, currentTrack, currentArtist, onToggleInterfaceHidden }) => {
-  const { getIconColor, getTextColor } = useThemeStyles();
+  const { getIconColor, getTextColor } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
   const greeting = getGreeting();
@@ -71,7 +71,11 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
     // Carregar preferência do localStorage
     const saved = localStorage.getItem('useLoveName');
     if (saved) {
-      setUseLoveName(JSON.parse(saved));
+      try {
+        setUseLoveName(JSON.parse(saved));
+      } catch (error) {
+        console.error('Erro ao fazer parse de useLoveName:', error);
+      }
     }
 
     // Ouvir evento de toggle
@@ -86,7 +90,11 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
   const toggleLoveName = () => {
     const newValue = !useLoveName;
     setUseLoveName(newValue);
-    localStorage.setItem('useLoveName', JSON.stringify(newValue));
+    try {
+      localStorage.setItem('useLoveName', JSON.stringify(newValue));
+    } catch (error) {
+      console.error('Erro ao salvar useLoveName no localStorage:', error);
+    }
     window.dispatchEvent(new CustomEvent('loveNameToggled', { detail: newValue }));
   };
 
@@ -111,7 +119,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
   };
 
   const getIcon = () => {
-    const { period } = useThemeStyles();
+    const { period } = useTheme();
     switch (period) {
       case 'morning':
         return 'light_mode';
@@ -302,15 +310,6 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
             <span className="text-white text-xs font-medium">Clima</span>
           </button>
           <button
-            onClick={() => setIsTravelMapOpen(true)}
-            className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2"
-            title="Mapa de Viagens"
-            aria-label="Abrir mapa de viagens"
-          >
-            <span className="material-symbols-outlined text-white transition-transform duration-300">map</span>
-            <span className="text-white text-xs font-medium">Mapa</span>
-          </button>
-          <button
             onClick={() => {
               if (user) {
                 setIsNotificationModalOpen(true);
@@ -320,13 +319,13 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
               }
             }}
             className="flex flex-col items-center gap-1 hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 rounded-lg px-3 py-2 relative"
-            title="Notificações"
-            aria-label="Abrir notificações"
+            title="Mensagens"
+            aria-label="Abrir mensagens"
           >
             <span className="material-symbols-outlined text-white transition-transform duration-300">notifications</span>
-            <span className="text-white text-xs font-medium">Notificações</span>
+            <span className="text-white text-xs font-medium">Mensagens</span>
             {getUnreadCount() > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold" aria-label={`${getUnreadCount()} notificações não lidas`}>
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold" aria-label={`${getUnreadCount()} mensagens não lidas`}>
                 {getUnreadCount()}
               </span>
             )}
@@ -366,12 +365,12 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
               }
             }}
             className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 relative"
-            title="Notificações"
-            aria-label="Abrir notificações"
+            title="Mensagens"
+            aria-label="Abrir mensagens"
           >
             <span className="material-symbols-outlined text-white transition-transform duration-300 text-[24px]">notifications</span>
             {getUnreadCount() > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold" aria-label={`${getUnreadCount()} notificações não lidas`}>
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold" aria-label={`${getUnreadCount()} mensagens não lidas`}>
                 {getUnreadCount()}
               </span>
             )}

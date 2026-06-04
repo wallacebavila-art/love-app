@@ -1,0 +1,89 @@
+{
+  "app": {
+    "title": "Love App",
+    "loading": "Loading...",
+    "error": "Error"
+  },
+  "header": {
+    "title": "Our Journey",
+    "settings": "Settings",
+    "admin": "Admin"
+  },
+  "cards": {
+    "message": {
+      "title": "Daily Message",
+      "loading": "Loading message...",
+      "noMessage": "No message today"
+    },
+    "verse": {
+      "title": "Daily Verse",
+      "loading": "Loading verse...",
+      "noVerse": "No verse today"
+    },
+    "gallery": {
+      "title": "Photo Gallery",
+      "noPhotos": "No photos yet",
+      "addPhotos": "Add photos in the admin panel"
+    },
+    "journey": {
+      "title": "Our Journey",
+      "daysTogether": "days together"
+    },
+    "calendar": {
+      "title": "Calendar",
+      "noEvents": "No events"
+    },
+    "weather": {
+      "title": "Weather",
+      "loading": "Loading weather..."
+    }
+  },
+  "modals": {
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter"
+  },
+  "music": {
+    "title": "Music Player",
+    "play": "Play",
+    "pause": "Pause",
+    "next": "Next",
+    "previous": "Previous",
+    "shuffle": "Shuffle",
+    "repeat": "Repeat",
+    "volume": "Volume",
+    "youtube": "YouTube",
+    "local": "Local"
+  },
+  "travel": {
+    "title": "Travel Map",
+    "addPlace": "Add Place",
+    "places": "Places",
+    "noPlaces": "No places saved"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "photos": "Photos",
+    "settings": "Settings",
+    "users": "Users"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "loginRequired": "Login required",
+    "loginMessage": "Please login to access this feature"
+  },
+  "errors": {
+    "generic": "An error occurred. Please try again.",
+    "network": "Connection error. Check your internet.",
+    "auth": "Authentication error.",
+    "permission": "You don't have permission to access this feature."
+  }
+}

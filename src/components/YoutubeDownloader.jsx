@@ -21,18 +21,20 @@
  */
 
 import { useState } from 'react';
-import { useThemeStyles } from '../hooks/useThemeStyles';
+import { useTheme } from '../contexts/ThemeContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-const YoutubeDownloader = ({ onClose, onMusicDownloaded }) => {
-  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
+const YoutubeDownloader = ({ isOpen, onClose, onMusicDownloaded }) => {
+  const { getCardBackground, getBorderColor, getTextColor } = useTheme();
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [status, setStatus] = useState('idle'); // 'idle' | 'downloading' | 'converting' | 'success' | 'error'
   const [message, setMessage] = useState('');
   const [progress, setProgress] = useState(0);
+
+  if (!isOpen) return null;
 
   const handleDownload = async () => {
     if (!url.trim()) {

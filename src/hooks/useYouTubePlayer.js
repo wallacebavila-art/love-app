@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-
-const PLAYLIST_ID = 'PL7Z2KjbeQrjT0TQw0_3JZAFJF9hhwdVOQ';
+import { YOUTUBE_API_KEY, YOUTUBE_PLAYLIST_ID, YOUTUBE_TRACK_UPDATE_DELAY_1, YOUTUBE_TRACK_UPDATE_DELAY_2 } from '../constants/appConfig';
 
 let youtubeApiLoaded = false;
 const apiReadyCallbacks = [];
@@ -59,6 +58,7 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
   const [currentTrack, setCurrentTrack] = useState('');
   const [currentArtist, setCurrentArtist] = useState('');
   const [isReady, setIsReady] = useState(false);
+  const [totalTracks, setTotalTracks] = useState(0);
   
   const playerRef = useRef(null);
   const playerReadyRef = useRef(false);
@@ -107,7 +107,7 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
         width: '1',
         playerVars: {
           listType: 'playlist',
-          list: PLAYLIST_ID,
+          list: YOUTUBE_PLAYLIST_ID,
           autoplay: autoPlay ? 1 : 0,
           loop: 1,
           controls: 1,
@@ -122,6 +122,13 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
             setIsReady(true);
             playerRef.current.setVolume(volume);
             updateTrackInfo();
+            
+            // Obter número total de vídeos na playlist
+            if (playerRef.current.getPlaylist && playerRef.current.getPlaylist()) {
+              const playlist = playerRef.current.getPlaylist();
+              setTotalTracks(playlist.length || 0);
+            }
+            
             if (autoPlay) {
               onPlayingChange?.(true);
             }
@@ -133,6 +140,9 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
               updateTrackInfo();
             } else if (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED) {
               onPlayingChange?.(false);
+            } else if (event.data === window.YT.PlayerState.CUED) {
+              // Quando o vídeo é carregado, atualizar info
+              updateTrackInfo();
             }
           },
           onError: (e) => {
@@ -167,28 +177,24 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
   const nextTrack = useCallback(() => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.nextVideo();
-      setTimeout(updateTrackInfo, 1000);
-      setTimeout(updateTrackInfo, 2000);
+      // A atualização de info será feita via onStateChange
     }
-  }, [updateTrackInfo]);
+  }, []);
 
   const prevTrack = useCallback(() => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.previousVideo();
-      setTimeout(updateTrackInfo, 1000);
-      setTimeout(updateTrackInfo, 2000);
+      // A atualização de info será feita via onStateChange
     }
-  }, [updateTrackInfo]);
+  }, []);
 
   const selectTrack = useCallback((index) => {
     if (playerRef.current && playerReadyRef.current) {
       playerRef.current.playVideoAt(index);
-      setTimeout(updateTrackInfo, 1000);
-      setTimeout(updateTrackInfo, 2000);
-      // Atualizar estado de playing para true
+      // A atualização de info será feita via onStateChange
       onPlayingChange?.(true);
     }
-  }, [updateTrackInfo, onPlayingChange]);
+  }, [onPlayingChange]);
 
   const cleanup = useCallback(() => {
     if (trackIntervalRef.current) {
@@ -219,6 +225,7 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
     nextTrack,
     prevTrack,
     selectTrack,
-    cleanup
+    cleanup,
+    totalTracks
   };
 };

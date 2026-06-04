@@ -5,6 +5,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 // https://vite.dev/config/
 export default defineConfig({
   base: '/love-app/',
+  server: {
+    hmr: {
+      overlay: false
+    }
+  },
   plugins: [
     react(),
     VitePWA({

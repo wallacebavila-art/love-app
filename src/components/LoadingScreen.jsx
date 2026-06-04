@@ -1,3 +1,5 @@
+import React from 'react';
+
 /**
  * Componente de tela de carregamento com animação de livro abrindo
  * 
@@ -62,4 +64,4 @@ const LoadingScreen = ({ bookOpenStage }) => {
   );
 };
 
-export default LoadingScreen;
+export default React.memo(LoadingScreen);

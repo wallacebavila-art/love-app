@@ -4,27 +4,35 @@ import StatusBarSpacer from './components/StatusBarSpacer';
 import Header from './components/Header';
 import BottomPlayerBar from './components/BottomPlayerBar';
 import NotificationToast, { NotificationProvider } from './components/NotificationToast';
+import ToastProvider from './components/Toast';
 import Login from './components/Login';
 import RaissaLogin from './components/RaissaLogin';
 import { useMusicPlayer } from './hooks/useMusicPlayer';
-import { NotificationModalProvider } from './contexts/NotificationModalContext';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import UpcomingEventsTicker from './components/UpcomingEventsTicker';
 import ProtectedRoute from './components/ProtectedRoute';
 import { TimePeriodProvider, useTimePeriod } from './contexts/TimePeriodContext';
 import { CalendarEventsProvider } from './contexts/CalendarEventsContext';
+import { logger } from './utils/logger';
 import { AuthProvider } from './contexts/AuthContext';
+import { ModalProvider } from './contexts/ModalContext';
 import { LoginModalProvider, useLoginModal } from './contexts/LoginModalContext';
+import { NotificationModalProvider } from './contexts/NotificationModalContext';
 import { DarkModeProvider } from './contexts/DarkModeContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { fetchDailyMessage } from './services/messageService';
 import { fetchDailyVerse } from './services/verseService';
 import { fetchWeather } from './services/weatherService';
 import { requestNotificationPermission, scheduleDailyNotification, sendDailyMessageNotification, cancelDailyNotification } from './services/notificationService';
 import { requestFCMToken, onForegroundMessage, showNotification } from './services/fcmService';
 import { saveFCMToken } from './services/fcmTokenService';
+// import { initAnalytics, trackPageView } from './services/analyticsService'; // Temporariamente desabilitado devido a problemas com dependências do Sentry
+import './i18n/i18n';
 import LoadingScreen from './components/LoadingScreen';
 import MainContent from './components/MainContent';
 import ModalsContainer from './components/ModalsContainer';
 import ConnectionStatus from './components/ConnectionStatus';
+import ErrorBoundary from './components/ErrorBoundary';
 import { getThemeClasses, getSelectionClasses } from './utils/themeUtils';
 
 function AppContent() {
@@ -72,6 +80,44 @@ function AppContent() {
     loadWeather();
   }, []);
 
+  // Inicializar analytics
+  useEffect(() => {
+    // initAnalytics(); // Temporariamente desabilitado devido a problemas com dependências do Sentry
+  }, []);
+
+  // Rastrear page views
+  useEffect(() => {
+    // trackPageView(location.pathname); // Temporariamente desabilitado devido a problemas com dependências do Sentry
+  }, [location.pathname]);
+
+  // Atalhos de teclado globais
+  useKeyboardShortcuts({
+    music: {
+      toggle: toggleMusic,
+      next: nextTrack,
+      previous: prevTrack
+    },
+    calendar: {
+      toggle: () => setIsCalendarOpen(prev => !prev)
+    },
+    settings: {
+      toggle: () => setIsSettingsModalOpen(prev => !prev)
+    },
+    admin: {
+      toggle: () => setIsAdminModalOpen(prev => !prev)
+    },
+    travel: {
+      toggle: () => setIsTravelMapModalOpen(prev => !prev)
+    },
+    close: () => {
+      setIsCalendarOpen(false);
+      setIsSettingsModalOpen(false);
+      setIsAdminModalOpen(false);
+      setIsTravelMapModalOpen(false);
+      setIsMusicPlayerModalOpen(false);
+    }
+  });
+
   // Abrir modal de admin quando rota for /admin
   useEffect(() => {
     if (location.pathname === '/admin') {
@@ -83,13 +129,21 @@ function AppContent() {
     // Carregar preferência de interface escondida
     const savedInterfaceHidden = localStorage.getItem('interfaceHidden');
     if (savedInterfaceHidden) {
-      setIsInterfaceHidden(JSON.parse(savedInterfaceHidden));
+      try {
+        setIsInterfaceHidden(JSON.parse(savedInterfaceHidden));
+      } catch (error) {
+        logger.error('Erro ao fazer parse de interfaceHidden:', error);
+      }
     }
   }, []);
 
   useEffect(() => {
     // Salvar preferência de interface escondida
-    localStorage.setItem('interfaceHidden', JSON.stringify(isInterfaceHidden));
+    try {
+      localStorage.setItem('interfaceHidden', JSON.stringify(isInterfaceHidden));
+    } catch (error) {
+      logger.error('Erro ao salvar interfaceHidden no localStorage:', error);
+    }
   }, [isInterfaceHidden]);
 
   useEffect(() => {
@@ -99,7 +153,7 @@ function AppContent() {
     // Solicita token FCM e salva no Firestore
     requestFCMToken().then(token => {
       if (token) {
-        console.log('Token FCM obtido com sucesso:', token);
+        logger.log('Token FCM obtido com sucesso:', token);
         // Salva o token no Firestore para envio de notificações
         saveFCMToken(token);
       }
@@ -124,7 +178,7 @@ function AppContent() {
         const message = await fetchDailyMessage();
         setDailyMessage(message);
       } catch (error) {
-        console.error('Erro ao carregar mensagem:', error);
+        logger.error('Erro ao carregar mensagem:', error);
         setDailyMessage('Pensando...');
       }
     };
@@ -138,7 +192,7 @@ function AppContent() {
         const verse = await fetchDailyVerse();
         setDailyVerse(verse);
       } catch (error) {
-        console.error('Erro ao carregar versículo:', error);
+        logger.error('Erro ao carregar versículo:', error);
         setDailyVerse({ text: 'Pensando...', reference: '' });
       }
     };
@@ -148,6 +202,7 @@ function AppContent() {
 
   useEffect(() => {
     let timer = null;
+    let innerTimer = null;
     
     const checkLoadingComplete = () => {
       if (dailyMessage && dailyVerse) {
@@ -155,7 +210,7 @@ function AppContent() {
           // Iniciar animação de abertura do livro
           setBookOpenStage('opening');
           // Após a animação de abertura, remover loading
-          setTimeout(() => {
+          innerTimer = setTimeout(() => {
             setBookOpenStage('open');
             setIsLoading(false);
           }, 1200);
@@ -167,24 +222,25 @@ function AppContent() {
 
     return () => {
       if (timer) clearTimeout(timer);
+      if (innerTimer) clearTimeout(innerTimer);
     };
   }, [dailyMessage, dailyVerse]);
 
 
 
   const handleDateSelect = (dateKey, message, verse) => {
-    console.log('📅 Data selecionada:', dateKey, 'Mensagem:', message, 'Versículo:', verse);
+    logger.log('📅 Data selecionada:', dateKey, 'Mensagem:', message, 'Versículo:', verse);
     setSelectedDate(dateKey);
     if (message) {
       setDailyMessage(message);
     } else {
-      console.log('⚠️ Nenhuma mensagem para esta data');
+      logger.log('⚠️ Nenhuma mensagem para esta data');
       setDailyMessage('Pensando...');
     }
     if (verse) {
       setDailyVerse(verse);
     } else {
-      console.log('⚠️ Nenhum versículo para esta data');
+      logger.log('⚠️ Nenhum versículo para esta data');
       setDailyVerse({ text: 'Pensando...', reference: '' });
     }
   };
@@ -317,42 +373,44 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <LoginModalProvider>
-          <DarkModeProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/raissa-login" element={<RaissaLogin />} />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute>
-                    <TimePeriodProvider>
-                      <CalendarEventsProvider>
-                        <NotificationProvider>
-                          <AppContent />
-                        </NotificationProvider>
-                      </CalendarEventsProvider>
-                    </TimePeriodProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="*"
-                element={
-                  <TimePeriodProvider>
+        <ModalProvider>
+          <LoginModalProvider>
+            <NotificationModalProvider>
+              <DarkModeProvider>
+                <TimePeriodProvider>
+                  <ThemeProvider>
                     <CalendarEventsProvider>
                       <NotificationProvider>
-                        <NotificationModalProvider>
-                          <AppContent />
-                        </NotificationModalProvider>
-                    </NotificationProvider>
-                  </CalendarEventsProvider>
+                        <ToastProvider>
+                          <ErrorBoundary>
+                            <Routes>
+                              <Route path="/login" element={<Login />} />
+                              <Route path="/raissa-login" element={<RaissaLogin />} />
+                              <Route
+                                path="/admin"
+                                element={
+                                  <ProtectedRoute>
+                                    <AppContent />
+                                  </ProtectedRoute>
+                                }
+                              />
+                              <Route
+                                path="*"
+                                element={
+                                  <AppContent />
+                                }
+                              />
+                            </Routes>
+                          </ErrorBoundary>
+                        </ToastProvider>
+                      </NotificationProvider>
+                    </CalendarEventsProvider>
+                  </ThemeProvider>
                 </TimePeriodProvider>
-                }
-              />
-            </Routes>
-          </DarkModeProvider>
-        </LoginModalProvider>
+              </DarkModeProvider>
+            </NotificationModalProvider>
+          </LoginModalProvider>
+        </ModalProvider>
       </AuthProvider>
     </Router>
   );

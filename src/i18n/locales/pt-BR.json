@@ -1,0 +1,89 @@
+{
+  "app": {
+    "title": "Love App",
+    "loading": "Carregando...",
+    "error": "Erro"
+  },
+  "header": {
+    "title": "Nossa Jornada",
+    "settings": "Configurações",
+    "admin": "Admin"
+  },
+  "cards": {
+    "message": {
+      "title": "Mensagem do Dia",
+      "loading": "Carregando mensagem...",
+      "noMessage": "Nenhuma mensagem hoje"
+    },
+    "verse": {
+      "title": "Versículo do Dia",
+      "loading": "Carregando versículo...",
+      "noVerse": "Nenhum versículo hoje"
+    },
+    "gallery": {
+      "title": "Galeria de Fotos",
+      "noPhotos": "Nenhuma foto ainda",
+      "addPhotos": "Adicione fotos no painel administrativo"
+    },
+    "journey": {
+      "title": "Nossa Jornada",
+      "daysTogether": "dias juntos"
+    },
+    "calendar": {
+      "title": "Calendário",
+      "noEvents": "Nenhum evento"
+    },
+    "weather": {
+      "title": "Clima",
+      "loading": "Carregando clima..."
+    }
+  },
+  "modals": {
+    "close": "Fechar",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "add": "Adicionar",
+    "search": "Buscar",
+    "filter": "Filtrar"
+  },
+  "music": {
+    "title": "Player de Música",
+    "play": "Reproduzir",
+    "pause": "Pausar",
+    "next": "Próxima",
+    "previous": "Anterior",
+    "shuffle": "Aleatório",
+    "repeat": "Repetir",
+    "volume": "Volume",
+    "youtube": "YouTube",
+    "local": "Local"
+  },
+  "travel": {
+    "title": "Mapa de Viagens",
+    "addPlace": "Adicionar Local",
+    "places": "Lugares",
+    "noPlaces": "Nenhum lugar salvo"
+  },
+  "admin": {
+    "title": "Painel Administrativo",
+    "photos": "Fotos",
+    "settings": "Configurações",
+    "users": "Usuários"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "email": "E-mail",
+    "password": "Senha",
+    "loginRequired": "Login necessário",
+    "loginMessage": "Faça login para acessar esta funcionalidade"
+  },
+  "errors": {
+    "generic": "Ocorreu um erro. Tente novamente.",
+    "network": "Erro de conexão. Verifique sua internet.",
+    "auth": "Erro de autenticação.",
+    "permission": "Você não tem permissão para acessar esta funcionalidade."
+  }
+}

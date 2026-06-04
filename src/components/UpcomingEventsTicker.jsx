@@ -1,4 +1,4 @@
-import { Fragment, useMemo } from 'react';
+import React, { Fragment, useMemo } from 'react';
 import { useTimePeriod } from '../contexts/TimePeriodContext';
 import { useCalendarEvents } from '../contexts/CalendarEventsContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,7 +7,7 @@ import {
   getUpcomingEvents,
 } from '../services/icloudCalendarService';
 
-const TickerSegment = ({ items, textColor, duplicate = false }) => (
+const TickerSegment = React.memo(({ items, textColor, duplicate = false }) => (
   <div
     className="events-ticker__segment"
     aria-hidden={duplicate || undefined}
@@ -21,7 +21,7 @@ const TickerSegment = ({ items, textColor, duplicate = false }) => (
       </Fragment>
     ))}
   </div>
-);
+));
 
 const UpcomingEventsTicker = () => {
   const { period } = useTimePeriod();
@@ -98,4 +98,4 @@ const UpcomingEventsTicker = () => {
   );
 };
 
-export default UpcomingEventsTicker;
+export default React.memo(UpcomingEventsTicker);

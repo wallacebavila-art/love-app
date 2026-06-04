@@ -2,6 +2,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import { validateEnv } from './config/envValidation'
+
+// Validar environment variables antes de iniciar o app
+validateEnv()
 
 // Register Service Worker for PWA
 if ('serviceWorker' in window) {

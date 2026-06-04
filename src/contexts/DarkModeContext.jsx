@@ -20,12 +20,20 @@ export const DarkModeProvider = ({ children }) => {
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
-    localStorage.setItem('darkMode', newMode.toString());
+    try {
+      localStorage.setItem('darkMode', newMode.toString());
+    } catch (error) {
+      console.error('Erro ao salvar darkMode no localStorage:', error);
+    }
   };
 
   const enableExplicitMode = () => {
     setIsExplicitMode(true);
-    localStorage.setItem('explicitDarkMode', 'true');
+    try {
+      localStorage.setItem('explicitDarkMode', 'true');
+    } catch (error) {
+      console.error('Erro ao salvar explicitDarkMode no localStorage:', error);
+    }
   };
 
   const disableExplicitMode = () => {

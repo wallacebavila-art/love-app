@@ -1,20 +1,9 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { auth } from '../services/firebaseConfig';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { createUserWithPermissions } from '../services/roleService';
 
 const AuthContext = createContext(null);
-
-// Credenciais do administrador
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'wallace@para-raissa.firebaseapp.com';
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || '123456';
-
-// Credenciais da Raíssa
-const RAISSA_EMAIL = import.meta.env.VITE_RAISSA_EMAIL || 'raissa@para-raissa.firebaseapp.com';
-const RAISSA_PASSWORD = import.meta.env.VITE_RAISSA_PASSWORD || 'wallaceteamo';
-
-// Forçar valores corretos caso o env não funcione
-const FORCED_ADMIN_EMAIL = 'wallace@para-raissa.firebaseapp.com';
-const FORCED_RAISSA_EMAIL = 'raissa@para-raissa.firebaseapp.com';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -23,17 +12,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        // Determinar tipo de usuário baseado no email
-        const isAdmin = firebaseUser.email === FORCED_ADMIN_EMAIL;
-        const isRaissa = firebaseUser.email === FORCED_RAISSA_EMAIL;
-
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          isAdmin,
-          isRaissa,
-          userType: isAdmin ? 'admin' : (isRaissa ? 'raissa' : 'user')
-        });
+        const userData = createUserWithPermissions(firebaseUser);
+        setUser(userData);
       } else {
         setUser(null);
       }
@@ -48,19 +28,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
-
-      // Determinar tipo de usuário baseado no email
-      const isAdmin = firebaseUser.email === FORCED_ADMIN_EMAIL;
-      const isRaissa = firebaseUser.email === FORCED_RAISSA_EMAIL;
-
-      const userData = {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email,
-        isAdmin,
-        isRaissa,
-        userType: isAdmin ? 'admin' : (isRaissa ? 'raissa' : 'user')
-      };
-
+      const userData = createUserWithPermissions(firebaseUser);
       setUser(userData);
       return userData;
     } catch (error) {

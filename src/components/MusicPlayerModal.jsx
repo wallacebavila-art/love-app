@@ -44,20 +44,6 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
           </button>
         </div>
 
-        {/* Informações da Música */}
-        <div className="bg-white/5 rounded-2xl p-4 mb-5 text-center">
-          {currentTrack ? (
-            <>
-              <p className="text-white font-semibold text-lg truncate">{currentTrack}</p>
-              {currentArtist && (
-                <p className="text-white/60 text-sm mt-1 truncate">{currentArtist}</p>
-              )}
-            </>
-          ) : (
-            <p className="text-white/40 text-sm">Nenhuma música tocando</p>
-          )}
-        </div>
-
         {/* Controles Principais */}
         <div className="flex items-center justify-center gap-4 mb-5">
           <button

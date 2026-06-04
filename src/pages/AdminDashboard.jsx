@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/firebaseConfig';
@@ -30,7 +30,7 @@ const AdminDashboard = () => {
       });
       setVerses(versesData);
     } catch (error) {
-      console.error('Erro ao buscar versículos:', error);
+      logger.error('Erro ao buscar versículos:', error);
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,7 @@ const AdminDashboard = () => {
       await logout();
       navigate('/login');
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
+      logger.error('Erro ao fazer logout:', error);
     }
   };
 
@@ -61,7 +61,7 @@ const AdminDashboard = () => {
       setShowAddForm(false);
       fetchVerses();
     } catch (error) {
-      console.error('Erro ao adicionar versículo:', error);
+      logger.error('Erro ao adicionar versículo:', error);
     }
   };
 
@@ -77,7 +77,7 @@ const AdminDashboard = () => {
       setFormData({ id_dia: '', versiculo_texto: '', versiculo_ref: '' });
       fetchVerses();
     } catch (error) {
-      console.error('Erro ao atualizar versículo:', error);
+      logger.error('Erro ao atualizar versículo:', error);
     }
   };
 
@@ -87,7 +87,7 @@ const AdminDashboard = () => {
         await deleteDoc(doc(db, 'mensagens', id));
         fetchVerses();
       } catch (error) {
-        console.error('Erro ao excluir versículo:', error);
+        logger.error('Erro ao excluir versículo:', error);
       }
     }
   };

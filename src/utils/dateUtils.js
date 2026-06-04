@@ -1,3 +1,5 @@
+import { RELATIONSHIP_START_DATE } from '../constants/appConfig';
+
 /**
  * Formata a data atual em português
  * @returns {string} Data formatada (ex: "Segunda-feira, 24 de Maio de 2024")
@@ -17,10 +19,10 @@ export const formatDateInPortuguese = () => {
 /**
  * Calcula a diferença de dias entre hoje e uma data inicial
  * O dia inicial conta como dia 1
- * @param {string} startDate - Data inicial no formato YYYY-MM-DD (padrão: "2026-01-12")
+ * @param {string} startDate - Data inicial no formato YYYY-MM-DD (padrão: usa RELATIONSHIP_START_DATE)
  * @returns {number} Número de dias desde a data inicial (dia inicial = dia 1)
  */
-export const calculateDaysTogether = (startDate = "2026-01-12") => {
+export const calculateDaysTogether = (startDate = RELATIONSHIP_START_DATE) => {
   // Parse da data inicial usando hora local
   const startParts = startDate.split('-');
   const start = new Date(

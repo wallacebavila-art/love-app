@@ -2,9 +2,10 @@ import { useNotifications } from './NotificationToast';
 import { useState, useEffect, useRef } from 'react';
 import { sendRealtimeNotification } from '../services/realtimeNotifications';
 import { uploadAudioToStorage } from '../services/photoService';
-import { useThemeStyles } from '../hooks/useThemeStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotificationModal } from '../contexts/NotificationModalContext';
+import { useToast } from './Toast';
 import raissaAvatar from '../assets/raissa-avatar.png';
 import wallaceAvatar from '../assets/wallace-avatar.png';
 import AudioPlayer from './AudioPlayer';
@@ -39,9 +40,10 @@ const EMOJI_CATEGORIES = [
 
 const NotificationModal = ({ isOpen, onClose }) => {
   const { notifications } = useNotifications();
-  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
+  const { getCardBackground, getBorderColor, getTextColor } = useTheme();
   const { user } = useAuth();
   const { setIsNotificationModalOpen } = useNotificationModal();
+  const { warning, error } = useToast();
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -105,7 +107,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
     
     // Validar comprimento mínimo
     if (sanitizedReplyText.length > 0 && sanitizedReplyText.length < 2) {
-      alert('A mensagem deve ter pelo menos 2 caracteres');
+      warning('A mensagem deve ter pelo menos 2 caracteres');
       return;
     }
 
@@ -121,7 +123,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
         console.log('🎤 Tentando fazer upload do áudio:', fileName, 'Tipo:', recordedAudioMimeType);
         audioUrl = await uploadAudioToStorage(recordedAudioBlob, fileName);
         if (!audioUrl) {
-          alert('Erro ao fazer upload do áudio');
+          error('Erro ao fazer upload do áudio');
           setSending(false);
           return;
         }
@@ -133,11 +135,11 @@ const NotificationModal = ({ isOpen, onClose }) => {
         setRecordedAudioBlob(null);
         setRecordingTime(0);
       } else {
-        alert('Erro ao enviar resposta');
+        error('Erro ao enviar resposta');
       }
     } catch (error) {
       console.error('Erro ao enviar resposta:', error);
-      alert('Erro ao enviar resposta');
+      error('Erro ao enviar resposta');
     } finally {
       setSending(false);
     }
@@ -194,7 +196,7 @@ const NotificationModal = ({ isOpen, onClose }) => {
       }, 1000);
     } catch (error) {
       console.error('Erro ao acessar microfone:', error);
-      alert('Erro ao acessar microfone. Verifique as permissões.');
+      error('Erro ao acessar microfone. Verifique as permissões.');
     }
   };
 

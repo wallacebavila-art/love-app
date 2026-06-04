@@ -5,18 +5,21 @@
  * para melhor organização do código.
  */
 
+import { lazy, Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
 import CalendarModal from './CalendarModal';
 import WeatherModal from './WeatherModal';
-import AdminModal from './AdminModal';
 import SettingsModal from './SettingsModal';
-import TravelMapModal from './TravelMapModal';
-import MusicPlayerModal from './MusicPlayerModal';
 import NotificationToast from './NotificationToast';
 import ICloudCalendarWidget from './ICloudCalendarWidget';
 import Login from './Login';
 import RaissaLogin from './RaissaLogin';
 import YoutubeDownloader from './YoutubeDownloader';
+
+// Code splitting para modais pesados
+const AdminModal = lazy(() => import('./AdminModal'));
+const TravelMapModal = lazy(() => import('./TravelMapModal'));
+const MusicPlayerModal = lazy(() => import('./MusicPlayerModal'));
 
 const ModalsContainer = ({
   isCalendarOpen,
@@ -74,16 +77,20 @@ const ModalsContainer = ({
         weather={weather}
       />
 
-      <AdminModal
-        isOpen={isAdminModalOpen}
-        onClose={() => {
-          setIsAdminModalOpen(false);
-          // Redirecionar para home se estiver na rota /admin
-          if (location.pathname === '/admin') {
-            window.history.pushState({}, '', '/');
-          }
-        }}
-      />
+      <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="animate-spin w-8 h-8 border-2 border-white/30 border-t-white rounded-full"></div>
+      </div>}>
+        <AdminModal
+          isOpen={isAdminModalOpen}
+          onClose={() => {
+            setIsAdminModalOpen(false);
+            // Redirecionar para home se estiver na rota /admin
+            if (location.pathname === '/admin') {
+              window.history.pushState({}, '', '/');
+            }
+          }}
+        />
+      </Suspense>
 
       <SettingsModal
         isOpen={isSettingsModalOpen}
@@ -91,10 +98,14 @@ const ModalsContainer = ({
         onOpenYoutubeDownloader={() => setIsYoutubeDownloaderOpen(true)}
       />
 
-      <TravelMapModal
-        isOpen={isTravelMapModalOpen}
-        onClose={() => setIsTravelMapModalOpen(false)}
-      />
+      <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="animate-spin w-8 h-8 border-2 border-white/30 border-t-white rounded-full"></div>
+      </div>}>
+        <TravelMapModal
+          isOpen={isTravelMapModalOpen}
+          onClose={() => setIsTravelMapModalOpen(false)}
+        />
+      </Suspense>
 
       <NotificationToast />
 
@@ -143,31 +154,48 @@ const ModalsContainer = ({
         </div>
       )}
 
-      <MusicPlayerModal
-        isOpen={isMusicPlayerModalOpen}
-        onClose={() => setIsMusicPlayerModalOpen(false)}
-        isPlaying={isPlaying}
-        onToggleMusic={toggleMusic}
-        onNextTrack={nextTrack}
-        onPrevTrack={prevTrack}
-        onToggleShuffle={toggleShuffle}
-        isShuffled={isShuffled}
-        musicMode={musicMode}
-        onToggleMusicMode={toggleMusicMode}
-        volume={volume}
-        onVolumeChange={setVolume}
-        currentTrack={currentTrack}
-        currentArtist={currentArtist}
-        currentTrackIndex={currentTrackIndex}
-        totalTracks={totalTracks}
-        playlistData={playlist}
-        onSelectTrack={selectTrack}
-      />
+      <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="animate-spin w-8 h-8 border-2 border-white/30 border-t-white rounded-full"></div>
+      </div>}>
+        <MusicPlayerModal
+          isOpen={isMusicPlayerModalOpen}
+          onClose={() => setIsMusicPlayerModalOpen(false)}
+          isPlaying={isPlaying}
+          onToggleMusic={toggleMusic}
+          onNextTrack={nextTrack}
+          onPrevTrack={prevTrack}
+          onToggleShuffle={toggleShuffle}
+          isShuffled={isShuffled}
+          musicMode={musicMode}
+          onToggleMusicMode={toggleMusicMode}
+          volume={volume}
+          onVolumeChange={setVolume}
+          currentTrack={currentTrack}
+          currentArtist={currentArtist}
+          currentTrackIndex={currentTrackIndex}
+          totalTracks={totalTracks}
+          playlistData={playlist}
+          onSelectTrack={selectTrack}
+        />
+      </Suspense>
 
-      <YoutubeDownloader
-        isOpen={isYoutubeDownloaderOpen}
-        onClose={() => setIsYoutubeDownloaderOpen(false)}
-      />
+      {isYoutubeDownloaderOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setIsYoutubeDownloaderOpen(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <div className="relative bg-transparent backdrop-blur-xl border-0 rounded-3xl p-4 shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setIsYoutubeDownloaderOpen(false)}
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-all hover:scale-110 z-10"
+            >
+              <span className="material-symbols-outlined text-white">close</span>
+            </button>
+            <YoutubeDownloader
+              isOpen={true}
+              onClose={() => setIsYoutubeDownloaderOpen(false)}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 };

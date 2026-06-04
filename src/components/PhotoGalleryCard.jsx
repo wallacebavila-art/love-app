@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { useThemeStyles } from '../hooks/useThemeStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import { fetchAllPhotos } from '../services/photoService';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoginModal } from '../contexts/LoginModalContext';
 
 const PhotoGalleryCard = () => {
-  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
+  const { getCardBackground, getBorderColor, getTextColor } = useTheme();
   const { user } = useAuth();
   const { setIsLoginModalOpen } = useLoginModal();
   const [photos, setPhotos] = useState([]);
@@ -13,11 +13,15 @@ const PhotoGalleryCard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [loadedImages, setLoadedImages] = useState(new Set());
 
-  // Refs para requestAnimationFrame
+  // Refs para requestAnimationFrame e swipe
   const animationFrameRef = useRef(null);
   const lastUpdateTimeRef = useRef(0);
   const SLIDE_INTERVAL = 3000; // 3 segundos
+  const touchStartRef = useRef(0);
+  const touchEndRef = useRef(0);
+  const minSwipeDistance = 50; // Distância mínima para considerar um swipe
 
   // Carregar fotos do Firebase
   useEffect(() => {
@@ -33,6 +37,41 @@ const PhotoGalleryCard = () => {
     };
     loadPhotos();
   }, []);
+
+  // Preload imagens adjacentes para melhorar a experiência
+  useEffect(() => {
+    if (photos.length === 0) return;
+
+    const preloadImage = (url) => {
+      if (!url || loadedImages.has(url)) return;
+      
+      const img = new Image();
+      img.src = url;
+      img.onload = () => {
+        setLoadedImages(prev => new Set(prev).add(url));
+      };
+    };
+
+    // Preload imagem atual
+    const currentPhoto = photos[currentIndex];
+    if (currentPhoto?.url) {
+      preloadImage(currentPhoto.url);
+    }
+
+    // Preload imagem anterior
+    const prevIndex = currentIndex === 0 ? photos.length - 1 : currentIndex - 1;
+    const prevPhoto = photos[prevIndex];
+    if (prevPhoto?.url) {
+      preloadImage(prevPhoto.url);
+    }
+
+    // Preload próxima imagem
+    const nextIndex = (currentIndex + 1) % photos.length;
+    const nextPhoto = photos[nextIndex];
+    if (nextPhoto?.url) {
+      preloadImage(nextPhoto.url);
+    }
+  }, [currentIndex, photos, loadedImages]);
 
   // Slide automático com requestAnimationFrame
   useEffect(() => {
@@ -77,6 +116,29 @@ const PhotoGalleryCard = () => {
 
   const goToSlide = (index) => {
     setCurrentIndex(index);
+  };
+
+  // Handlers de touch para swipe
+  const onTouchStart = (e) => {
+    touchStartRef.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e) => {
+    touchEndRef.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    const touchDistance = touchStartRef.current - touchEndRef.current;
+    
+    if (Math.abs(touchDistance) > minSwipeDistance) {
+      if (touchDistance > 0) {
+        // Swipe left - próxima foto
+        goToNext();
+      } else {
+        // Swipe right - foto anterior
+        goToPrevious();
+      }
+    }
   };
 
   if (isLoading) {
@@ -156,13 +218,19 @@ const PhotoGalleryCard = () => {
             </div>
 
             {/* Photo */}
-            <div className="w-full h-full flex items-center justify-center p-2 cursor-pointer" onClick={() => {
-              if (!user) {
-                setIsLoginModalOpen(true);
-              } else {
-                setIsExpanded(true);
-              }
-            }}>
+            <div 
+              className="w-full h-full flex items-center justify-center p-2 cursor-pointer"
+              onClick={() => {
+                if (!user) {
+                  setIsLoginModalOpen(true);
+                } else {
+                  setIsExpanded(true);
+                }
+              }}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
               {currentPhoto.url ? (
                 <img
                   src={currentPhoto.url.startsWith('http') ? currentPhoto.url : currentPhoto.url}
@@ -242,13 +310,20 @@ const PhotoGalleryCard = () => {
               <span className="material-symbols-outlined text-white text-[32px]">chevron_right</span>
             </button>
 
-            <div className="relative max-w-[365px] max-h-[95vh]">
+            <div 
+              className="relative max-w-[365px] max-h-[95vh]"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
               <img
                 src={currentPhoto.url.startsWith('http') ? currentPhoto.url : currentPhoto.url}
                 alt={currentPhoto.caption || 'Foto'}
                 referrerPolicy={currentPhoto.url.startsWith('http') ? "no-referrer" : undefined}
                 crossOrigin={currentPhoto.url.startsWith('http') ? "anonymous" : undefined}
                 className="w-full h-full object-contain rounded-2xl shadow-2xl"
+                loading="lazy"
+                decoding="async"
               />
               {currentPhoto.caption && (
                 <p className={`font-body-md text-[12px] text-white text-center mt-2 drop-shadow-lg`}>

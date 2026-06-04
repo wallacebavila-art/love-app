@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { loadGoogleMaps } from '../utils/googleMapsLoader';
+import { useToast } from './Toast';
 
 const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: externalAddingMode, onMapReady }) => {
+  const { error } = useToast();
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -57,7 +59,7 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
         },
         (error) => {
           console.log('Erro ao obter localização:', error);
-          alert('Não foi possível obter sua localização');
+          error('Não foi possível obter sua localização');
         },
         {
           enableHighAccuracy: true,
@@ -66,7 +68,7 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
         }
       );
     } else {
-      alert('Geolocalização não suportada neste navegador');
+      error('Geolocalização não suportada neste navegador');
     }
   };
 

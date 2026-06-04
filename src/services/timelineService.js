@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { db } from './firebaseConfig';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
@@ -22,7 +23,7 @@ export const fetchTimelineData = async () => {
     
     return null;
   } catch (error) {
-    console.error('Erro ao carregar dados da timeline:', error);
+    logger.error('Erro ao carregar dados da timeline:', error);
     return null;
   }
 };
@@ -43,10 +44,10 @@ export const saveMilestones = async (milestones) => {
       await setDoc(timelineDoc, { milestones });
     }
     
-    console.log('✅ Marcos da timeline salvos no Firebase!');
+    logger.log('✅ Marcos da timeline salvos no Firebase!');
     return true;
   } catch (error) {
-    console.error('❌ Erro ao salvar marcos da timeline:', error);
+    logger.error('❌ Erro ao salvar marcos da timeline:', error);
     return false;
   }
 };
@@ -67,10 +68,10 @@ export const saveCustomDays = async (customDays) => {
       await setDoc(timelineDoc, { customDays });
     }
     
-    console.log('✅ Dias personalizados salvos no Firebase!');
+    logger.log('✅ Dias personalizados salvos no Firebase!');
     return true;
   } catch (error) {
-    console.error('❌ Erro ao salvar dias personalizados:', error);
+    logger.error('❌ Erro ao salvar dias personalizados:', error);
     return false;
   }
 };
@@ -93,7 +94,7 @@ export const saveTimelineData = async (data) => {
     
     return true;
   } catch (error) {
-    console.error('Erro ao salvar dados da timeline:', error);
+    logger.error('Erro ao salvar dados da timeline:', error);
     return false;
   }
 };

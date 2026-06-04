@@ -10,8 +10,8 @@ const CalendarEventsContext = createContext(null);
 
 export const REFRESH_INTERVAL_MS = CALENDAR_CACHE_TTL_MS;
 
-const getInitialCalendarState = () => {
-  const cached = readCalendarCache();
+const getInitialCalendarState = async () => {
+  const cached = await readCalendarCache();
   if (cached) {
     return {
       events: cached.events,
@@ -23,15 +23,14 @@ const getInitialCalendarState = () => {
 };
 
 export const CalendarEventsProvider = ({ children }) => {
-  const [initialState] = useState(getInitialCalendarState);
-  const [events, setEvents] = useState(initialState.events);
-  const [isLoading, setIsLoading] = useState(initialState.isLoading);
+  const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(initialState.lastUpdated);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const loadEvents = useCallback(async ({ initial = false, force = false } = {}) => {
     if (!force) {
-      const cached = readCalendarCache();
+      const cached = await readCalendarCache();
       if (cached) {
         setEvents(cached.events);
         setLastUpdated(cached.lastUpdated);
@@ -50,7 +49,7 @@ export const CalendarEventsProvider = ({ children }) => {
     try {
       const calendarEvents = await fetchICloudCalendar();
       setEvents(calendarEvents);
-      setLastUpdated(writeCalendarCache(calendarEvents));
+      setLastUpdated(await writeCalendarCache(calendarEvents));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -60,14 +59,14 @@ export const CalendarEventsProvider = ({ children }) => {
   const refresh = useCallback(() => loadEvents({ force: true }), [loadEvents]);
 
   useEffect(() => {
-    loadEvents({ initial: !initialState.lastUpdated });
+    loadEvents({ initial: !lastUpdated });
 
     const interval = setInterval(() => {
       loadEvents();
     }, REFRESH_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [loadEvents, initialState.lastUpdated]);
+  }, [loadEvents]);
 
   return (
     <CalendarEventsContext.Provider

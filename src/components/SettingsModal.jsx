@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useLoginModal } from '../contexts/LoginModalContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
-import { useThemeStyles } from '../hooks/useThemeStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import { exportMessages, downloadBackup } from '../services/backupService';
 import { clearAllNotifications } from '../services/realtimeNotifications';
+import { useToast } from './Toast';
 import naocliqueImage from '/naoclique.png';
+import { logger } from '../utils/logger';
 import raissaAvatar from '/favicon.png';
 
 const SettingsModal = ({ isOpen, onClose, onOpenYoutubeDownloader }) => {
@@ -14,7 +16,8 @@ const SettingsModal = ({ isOpen, onClose, onOpenYoutubeDownloader }) => {
   const navigate = useNavigate();
   const { setIsLoginModalOpen } = useLoginModal();
   const { isDarkMode, isExplicitMode, toggleDarkMode, enableExplicitMode, disableExplicitMode } = useDarkMode();
-  const { getCardBackground, getBorderColor, getTextColor } = useThemeStyles();
+  const { getCardBackground, getBorderColor, getTextColor } = useTheme();
+  const { success, error } = useToast();
   const [showSecretImage, setShowSecretImage] = useState(false);
   const [secretStep, setSecretStep] = useState(0);
   const [useLoveName, setUseLoveName] = useState(false);
@@ -25,7 +28,11 @@ const SettingsModal = ({ isOpen, onClose, onOpenYoutubeDownloader }) => {
     // Carregar preferência do localStorage
     const saved = localStorage.getItem('useLoveName');
     if (saved) {
-      setUseLoveName(JSON.parse(saved));
+      try {
+        setUseLoveName(JSON.parse(saved));
+      } catch (error) {
+        logger.error('Erro ao fazer parse de useLoveName:', error);
+      }
     }
 
     // Ouvir evento de toggle
@@ -48,7 +55,7 @@ const SettingsModal = ({ isOpen, onClose, onOpenYoutubeDownloader }) => {
       onClose();
       navigate('/');
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
+      logger.error('Erro ao fazer logout:', error);
     }
   };
 
@@ -82,8 +89,8 @@ const SettingsModal = ({ isOpen, onClose, onOpenYoutubeDownloader }) => {
       const data = await exportMessages();
       downloadBackup(data);
     } catch (error) {
-      console.error('Erro ao exportar mensagens:', error);
-      alert('Erro ao exportar mensagens');
+      logger.error('Erro ao exportar mensagens:', error);
+      error('Erro ao exportar mensagens');
     } finally {
       setIsExporting(false);
     }
@@ -96,15 +103,15 @@ const SettingsModal = ({ isOpen, onClose, onOpenYoutubeDownloader }) => {
     
     setIsClearingChat(true);
     try {
-      const success = await clearAllNotifications();
-      if (success) {
-        alert('Histórico do chat limpo com sucesso!');
+      const clearSuccess = await clearAllNotifications();
+      if (clearSuccess) {
+        success('Histórico do chat limpo com sucesso!');
       } else {
-        alert('Erro ao limpar histórico do chat');
+        error('Erro ao limpar histórico do chat');
       }
     } catch (error) {
-      console.error('Erro ao limpar chat:', error);
-      alert('Erro ao limpar histórico do chat');
+      logger.error('Erro ao limpar chat:', error);
+      error('Erro ao limpar histórico do chat');
     } finally {
       setIsClearingChat(false);
     }
