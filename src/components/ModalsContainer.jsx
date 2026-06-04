@@ -60,6 +60,7 @@ const ModalsContainer = ({
   totalTracks,
   playlist,
   selectTrack,
+  loadPlaylist,
 }) => {
   const location = useLocation();
 
@@ -176,6 +177,7 @@ const ModalsContainer = ({
           totalTracks={totalTracks}
           playlistData={playlist}
           onSelectTrack={selectTrack}
+          loadPlaylist={loadPlaylist}
         />
       </Suspense>
 

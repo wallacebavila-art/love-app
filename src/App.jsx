@@ -20,6 +20,7 @@ import { LoginModalProvider, useLoginModal } from './contexts/LoginModalContext'
 import { NotificationModalProvider } from './contexts/NotificationModalContext';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { YouTubePlaylistProvider } from './contexts/YouTubePlaylistContext';
 import { fetchDailyMessage } from './services/messageService';
 import { fetchDailyVerse } from './services/verseService';
 import { fetchWeather } from './services/weatherService';
@@ -36,7 +37,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { getThemeClasses, getSelectionClasses } from './utils/themeUtils';
 
 function AppContent() {
-  const { isPlaying, toggleMusic, nextTrack, prevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, setVolume, currentTrack, currentArtist, currentTrackIndex, totalTracks, playlist, selectTrack } = useMusicPlayer();
+  const { isPlaying, toggleMusic, nextTrack, prevTrack, toggleShuffle, isShuffled, musicMode, toggleMusicMode, volume, setVolume, currentTrack, currentArtist, currentTrackIndex, totalTracks, playlist, selectTrack, loadPlaylist } = useMusicPlayer();
   const [dailyMessage, setDailyMessage] = useState(null);
   const [dailyVerse, setDailyVerse] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -329,6 +330,7 @@ function AppContent() {
             totalTracks={totalTracks}
             playlist={playlist}
             selectTrack={selectTrack}
+            loadPlaylist={loadPlaylist}
           />
 
           {/* Bottom Player Bar - Apenas no modo mobile */}
@@ -377,12 +379,13 @@ function App() {
           <LoginModalProvider>
             <NotificationModalProvider>
               <DarkModeProvider>
-                <TimePeriodProvider>
-                  <ThemeProvider>
-                    <CalendarEventsProvider>
-                      <NotificationProvider>
-                        <ToastProvider>
-                          <ErrorBoundary>
+                <YouTubePlaylistProvider>
+                  <TimePeriodProvider>
+                    <ThemeProvider>
+                      <CalendarEventsProvider>
+                        <NotificationProvider>
+                          <ToastProvider>
+                            <ErrorBoundary>
                             <Routes>
                               <Route path="/login" element={<Login />} />
                               <Route path="/raissa-login" element={<RaissaLogin />} />
@@ -407,7 +410,8 @@ function App() {
                     </CalendarEventsProvider>
                   </ThemeProvider>
                 </TimePeriodProvider>
-              </DarkModeProvider>
+              </YouTubePlaylistProvider>
+            </DarkModeProvider>
             </NotificationModalProvider>
           </LoginModalProvider>
         </ModalProvider>

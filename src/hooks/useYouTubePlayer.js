@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { YOUTUBE_API_KEY, YOUTUBE_PLAYLIST_ID, YOUTUBE_TRACK_UPDATE_DELAY_1, YOUTUBE_TRACK_UPDATE_DELAY_2 } from '../constants/appConfig';
+import { getSelectedPlaylistId } from '../services/youtubeService';
 
 let youtubeApiLoaded = false;
 const apiReadyCallbacks = [];
@@ -53,8 +54,9 @@ function waitForAPI() {
  * @param {boolean} options.autoPlay - Se deve auto-play
  * @param {Function} options.onTrackChange - Callback quando a faixa muda
  * @param {Function} options.onPlayingChange - Callback quando o estado de playing muda
+ * @param {string} options.playlistId - ID da playlist do YouTube (opcional)
  */
-export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingChange }) => {
+export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingChange, playlistId }) => {
   const [currentTrack, setCurrentTrack] = useState('');
   const [currentArtist, setCurrentArtist] = useState('');
   const [isReady, setIsReady] = useState(false);
@@ -63,6 +65,9 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
   const playerRef = useRef(null);
   const playerReadyRef = useRef(false);
   const trackIntervalRef = useRef(null);
+
+  // Usar o playlistId fornecido ou o padrão do localStorage/appConfig
+  const finalPlaylistId = playlistId || getSelectedPlaylistId();
 
   const updateTrackInfo = useCallback(() => {
     try {
@@ -107,7 +112,7 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
         width: '1',
         playerVars: {
           listType: 'playlist',
-          list: YOUTUBE_PLAYLIST_ID,
+          list: finalPlaylistId,
           autoplay: autoPlay ? 1 : 0,
           loop: 1,
           controls: 1,
@@ -153,7 +158,7 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
     });
 
     return () => { isMounted = false; };
-  }, [autoPlay, volume, updateTrackInfo, onPlayingChange]);
+  }, [autoPlay, volume, updateTrackInfo, onPlayingChange, finalPlaylistId]);
 
   useEffect(() => {
     if (playerRef.current && playerReadyRef.current) {
@@ -196,6 +201,79 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
     }
   }, [onPlayingChange]);
 
+  const loadPlaylist = useCallback((newPlaylistId) => {
+    // Destruir o player atual
+    try {
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    } catch (e) {
+      console.error('[YouTubePlayer] Erro ao destruir player:', e);
+    }
+    
+    playerReadyRef.current = false;
+    setIsReady(false);
+    
+    // Criar um novo player com a nova playlist
+    let playerDiv = document.getElementById('youtube-player');
+    if (!playerDiv) {
+      playerDiv = document.createElement('div');
+      playerDiv.id = 'youtube-player';
+      document.body.appendChild(playerDiv);
+    }
+
+    playerDiv.style.position = 'fixed';
+    playerDiv.style.top = '-100px';
+    playerDiv.style.left = '-100px';
+    playerDiv.style.width = '1px';
+    playerDiv.style.height = '1px';
+    playerDiv.style.opacity = '0.01';
+    playerDiv.style.pointerEvents = 'none';
+
+    playerRef.current = new window.YT.Player('youtube-player', {
+      height: '1',
+      width: '1',
+      playerVars: {
+        listType: 'playlist',
+        list: newPlaylistId,
+        autoplay: 0,
+        loop: 1,
+        controls: 1,
+        showinfo: 0,
+        modestbranding: 1,
+        playsinline: 1,
+      },
+      events: {
+        onReady: () => {
+          playerReadyRef.current = true;
+          setIsReady(true);
+          playerRef.current.setVolume(volume);
+          updateTrackInfo();
+          
+          // Obter número total de vídeos na playlist
+          if (playerRef.current.getPlaylist && playerRef.current.getPlaylist()) {
+            const playlist = playerRef.current.getPlaylist();
+            setTotalTracks(playlist.length || 0);
+          }
+        },
+        onStateChange: (event) => {
+          if (event.data === window.YT.PlayerState.PLAYING) {
+            onPlayingChange?.(true);
+            updateTrackInfo();
+          } else if (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED) {
+            onPlayingChange?.(false);
+          } else if (event.data === window.YT.PlayerState.CUED) {
+            updateTrackInfo();
+          }
+        },
+        onError: (e) => {
+          console.error('[YouTubePlayer] Erro no player:', e);
+        },
+      },
+    });
+  }, [volume, updateTrackInfo, onPlayingChange]);
+
   const cleanup = useCallback(() => {
     if (trackIntervalRef.current) {
       clearInterval(trackIntervalRef.current);
@@ -225,6 +303,7 @@ export const useYouTubePlayer = ({ volume, autoPlay, onTrackChange, onPlayingCha
     nextTrack,
     prevTrack,
     selectTrack,
+    loadPlaylist,
     cleanup,
     totalTracks
   };

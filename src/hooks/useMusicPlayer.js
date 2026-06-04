@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useYouTubePlayer } from './useYouTubePlayer';
 import { useLocalAudioPlayer } from './useLocalAudioPlayer';
 import { MAX_YOUTUBE_TRACKS } from '../constants/appConfig';
+import { useYouTubePlaylist } from '../contexts/YouTubePlaylistContext';
 
 /**
  * Hook principal que coordena os players de música (YouTube e Local)
  */
 export const useMusicPlayer = () => {
+  const { selectedPlaylistId } = useYouTubePlaylist();
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(() => {
     const saved = localStorage.getItem('musicVolume');
@@ -35,7 +37,8 @@ export const useMusicPlayer = () => {
     volume,
     autoPlay: musicMode === 'youtube' && isPlaying,
     onTrackChange: handleTrackChange,
-    onPlayingChange: handlePlayingChange
+    onPlayingChange: handlePlayingChange,
+    playlistId: selectedPlaylistId
   });
 
   // Hook do áudio local
@@ -93,36 +96,12 @@ export const useMusicPlayer = () => {
     }
     setIsPlaying(false);
 
-    // Inicializar o novo modo
+    // Inicializar o novo modo (sem auto-play)
     if (newMode === 'youtube') {
       setIsYouTubeReady(true);
-      const timeout1 = setTimeout(() => {
-        if (wasPlaying) {
-          setIsPlaying(true); // Atualiza estado antes de tentar tocar
-          const timeout2 = setTimeout(() => {
-            youtubePlayer.togglePlay();
-          }, 500);
-          // Cleanup para timeout2
-          return () => clearTimeout(timeout2);
-        }
-      }, 1500);
-      // Cleanup para timeout1
-      return () => clearTimeout(timeout1);
     } else {
       localPlayer.loadSavedState();
       setIsLocalReady(true);
-      const timeout1 = setTimeout(() => {
-        if (wasPlaying) {
-          setIsPlaying(true); // Atualiza estado antes de tentar tocar
-          const timeout2 = setTimeout(() => {
-            localPlayer.togglePlay();
-          }, 100);
-          // Cleanup para timeout2
-          return () => clearTimeout(timeout2);
-        }
-      }, 100);
-      // Cleanup para timeout1
-      return () => clearTimeout(timeout1);
     }
   }, [musicMode, isPlaying, youtubePlayer, localPlayer]);
 
@@ -194,6 +173,7 @@ export const useMusicPlayer = () => {
     currentTrackIndex,
     totalTracks,
     playlist: playlistData,
-    selectTrack
+    selectTrack,
+    loadPlaylist: youtubePlayer.loadPlaylist
   };
 };
