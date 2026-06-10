@@ -8,10 +8,14 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
   const [isLoadingYoutube, setIsLoadingYoutube] = useState(false);
   const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
   const [showAddPlaylistForm, setShowAddPlaylistForm] = useState(false);
+  const [showEditPlaylistForm, setShowEditPlaylistForm] = useState(false);
+  const [editingPlaylistId, setEditingPlaylistId] = useState('');
+  const [editPlaylistName, setEditPlaylistName] = useState('');
+  const [editPlaylistDescription, setEditPlaylistDescription] = useState('');
   const [newPlaylistId, setNewPlaylistId] = useState('');
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [newPlaylistDescription, setNewPlaylistDescription] = useState('');
-  const { playlists, selectedPlaylistId, selectPlaylist, addPlaylist, removePlaylist } = useYouTubePlaylist();
+  const { playlists, selectedPlaylistId, selectPlaylist, addPlaylist, removePlaylist, editPlaylist } = useYouTubePlaylist();
 
   // Carregar playlist do YouTube quando o modo for YouTube ou quando mudar a playlist
   useEffect(() => {
@@ -286,13 +290,27 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
                     )}
                   </button>
                   {playlist.id !== 'PL7Z2KjbeQrjT0TQw0_3JZAFJF9hhwdVOQ' && (
-                    <button
-                      onClick={() => removePlaylist(playlist.id)}
-                      className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/30 transition-all"
-                      title="Remover playlist"
-                    >
-                      <span className="material-symbols-outlined text-red-400 text-[18px]">delete</span>
-                    </button>
+                    <>
+                      <button
+                        onClick={() => {
+                          setEditingPlaylistId(playlist.id);
+                          setEditPlaylistName(playlist.name);
+                          setEditPlaylistDescription(playlist.description);
+                          setShowEditPlaylistForm(true);
+                        }}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-500/20 hover:bg-blue-500/30 transition-all"
+                        title="Editar playlist"
+                      >
+                        <span className="material-symbols-outlined text-blue-400 text-[18px]">edit</span>
+                      </button>
+                      <button
+                        onClick={() => removePlaylist(playlist.id)}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/30 transition-all"
+                        title="Remover playlist"
+                      >
+                        <span className="material-symbols-outlined text-red-400 text-[18px]">delete</span>
+                      </button>
+                    </>
                   )}
                 </div>
               ))}
@@ -358,6 +376,53 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
                 <span className="material-symbols-outlined text-[18px]">add</span>
                 Adicionar Nova Playlist
               </button>
+            )}
+
+            {/* Formulário para editar playlist */}
+            {showEditPlaylistForm && (
+              <div className="mt-4 p-4 bg-white/5 rounded-xl space-y-3">
+                <input
+                  type="text"
+                  value={editPlaylistName}
+                  onChange={(e) => setEditPlaylistName(e.target.value)}
+                  placeholder="Nome da Playlist"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                />
+                <input
+                  type="text"
+                  value={editPlaylistDescription}
+                  onChange={(e) => setEditPlaylistDescription(e.target.value)}
+                  placeholder="Descrição (opcional)"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (editingPlaylistId && editPlaylistName) {
+                        editPlaylist(editingPlaylistId, editPlaylistName, editPlaylistDescription);
+                        setEditingPlaylistId('');
+                        setEditPlaylistName('');
+                        setEditPlaylistDescription('');
+                        setShowEditPlaylistForm(false);
+                      }
+                    }}
+                    className="flex-1 py-2 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-all text-sm font-medium"
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowEditPlaylistForm(false);
+                      setEditingPlaylistId('');
+                      setEditPlaylistName('');
+                      setEditPlaylistDescription('');
+                    }}
+                    className="flex-1 py-2 rounded-xl bg-white/10 text-white/70 hover:bg-white/20 transition-all text-sm font-medium"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
             )}
 
             <div className="mt-4 pt-4 border-t border-white/10">

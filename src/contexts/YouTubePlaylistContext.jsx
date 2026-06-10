@@ -70,12 +70,26 @@ export const YouTubePlaylistProvider = ({ children }) => {
     }
   };
 
+  const editPlaylist = (playlistId, name, description) => {
+    const updatedPlaylists = playlists.map(p =>
+      p.id === playlistId ? { ...p, name, description } : p
+    );
+    setPlaylists(updatedPlaylists);
+
+    try {
+      localStorage.setItem('youtubePlaylists', JSON.stringify(updatedPlaylists));
+    } catch (error) {
+      console.error('Erro ao salvar playlists no localStorage:', error);
+    }
+  };
+
   const value = {
     playlists,
     selectedPlaylistId,
     selectPlaylist,
     addPlaylist,
     removePlaylist,
+    editPlaylist,
     loading
   };
 

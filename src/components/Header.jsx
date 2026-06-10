@@ -313,7 +313,7 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
             title="Mensagens"
             aria-label="Abrir mensagens"
           >
-            <span className="material-symbols-outlined text-white transition-transform duration-300">notifications</span>
+            <span className="material-symbols-outlined text-white transition-transform duration-300">chat_bubble</span>
             <span className="text-white text-xs font-medium">Mensagens</span>
             {getUnreadCount() > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold" aria-label={`${getUnreadCount()} mensagens não lidas`}>
@@ -346,26 +346,6 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
 
         {/* Botões Mobile */}
         <div className="md:hidden flex gap-2">
-          <button
-            onClick={() => {
-              if (user) {
-                setIsNotificationModalOpen(true);
-                setLastViewedTimestamp(Date.now());
-              } else {
-                setIsRaissaLoginModalOpen(true);
-              }
-            }}
-            className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 relative"
-            title="Mensagens"
-            aria-label="Abrir mensagens"
-          >
-            <span className="material-symbols-outlined text-white transition-transform duration-300 text-[24px]">notifications</span>
-            {getUnreadCount() > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold" aria-label={`${getUnreadCount()} mensagens não lidas`}>
-                {getUnreadCount()}
-              </span>
-            )}
-          </button>
           {(user?.userType === 'raissa' || user?.userType === 'admin') && (
             <button
               onClick={() => user?.userType === 'raissa' ? setShowRaissaMessage(true) : null}
@@ -380,6 +360,26 @@ const Header = ({ onOpenCalendar, onOpenWeather, onOpenAdmin, onOpenSettings, on
               />
             </button>
           )}
+          <button
+            onClick={() => {
+              if (user) {
+                setIsNotificationModalOpen(true);
+                setLastViewedTimestamp(Date.now());
+              } else {
+                setIsRaissaLoginModalOpen(true);
+              }
+            }}
+            className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95 relative"
+            title="Mensagens"
+            aria-label="Abrir mensagens"
+          >
+            <span className="material-symbols-outlined text-white transition-transform duration-300 text-[24px]">chat_bubble</span>
+            {getUnreadCount() > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold" aria-label={`${getUnreadCount()} mensagens não lidas`}>
+                {getUnreadCount()}
+              </span>
+            )}
+          </button>
           <button 
             onClick={() => setIsMenuOpen(true)}
             className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white/30 active:bg-white/40 transition-all duration-300 hover:scale-110 active:scale-95"
