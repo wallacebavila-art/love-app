@@ -285,6 +285,7 @@ function AppContent() {
             currentTrack={currentTrack}
             currentArtist={currentArtist}
             onToggleInterfaceHidden={() => setIsInterfaceHidden(!isInterfaceHidden)}
+            isInterfaceHidden={isInterfaceHidden}
           />
 
           <UpcomingEventsTicker />
@@ -350,18 +351,19 @@ function AppContent() {
             onOpenMusicPlayer={() => setIsMusicPlayerModalOpen(true)}
           />
 
-          {/* Botão flutuante para reabrir interface quando escondida */}
-          {isInterfaceHidden && (
-            <button
-              onClick={() => setIsInterfaceHidden(false)}
-              className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-full bg-white/20 backdrop-blur-xl border border-white/30 flex items-center justify-center text-white hover:bg-white/30 hover:scale-110 transition-all shadow-2xl"
-              title="Mostrar interface"
-            >
-              <span className="material-symbols-outlined text-2xl">visibility</span>
-            </button>
-          )}
-
         </div>
+
+        {/* Botão flutuante para reabrir interface quando escondida */}
+        {isInterfaceHidden && (
+          <button
+            onClick={() => setIsInterfaceHidden(false)}
+            className="fixed top-4 right-4 z-50 w-12 h-12 rounded-full bg-pink-500 hover:bg-pink-600 active:bg-pink-700 transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg flex items-center justify-center"
+            title="Voltar ao modo normal"
+            aria-label="Voltar ao modo normal"
+          >
+            <span className="material-symbols-outlined text-white text-[24px]">home</span>
+          </button>
+        )}
 
         {/* Layout Decorative Element */}
         <div className="fixed bottom-1/4 -right-24 w-64 h-64 bg-[#e6b89c]/20 blur-[100px] rounded-full pointer-events-none"></div>

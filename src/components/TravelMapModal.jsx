@@ -255,6 +255,16 @@ const TravelMapModal = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
       <div className={`relative ${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border ${getBorderColor()} rounded-[32px] shadow-2xl shadow-black/10 w-full max-w-7xl h-[90vh] overflow-hidden flex flex-col`}>
+        {/* Botão de fechar - canto superior direito */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-black/60 hover:scale-110 transition-all shadow-lg"
+          title="Fechar mapa"
+          aria-label="Fechar mapa"
+        >
+          <span className="material-symbols-outlined text-[20px]">close</span>
+        </button>
+
         {/* Map Container */}
         <div className="flex-1 relative flex flex-col">
           <div className="flex-1 relative overflow-hidden">
@@ -284,12 +294,26 @@ const TravelMapModal = ({ isOpen, onClose }) => {
               </div>
             )}
 
-            {/* Add Form Overlay */}
+            {/* Add Form Overlay - ajustado para não sobrepor */}
             {showAddForm && (
-              <div className="absolute top-4 right-4 w-64 bg-black/60 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-2xl z-10">
-                <h3 className={`text-lg font-semibold ${getTextColor()} mb-4`}>
-                  {editingPlace ? 'Editar Lugar' : 'Adicionar Novo Lugar'}
-                </h3>
+              <div className="absolute top-4 right-4 w-72 bg-black/60 backdrop-blur-xl rounded-2xl p-4 border border-white/20 shadow-2xl z-25 max-h-[80vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={`text-lg font-semibold ${getTextColor()}`}>
+                    {editingPlace ? 'Editar Lugar' : 'Adicionar Novo Lugar'}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setNewPlace({ name: '', description: '', date: '', icon: 'heart' });
+                      setTempPosition(null);
+                      setEditingPlace(null);
+                    }}
+                    className="text-white/60 hover:text-white transition rounded-full p-1 hover:bg-white/10"
+                    title="Fechar formulário"
+                  >
+                    <span className="material-symbols-outlined text-sm">close</span>
+                  </button>
+                </div>
                 {!tempPosition && !editingPlace && (
                   <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/40 rounded-lg">
                     <p className="text-sm text-yellow-200">
@@ -421,7 +445,7 @@ const TravelMapModal = ({ isOpen, onClose }) => {
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2 relative">
             {showSearchResults && searchResults.length > 0 && (
-              <div className="absolute inset-0 bg-black/95 backdrop-blur-xl rounded-2xl p-3 space-y-2 z-20 overflow-y-auto border border-white/10">
+              <div className="absolute inset-0 bg-black/95 backdrop-blur-xl rounded-2xl p-3 space-y-2 z-15 overflow-y-auto border border-white/10">
                 <div className="flex justify-between items-center mb-3">
                   <span className={`text-xs font-semibold ${getTextColor()}`}>Resultados da pesquisa</span>
                   <button
@@ -473,7 +497,7 @@ const TravelMapModal = ({ isOpen, onClose }) => {
                     </div>
                   )}
                   {!isSidebarCollapsed && (
-                    <div className="flex gap-1 mt-3 pt-2 border-t border-white/10">
+                    <div className="flex gap-1 mt-3 pt-2 border-t border-white/10 z-10 relative">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

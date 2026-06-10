@@ -42,9 +42,38 @@ const CalendarModal = ({ isOpen, onClose, onDateSelect }) => {
       const verse = verseSnapshot.exists() ? verseSnapshot.data() : null;
       
       logger.log('✅ Mensagem:', message);
-      logger.log('✅ Versículo:', verse);
+      logger.log('✅ Versículo bruto:', verse);
       
-      onDateSelect(dateKey, message, verse);
+      // Transformar versículo para o formato esperado pelo RevealCard
+      let transformedVerse = null;
+      if (verse) {
+        // Se o versículo tem o formato { mensagem: "...", date: "..." }
+        if (verse.mensagem) {
+          // Separar texto e referência se estiverem juntos
+          const parts = verse.mensagem.split(' - ');
+          if (parts.length >= 2) {
+            transformedVerse = {
+              text: parts.slice(0, -1).join(' - '),
+              reference: parts[parts.length - 1]
+            };
+          } else {
+            transformedVerse = {
+              text: verse.mensagem,
+              reference: ''
+            };
+          }
+        } else if (verse.text) {
+          // Se já tem o formato correto
+          transformedVerse = verse;
+        } else {
+          // Se for string
+          transformedVerse = verse;
+        }
+      }
+      
+      logger.log('✅ Versículo transformado:', transformedVerse);
+      
+      onDateSelect(dateKey, message, transformedVerse);
       onClose();
     } catch (error) {
       logger.error('❌ Erro ao buscar dados:', error);

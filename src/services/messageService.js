@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
 import { db } from './firebaseConfig';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { getTodayDateString } from '../utils/dateUtils';
+import { getMessageDateString } from '../utils/dateUtils';
 
 /**
  * Busca a mensagem do dia no Firestore
@@ -9,7 +9,13 @@ import { getTodayDateString } from '../utils/dateUtils';
  */
 export const fetchDailyMessage = async () => {
   try {
-    const today = getTodayDateString();
+    const today = getMessageDateString();
+    
+    // Se a data for null (antes da data de início), retorna mensagem padrão
+    if (!today) {
+      return 'Pensando...';
+    }
+    
     const messageDoc = doc(db, 'mensagens', today);
     const docSnapshot = await getDoc(messageDoc);
     

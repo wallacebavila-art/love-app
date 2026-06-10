@@ -86,6 +86,11 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
             center: center,
             zoom: places.length > 0 ? 16 : 13,
             mapTypeId: 'hybrid',
+            disableDefaultUI: false,
+            zoomControl: true,
+            mapTypeControl: true,
+            streetViewControl: false,
+            fullscreenControl: false,
             styles: [
               {
                 featureType: 'poi',
@@ -290,7 +295,7 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
       />
       <button
         onClick={handleCenterOnUser}
-        className="absolute bottom-4 right-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
+        className="absolute bottom-4 left-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
         title="Minha localização"
       >
         <span className="material-symbols-outlined text-blue-500">my_location</span>

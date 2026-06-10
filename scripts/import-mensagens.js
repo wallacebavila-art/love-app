@@ -42,7 +42,7 @@ try {
 
 // Inicializar o Firebase Admin SDK
 try {
-  const serviceAccountPath = join(__dirname, 'service-account-key.json');
+  const serviceAccountPath = join(__dirname, '..', 'service-account-key.json');
   const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)

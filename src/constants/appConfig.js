@@ -35,6 +35,10 @@ export const CORS_PROXY_URL = import.meta.env.VITE_CORS_PROXY_URL || 'https://co
 export const RELATIONSHIP_START_DATE = import.meta.env.VITE_RELATIONSHIP_START_DATE || '2026-01-12';
 export const DEFAULT_RELATIONSHIP_START_DATE = '2026-01-12';
 
+// Messages and Verses
+export const MESSAGES_START_DATE = '2026-06-12';
+export const VERSES_START_DATE = '2026-06-12';
+
 // Weather
 export const WEATHER_CITY = import.meta.env.VITE_WEATHER_CITY || 'Rio de Janeiro';
 

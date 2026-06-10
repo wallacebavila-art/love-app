@@ -146,7 +146,24 @@ const AdminModal = ({ isOpen, onClose }) => {
       const querySnapshot = await getDocs(collection(db, 'verses'));
       const data = [];
       querySnapshot.forEach((doc) => {
-        data.push({ id: doc.id, ...doc.data() });
+        const docData = doc.data();
+        // Transformar versículo para o formato esperado
+        let transformedData = { id: doc.id, ...docData };
+        
+        // Se o versículo tem o formato { mensagem: "...", date: "..." }
+        if (docData.mensagem && !docData.text) {
+          // Separar texto e referência se estiverem juntos
+          const parts = docData.mensagem.split(' - ');
+          if (parts.length >= 2) {
+            transformedData.text = parts.slice(0, -1).join(' - ');
+            transformedData.reference = parts[parts.length - 1];
+          } else {
+            transformedData.text = docData.mensagem;
+            transformedData.reference = '';
+          }
+        }
+        
+        data.push(transformedData);
       });
       data.sort((a, b) => (a.date || a.id).localeCompare(b.date || b.id));
       setVerses(data);

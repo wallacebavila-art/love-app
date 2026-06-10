@@ -14,7 +14,7 @@ export const uploadPhotoToStorage = async (file, fileName) => {
 
     // Verificar se é HEIC e alertar para converter manualmente
     if (file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic') {
-      throw new Error('Arquivos HEIC não são suportados. Por favor, converta a imagem para JPEG ou PNG antes de fazer upload.');
+      throw new Error('Arquivo HEIC detectado. Por favor, converta a imagem para JPEG ou PNG antes de fazer upload.\n\nNo iPhone:\n1. Abra o app "Fotos"\n2. Selecione a foto\n3. Toque em "Compartilhar"\n4. Selecione "Copiar Foto"\n5. Cole em um novo email ou mensagem e salve como JPEG\n\nOu use um conversor online como: https://cloudconvert.com/heic-to-jpg');
     }
 
     // Comprimir imagem antes do upload (melhor qualidade: 500KB, qualidade 0.9)

@@ -1,4 +1,4 @@
-import { RELATIONSHIP_START_DATE } from '../constants/appConfig';
+import { RELATIONSHIP_START_DATE, MESSAGES_START_DATE, VERSES_START_DATE } from '../constants/appConfig';
 
 /**
  * Formata a data atual em português
@@ -54,6 +54,37 @@ export const getTodayDateString = () => {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Calcula a data da mensagem/versículo baseada na data de início
+ * Se a data atual for antes da data de início, retorna null (não mostrar mensagem)
+ * Se a data atual for depois da data de início, calcula a data correspondente
+ * @param {string} startDate - Data de início no formato YYYY-MM-DD
+ * @returns {string|null} Data no formato YYYY-MM-DD ou null se antes da data de início
+ */
+export const getMessageDateString = (startDate = MESSAGES_START_DATE) => {
+  const now = new Date();
+  const start = new Date(startDate);
+  
+  // Se a data atual for antes da data de início, retorna null
+  if (now < start) {
+    return null;
+  }
+  
+  // Calcula a diferença em dias
+  const diffTime = now.getTime() - start.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  // Retorna a data correspondente
+  const resultDate = new Date(start);
+  resultDate.setDate(start.getDate() + diffDays);
+  
+  const year = resultDate.getFullYear();
+  const month = String(resultDate.getMonth() + 1).padStart(2, '0');
+  const day = String(resultDate.getDate()).padStart(2, '0');
   
   return `${year}-${month}-${day}`;
 };

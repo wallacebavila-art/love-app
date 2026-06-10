@@ -82,20 +82,6 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
 
         {/* Controles Secundários */}
         <div className="flex items-center justify-center gap-3 mb-5">
-          {/* Shuffle */}
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleShuffle && onToggleShuffle(); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              isShuffled
-                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                : 'bg-white/10 text-white/60 border border-white/10'
-            }`}
-            title="Modo aleatório"
-          >
-            <span className="material-symbols-outlined text-[16px]">shuffle</span>
-            {isShuffled ? 'Ativado' : 'Aleatório'}
-          </button>
-
           {/* Alternar Modo */}
           <button
             onClick={(e) => { e.stopPropagation(); onToggleMusicMode && onToggleMusicMode(); }}

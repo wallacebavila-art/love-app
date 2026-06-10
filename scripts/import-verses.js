@@ -25,12 +25,13 @@ const __dirname = dirname(__filename);
 const args = process.argv.slice(2);
 if (args.length < 1) {
   console.log('❌ Uso incorreto!');
-  console.log('Uso: node import-verses.js <arquivo_json>');
-  console.log('Exemplo: node import-verses.js verses.json');
+  console.log('Uso: node import-verses.js <arquivo_json> [data_inicio]');
+  console.log('Exemplo: node import-verses.js verses.json 2026-06-12');
   process.exit(1);
 }
 
 const jsonFilePath = args[0];
+const startDate = args[1] || null; // Data de início opcional (YYYY-MM-DD)
 
 // Função para converter id_dia para data YYYY-MM-DD começando de hoje
 const dayIdToDate = (dayId, startFromDate = null) => {
@@ -45,14 +46,18 @@ const dayIdToDate = (dayId, startFromDate = null) => {
 };
 
 // Função para transformar o formato dos versículos
-const transformVerses = (verses) => {
+const transformVerses = (verses, startFromDate = null) => {
   return verses.map((verse, index) => {
-    const dayNumber = verse.id_dia || (index + 1);
-    const date = dayIdToDate(dayNumber); // Começa de hoje por padrão
+    const dayNumber = index + 1;
+    const date = dayIdToDate(dayNumber, startFromDate);
+    
+    // Verificar se o versículo tem os campos do novo formato (mensagem e versiculo_ref)
+    const mensagem = verse.mensagem || verse.versiculo_texto;
+    const referencia = verse.versiculo_ref || verse.versiculo_ref || '';
     
     return {
       date: date,
-      mensagem: `${verse.versiculo_texto} - ${verse.versiculo_ref}`
+      mensagem: `${mensagem} - ${referencia}`
     };
   });
 };
@@ -64,14 +69,20 @@ try {
   
   console.log(`📖 ${versesData.length} versículos encontrados no arquivo.`);
   
-  const transformedVerses = transformVerses(versesData);
+  const transformedVerses = transformVerses(versesData, startDate);
+  
+  if (startDate) {
+    console.log(`📅 Data de início: ${startDate}`);
+  } else {
+    console.log(`📅 Data de início: hoje`);
+  }
   
   console.log('🔄 Versículos transformados para o formato Firebase:');
   console.log('Exemplo:', transformedVerses[0]);
   
   // Inicializar o Firebase Admin SDK
   try {
-    const serviceAccountPath = join(__dirname, 'service-account-key.json');
+    const serviceAccountPath = join(__dirname, '..', 'service-account-key.json');
     const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
@@ -98,8 +109,11 @@ try {
   
   for (const verse of transformedVerses) {
     try {
-      const docRef = db.collection('mensagens').doc(verse.date);
-      batch.set(docRef, { mensagem: verse.mensagem });
+      const docRef = db.collection('verses').doc(verse.date);
+      batch.set(docRef, { 
+        mensagem: verse.mensagem,
+        date: verse.date
+      });
       successCount++;
       
       // Executar batch a cada 500 operações (limite do Firestore)

@@ -79,15 +79,6 @@ const BottomPlayerBar = ({ isPlaying, onToggleMusic, onNextTrack, onPrevTrack, t
         {/* Controles secundários */}
         <div className="flex items-center gap-1">
           <button
-            onClick={(e) => { e.stopPropagation(); toggleShuffle && toggleShuffle(); }}
-            className={`w-7 h-7 flex items-center justify-center rounded-full transition-all duration-300 active:scale-95 ${
-              isShuffled ? 'bg-green-500/80 text-white' : 'bg-white/10 text-white/80 hover:bg-white/20'
-            }`}
-            title={isShuffled ? 'Modo aleatório ativado' : 'Ativar modo aleatório'}
-          >
-            <span className="material-symbols-outlined text-[14px]">shuffle</span>
-          </button>
-          <button
             onClick={(e) => { e.stopPropagation(); toggleMusicMode && toggleMusicMode(); }}
             className={`w-7 h-7 flex items-center justify-center rounded-full transition-all duration-300 active:scale-95 ${
               musicMode === 'youtube' ? 'bg-red-500/80 text-white' : 'bg-blue-500/80 text-white'
