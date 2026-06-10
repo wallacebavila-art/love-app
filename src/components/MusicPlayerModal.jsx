@@ -289,29 +289,25 @@ const MusicPlayerModal = ({ isOpen, onClose, isPlaying, onToggleMusic, onNextTra
                       <span className="material-symbols-outlined text-purple-400 text-[20px]">check_circle</span>
                     )}
                   </button>
-                  {playlist.id !== 'PL7Z2KjbeQrjT0TQw0_3JZAFJF9hhwdVOQ' && (
-                    <>
-                      <button
-                        onClick={() => {
-                          setEditingPlaylistId(playlist.id);
-                          setEditPlaylistName(playlist.name);
-                          setEditPlaylistDescription(playlist.description);
-                          setShowEditPlaylistForm(true);
-                        }}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-500/20 hover:bg-blue-500/30 transition-all"
-                        title="Editar playlist"
-                      >
-                        <span className="material-symbols-outlined text-blue-400 text-[18px]">edit</span>
-                      </button>
-                      <button
-                        onClick={() => removePlaylist(playlist.id)}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/30 transition-all"
-                        title="Remover playlist"
-                      >
-                        <span className="material-symbols-outlined text-red-400 text-[18px]">delete</span>
-                      </button>
-                    </>
-                  )}
+                  <button
+                    onClick={() => {
+                      setEditingPlaylistId(playlist.id);
+                      setEditPlaylistName(playlist.name);
+                      setEditPlaylistDescription(playlist.description);
+                      setShowEditPlaylistForm(true);
+                    }}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-500/20 hover:bg-blue-500/30 transition-all"
+                    title="Editar playlist"
+                  >
+                    <span className="material-symbols-outlined text-blue-400 text-[18px]">edit</span>
+                  </button>
+                  <button
+                    onClick={() => removePlaylist(playlist.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500/20 hover:bg-red-500/30 transition-all"
+                    title="Remover playlist"
+                  >
+                    <span className="material-symbols-outlined text-red-400 text-[18px]">delete</span>
+                  </button>
                 </div>
               ))}
             </div>

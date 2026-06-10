@@ -15,6 +15,7 @@ import ICloudCalendarWidget from './ICloudCalendarWidget';
 import Login from './Login';
 import RaissaLogin from './RaissaLogin';
 import YoutubeDownloader from './YoutubeDownloader';
+import WelcomeModal from './WelcomeModal';
 
 // Code splitting para modais pesados
 const AdminModal = lazy(() => import('./AdminModal'));
@@ -66,6 +67,8 @@ const ModalsContainer = ({
 
   return (
     <>
+      <WelcomeModal />
+
       <CalendarModal
         isOpen={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
