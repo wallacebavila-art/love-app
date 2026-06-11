@@ -43,8 +43,8 @@ export const VERSES_START_DATE = '2026-06-12';
 export const WEATHER_CITY = import.meta.env.VITE_WEATHER_CITY || 'Rio de Janeiro';
 
 // User Roles
-export const ADMIN_EMAILS = import.meta.env.VITE_ADMIN_EMAILS ? import.meta.env.VITE_ADMIN_EMAILS.split(',') : [];
-export const RAISSA_EMAILS = import.meta.env.VITE_RAISSA_EMAILS ? import.meta.env.VITE_RAISSA_EMAILS.split(',') : [];
+export const ADMIN_EMAILS = import.meta.env.VITE_ADMIN_EMAILS ? import.meta.env.VITE_ADMIN_EMAILS.split(',') : ['wallace@para-raissa.firebaseapp.com'];
+export const RAISSA_EMAILS = import.meta.env.VITE_RAISSA_EMAILS ? import.meta.env.VITE_RAISSA_EMAILS.split(',') : ['raissa@para-raissa.firebaseapp.com'];
 
 // Music Player
 export const MAX_YOUTUBE_TRACKS = 100;
