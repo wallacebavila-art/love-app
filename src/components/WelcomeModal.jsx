@@ -85,16 +85,28 @@ const WelcomeModal = ({ onClose }) => {
   ];
 
   useEffect(() => {
+    console.log('WelcomeModal useEffect executado, user:', user?.userType);
+
     // Verificar se deve mostrar o modal
     const shouldShowModal = () => {
       // Verificar se é Raíssa
       if (user?.userType !== 'raissa') return false;
 
-      // Verificar se já viu a mensagem
-      const hasSeenWelcome = localStorage.getItem('raissaWelcomeSeen');
-      if (hasSeenWelcome) return false;
+      // Verificar se é dia 12 de junho de 2026
+      const today = new Date();
+      const specialDate = new Date('2026-06-12T00:00:00');
+      const isSpecialDay = today.toDateString() === specialDate.toDateString();
 
-      return true;
+      // Debug
+      console.log('WelcomeModal Debug:', {
+        today: today.toDateString(),
+        specialDate: specialDate.toDateString(),
+        isSpecialDay,
+        userType: user?.userType
+      });
+
+      // Apenas mostrar no dia 12 de junho de 2026
+      return isSpecialDay;
     };
 
     if (shouldShowModal()) {
@@ -108,12 +120,6 @@ const WelcomeModal = ({ onClose }) => {
     setIsAnimating(false);
     setTimeout(() => {
       setIsVisible(false);
-      // Marcar que Raíssa já viu a mensagem
-      try {
-        localStorage.setItem('raissaWelcomeSeen', 'true');
-      } catch (error) {
-        console.error('Erro ao salvar estado de boas-vindas:', error);
-      }
       if (onClose) onClose();
     }, 300);
   };
