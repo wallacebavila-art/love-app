@@ -90,11 +90,6 @@ const WelcomeModal = ({ onClose }) => {
       // Verificar se é Raíssa
       if (user?.userType !== 'raissa') return false;
 
-      // Verificar se é dia 12 de junho ou posterior
-      const today = new Date();
-      const startDate = new Date('2026-06-09');
-      if (today < startDate) return false;
-
       // Verificar se já viu a mensagem
       const hasSeenWelcome = localStorage.getItem('raissaWelcomeSeen');
       if (hasSeenWelcome) return false;
@@ -259,7 +254,7 @@ const WelcomeModal = ({ onClose }) => {
         {/* Data (apenas na primeira página) */}
         {isFirstPage && (
           <p className="text-center text-white/40 text-[10px] mt-3">
-            12 de Junho de 2026
+            {new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         )}
       </div>
