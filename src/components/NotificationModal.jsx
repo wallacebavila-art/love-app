@@ -196,7 +196,8 @@ const NotificationModal = ({ isOpen, onClose }) => {
       }, 1000);
     } catch (error) {
       console.error('Erro ao acessar microfone:', error);
-      error('Erro ao acessar microfone. Verifique as permissões.');
+      // Não chamar error como função - é um objeto Error
+      throw new Error('Erro ao acessar microfone. Verifique as permissões.');
     }
   };
 

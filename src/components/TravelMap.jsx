@@ -59,7 +59,7 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
         },
         (error) => {
           console.log('Erro ao obter localização:', error);
-          error('Não foi possível obter sua localização');
+          // Não chamar error como função - é um objeto Error
         },
         {
           enableHighAccuracy: true,
@@ -68,7 +68,7 @@ const TravelMap = memo(({ places, onAddPlace, onPlaceClick, isAddingMode: extern
         }
       );
     } else {
-      error('Geolocalização não suportada neste navegador');
+      console.log('Geolocalização não suportada neste navegador');
     }
   };
 
