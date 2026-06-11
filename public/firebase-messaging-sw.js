@@ -77,8 +77,8 @@ messaging.onBackgroundMessage(async (payload) => {
   const notificationTitle = payload.notification?.title || 'Nova Mensagem';
   const notificationOptions = {
     body: payload.notification?.body || '',
-    icon: '/icon-192.svg',
-    badge: '/icon-192.svg',
+    icon: '/love-app/icon-192.svg',
+    badge: '/love-app/icon-192.svg',
     data: payload.data,
   };
 

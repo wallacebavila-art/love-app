@@ -27,6 +27,25 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const YoutubeDownloader = ({ isOpen, onClose, onMusicDownloaded }) => {
   const { getCardBackground, getBorderColor, getTextColor } = useTheme();
+
+  // Não mostrar em produção
+  if (import.meta.env.PROD) {
+    return (
+      <div className={`${getCardBackground()} backdrop-blur-[24px] -webkit-backdrop-blur-[24px] border-2 ${getBorderColor()} rounded-3xl p-5 shadow-2xl shadow-black/10`}>
+        <h3 className={`text-lg font-semibold ${getTextColor()} mb-4 flex items-center gap-2`}>
+          <span className="material-symbols-outlined text-white/60">download</span>
+          Baixar Música do YouTube
+        </h3>
+        <p className={`${getTextColor()} text-center text-sm`}>
+          ⚠️ Esta funcionalidade só está disponível em desenvolvimento.
+        </p>
+        <p className={`${getTextColor()} text-center text-xs mt-2 opacity-60`}>
+          Use o player de YouTube integrado para ouvir músicas.
+        </p>
+      </div>
+    );
+  }
+
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
