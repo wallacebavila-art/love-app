@@ -202,29 +202,17 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    let timer = null;
-    let innerTimer = null;
-    
     const checkLoadingComplete = () => {
       if (dailyMessage && dailyVerse) {
-        timer = setTimeout(() => {
-          // Iniciar animação de abertura do livro
-          setBookOpenStage('opening');
-          // Após a animação de abertura, remover loading
-          innerTimer = setTimeout(() => {
-            setBookOpenStage('open');
-            setIsLoading(false);
-          }, 1200);
-        }, 2000);
+        // Adicionar delay fixo de 500ms antes de remover loading
+        setTimeout(() => {
+          setBookOpenStage('open');
+          setIsLoading(false);
+        }, 500);
       }
     };
 
     checkLoadingComplete();
-
-    return () => {
-      if (timer) clearTimeout(timer);
-      if (innerTimer) clearTimeout(innerTimer);
-    };
   }, [dailyMessage, dailyVerse]);
 
 
