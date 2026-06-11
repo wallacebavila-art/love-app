@@ -30,7 +30,7 @@ const initI18n = async () => {
         }
       });
   } catch (error) {
-    console.warn('i18next dependencies not installed, i18n disabled');
+    console.warn('i18next dependencies not installed, i18n disabled:', error);
     i18nInstance = {
       t: (key) => key,
       changeLanguage: () => {},

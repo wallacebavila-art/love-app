@@ -15,13 +15,13 @@ export const OPENWEATHERMAP_API_KEY = import.meta.env.VITE_OPENWEATHERMAP_API_KE
 
 // Firebase
 export const FIREBASE_CONFIG = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyBPpMEAe3yMYl8Y49btaV4lUiZLN_ZQEBo',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'para-raissa.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'para-raissa',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'para-raissa.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '372214287601',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:372214287601:web:75eb749127035cb7d9ad50',
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || 'https://para-raissa-default-rtdb.firebaseio.com'
 };
 
 // FCM

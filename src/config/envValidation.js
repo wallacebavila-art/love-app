@@ -52,7 +52,7 @@ export const validateEnvVars = () => {
 
 /**
  * Valida variáveis de ambiente em modo desenvolvimento
- * Em produção, lança erro se faltar variáveis obrigatórias
+ * Em produção, apenas avisa sobre variáveis faltantes (temporariamente para debug)
  */
 export const validateEnv = () => {
   if (import.meta.env.DEV) {
@@ -65,8 +65,14 @@ export const validateEnv = () => {
       );
     }
   } else {
-    // Em produção, lança erro se faltar variáveis obrigatórias
-    validateEnvVars();
+    // Em produção, apenas avisa temporariamente para debug (não lança erro)
+    const missingVars = requiredEnvVars.filter(varName => !import.meta.env[varName]);
+    if (missingVars.length > 0) {
+      console.warn(
+        `⚠️ Missing environment variables (production):\n${missingVars.join('\n')}\n` +
+        `The app may not work correctly without these variables.`
+      );
+    }
   }
 };
 

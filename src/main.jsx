@@ -7,16 +7,16 @@ import { validateEnv } from './config/envValidation'
 // Validar environment variables antes de iniciar o app
 validateEnv()
 
-// Register Service Worker for PWA
-if ('serviceWorker' in window) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('SW registered: ', registration);
-    }).catch(registrationError => {
-      console.log('SW registration failed: ', registrationError);
-    });
-  });
-}
+// Register Service Worker for PWA (temporariamente desabilitado para debug)
+// if ('serviceWorker' in window) {
+//   window.addEventListener('load', () => {
+//     navigator.serviceWorker.register('/sw.js').then(registration => {
+//       console.log('SW registered: ', registration);
+//     }).catch(registrationError => {
+//       console.log('SW registration failed: ', registrationError);
+//     });
+//   });
+// }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
