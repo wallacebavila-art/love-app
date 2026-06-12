@@ -74,17 +74,16 @@ export const getMessageDateString = (startDate = MESSAGES_START_DATE) => {
     return null;
   }
   
-  // Calcula a diferença em dias
+  // Calcula a diferença em dias usando UTC para evitar problemas de fuso horário
   const diffTime = now.getTime() - start.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   
-  // Retorna a data correspondente
-  const resultDate = new Date(start);
-  resultDate.setDate(start.getDate() + diffDays);
+  // Retorna a data correspondente usando UTC
+  const resultDate = new Date(start.getTime() + diffDays * 24 * 60 * 60 * 1000);
   
-  const year = resultDate.getFullYear();
-  const month = String(resultDate.getMonth() + 1).padStart(2, '0');
-  const day = String(resultDate.getDate()).padStart(2, '0');
+  const year = resultDate.getUTCFullYear();
+  const month = String(resultDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(resultDate.getUTCDate()).padStart(2, '0');
   
   return `${year}-${month}-${day}`;
 };
