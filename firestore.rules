@@ -66,5 +66,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Regras para playlists - temporariamente aberto para teste
+    match /playlists/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { fetchYouTubePlaylist, setSelectedPlaylistId, getSelectedPlaylistId } from '../services/youtubeService';
+import { fetchPlaylists, addPlaylist as addPlaylistToFirestore, updatePlaylist as updatePlaylistInFirestore, removePlaylist as removePlaylistFromFirestore, initializeDefaultPlaylist } from '../services/playlistService';
 
 const YouTubePlaylistContext = createContext(null);
 
@@ -17,19 +18,26 @@ export const YouTubePlaylistProvider = ({ children }) => {
     }
   ];
 
-  // Carregar playlists do localStorage
+  // Carregar playlists do Firestore
   useEffect(() => {
-    try {
-      const savedPlaylists = localStorage.getItem('youtubePlaylists');
-      if (savedPlaylists) {
-        setPlaylists(JSON.parse(savedPlaylists));
-      } else {
+    const loadPlaylists = async () => {
+      setLoading(true);
+      try {
+        // Inicializa playlist padrão se não existir
+        await initializeDefaultPlaylist();
+        
+        // Carrega playlists do Firestore
+        const fetchedPlaylists = await fetchPlaylists();
+        setPlaylists(fetchedPlaylists);
+      } catch (error) {
+        console.error('Erro ao carregar playlists do Firestore:', error);
         setPlaylists(defaultPlaylists);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Erro ao carregar playlists do localStorage:', error);
-      setPlaylists(defaultPlaylists);
-    }
+    };
+
+    loadPlaylists();
   }, []);
 
   const selectPlaylist = (playlistId) => {
@@ -37,49 +45,64 @@ export const YouTubePlaylistProvider = ({ children }) => {
     setSelectedPlaylistId(playlistId);
   };
 
-  const addPlaylist = (playlistId, name, description) => {
+  const addPlaylist = async (playlistId, name, description) => {
     const newPlaylist = {
       id: playlistId,
       name: name || 'Nova Playlist',
       description: description || 'Playlist personalizada'
     };
 
-    const updatedPlaylists = [...playlists, newPlaylist];
-    setPlaylists(updatedPlaylists);
-
     try {
-      localStorage.setItem('youtubePlaylists', JSON.stringify(updatedPlaylists));
+      const docRef = await addPlaylistToFirestore(newPlaylist);
+      const updatedPlaylists = [...playlists, { ...newPlaylist, firestoreDocId: docRef.id }];
+      setPlaylists(updatedPlaylists);
     } catch (error) {
-      console.error('Erro ao salvar playlists no localStorage:', error);
+      console.error('Erro ao adicionar playlist:', error);
     }
   };
 
-  const removePlaylist = (playlistId) => {
-    const updatedPlaylists = playlists.filter(p => p.id !== playlistId);
-    setPlaylists(updatedPlaylists);
-
-    try {
-      localStorage.setItem('youtubePlaylists', JSON.stringify(updatedPlaylists));
-    } catch (error) {
-      console.error('Erro ao salvar playlists no localStorage:', error);
+  const removePlaylist = async (playlistId) => {
+    // Encontra o documento ID no Firestore (não é o mesmo que playlistId)
+    const playlistToRemove = playlists.find(p => p.id === playlistId);
+    if (!playlistToRemove || !playlistToRemove.firestoreDocId) {
+      console.error('Playlist não encontrada ou sem ID do Firestore');
+      return;
     }
 
-    // Se a playlist removida era a selecionada, volta para a padrão
-    if (selectedPlaylistId === playlistId) {
-      selectPlaylist(defaultPlaylists[0].id);
+    try {
+      await removePlaylistFromFirestore(playlistToRemove.firestoreDocId);
+      const updatedPlaylists = playlists.filter(p => p.id !== playlistId);
+      setPlaylists(updatedPlaylists);
+
+      // Se a playlist removida era a selecionada, volta para a padrão
+      if (selectedPlaylistId === playlistId) {
+        selectPlaylist(defaultPlaylists[0].id);
+      }
+    } catch (error) {
+      console.error('Erro ao remover playlist:', error);
     }
   };
 
-  const editPlaylist = (playlistId, name, description) => {
-    const updatedPlaylists = playlists.map(p =>
-      p.id === playlistId ? { ...p, name, description } : p
-    );
-    setPlaylists(updatedPlaylists);
+  const editPlaylist = async (playlistId, name, description) => {
+    // Encontra o documento ID no Firestore (não é o mesmo que playlistId)
+    const playlistToEdit = playlists.find(p => p.id === playlistId);
+    if (!playlistToEdit || !playlistToEdit.firestoreDocId) {
+      console.error('Playlist não encontrada ou sem ID do Firestore');
+      return;
+    }
 
     try {
-      localStorage.setItem('youtubePlaylists', JSON.stringify(updatedPlaylists));
+      await updatePlaylistInFirestore(playlistToEdit.firestoreDocId, {
+        id: playlistId,
+        name,
+        description
+      });
+      const updatedPlaylists = playlists.map(p =>
+        p.id === playlistId ? { ...p, name, description } : p
+      );
+      setPlaylists(updatedPlaylists);
     } catch (error) {
-      console.error('Erro ao salvar playlists no localStorage:', error);
+      console.error('Erro ao editar playlist:', error);
     }
   };
 
